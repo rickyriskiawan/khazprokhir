@@ -74,14 +74,14 @@ Mengimplementasikan seluruh endpoint RESTful API untuk pengelolaan **Master Data
 - Setiap operasi mutasi (POST, PUT, DELETE) otomatis memanggil `createAuditLog` untuk mencatat riwayat ke tabel `audit_log`.
 
 ### 3. Kriteria Penerimaan (Acceptance Criteria)
-- [ ] Seluruh endpoint Master Data (denominasi, emisi, shift, user) dapat diakses dengan respons JSON standar.
-- [ ] Pengubahan data master (POST, PUT, DELETE) hanya dapat dilakukan oleh role `SUPERVISOR` (role `OPERATOR` ditolak 403 Forbidden).
-- [ ] Pembuatan dan pembaruan akun user mengenkripsi password dengan bcrypt dan tidak mengekspos hash ke response.
-- [ ] Endpoint Target Tahunan menghitung `target_brood` dan `target_pack` secara otomatis dan presisi.
-- [ ] Endpoint Target Bulanan memvalidasi parameter bulan (1-12) dan sisa hari kerja.
-- [ ] Endpoint Persediaan HCTS dan Rencana Penyerahan berfungsi untuk input, pembacaan, dan update data.
-- [ ] Setiap aktivitas mutasi tercatat ke tabel `audit_log`.
-- [ ] Seluruh automated test berjalan sukses (`npm test`).
+- [x] Seluruh endpoint Master Data (denominasi, emisi, shift, user) dapat diakses dengan respons JSON standar.
+- [x] Pengubahan data master (POST, PUT, DELETE) hanya dapat dilakukan oleh role `SUPERVISOR` (role `OPERATOR` ditolak 403 Forbidden).
+- [x] Pembuatan dan pembaruan akun user mengenkripsi password dengan bcrypt dan tidak mengekspos hash ke response.
+- [x] Endpoint Target Tahunan menghitung `target_brood` dan `target_pack` secara otomatis dan presisi.
+- [x] Endpoint Target Bulanan memvalidasi parameter bulan (1-12) dan sisa hari kerja.
+- [x] Endpoint Persediaan HCTS dan Rencana Penyerahan berfungsi untuk input, pembacaan, dan update data.
+- [x] Setiap aktivitas mutasi tercatat ke tabel `audit_log`.
+- [x] Seluruh automated test berjalan sukses (`npm test`).
 
 ---
 
