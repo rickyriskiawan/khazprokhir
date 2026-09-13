@@ -7,7 +7,13 @@
   "scripts": {
     "dev": "nodemon --env-file=.env.development src/index.js",
     "start": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "test": "node --env-file=.env.development src/verify-db.js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "keywords": [
     "banknote",
@@ -17,7 +23,8 @@
   "author": "Ricky Risikiawan",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^7.10.0",
+    "@prisma/client": "^6.19.3",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
@@ -25,6 +32,6 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
-    "prisma": "^8.0.0-rc.14"
+    "prisma": "^6.19.3"
   }
 }

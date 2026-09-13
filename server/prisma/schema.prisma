@@ -1,0 +1,456 @@
+// Prisma schema for Khazprokhir Banknote Monitoring System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// Enums
+// -----------------------------------------------------------------------------
+
+enum Role {
+  OPERATOR
+  SUPERVISOR
+  MANAGEMENT
+  AUDITOR
+}
+
+enum KategoriPenerimaan {
+  MASINAL
+  PARSIAL
+}
+
+enum StatusPack {
+  PENDING
+  RECEIVED
+  SORTED
+  PACKED
+  SHIPPED
+}
+
+enum StatusSortir {
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum StatusKemas {
+  READY
+  SHIPPED
+}
+
+enum StatusPengiriman {
+  DRAFT
+  APPROVED
+  SHIPPED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+// -----------------------------------------------------------------------------
+// User & Authentication
+// -----------------------------------------------------------------------------
+
+model User {
+  id            Int      @id @default(autoincrement())
+  username      String   @unique
+  password_hash String
+  full_name     String
+  role          Role     @default(OPERATOR)
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relations
+  bon_masuk             BonMasuk[]
+  proses_sortir         ProsesSortir[]
+  hasil_kemas           HasilKemas[]
+  pengiriman_created    Pengiriman[]   @relation("PengirimanCreatedBy")
+  pengiriman_approved   Pengiriman[]   @relation("PengirimanApprovedBy")
+  audit_logs            AuditLog[]
+
+  @@map("users")
+}
+
+// -----------------------------------------------------------------------------
+// Master Data
+// -----------------------------------------------------------------------------
+
+model Denominasi {
+  id        Int     @id @default(autoincrement())
+  nama      String  // contoh: "Rp100.000", "Rp50.000"
+  nilai     Int     // contoh: 100000, 50000
+  is_active Boolean @default(true)
+
+  // Relations
+  emisi               Emisi[]
+  target_tahunan      TargetTahunan[]
+  target_bulanan      TargetBulanan[]
+  hasil_kemas         HasilKemas[]
+  pengiriman          Pengiriman[]
+  transaksi_hcts      TransaksiHcts[]
+  rencana_penyerahan  RencanaPenyerahan[]
+
+  @@map("denominasi")
+}
+
+model Emisi {
+  id            Int        @id @default(autoincrement())
+  kode_emisi    String     // contoh: "TE 2022"
+  sandi         String     // contoh: "Y'22", "X'22"
+  tahun         String     // contoh: "2022"
+  denominasi_id Int
+  denominasi    Denominasi @relation(fields: [denominasi_id], references: [id])
+  is_active     Boolean    @default(true)
+
+  // Relations
+  batches Batch[]
+
+  @@map("emisi")
+}
+
+model Shift {
+  id          Int     @id @default(autoincrement())
+  nama        String  // Shift 1 / Shift 2 / Shift 3
+  jam_mulai   String  // "06:00"
+  jam_selesai String  // "14:00"
+  is_active   Boolean @default(true)
+
+  // Relations
+  bon_masuk     BonMasuk[]
+  proses_sortir ProsesSortir[]
+  hasil_kemas   HasilKemas[]
+
+  @@map("shift")
+}
+
+// -----------------------------------------------------------------------------
+// Perencanaan & Target Produksi
+// -----------------------------------------------------------------------------
+
+model TargetTahunan {
+  id             Int        @id @default(autoincrement())
+  tahun_anggaran Int        // contoh: 2026
+  denominasi_id  Int
+  denominasi     Denominasi @relation(fields: [denominasi_id], references: [id])
+  target_bilyet  BigInt     // Target lembar dalam setahun
+  target_brood   BigInt     // auto/kalkulasi: target_bilyet / 1000
+  target_pack    Int        // auto/kalkulasi: target_brood / 45
+  catatan        String?    @db.Text
+  created_at     DateTime   @default(now())
+  updated_at     DateTime   @updatedAt
+
+  @@unique([tahun_anggaran, denominasi_id])
+  @@map("target_tahunan")
+}
+
+model TargetBulanan {
+  id                       Int        @id @default(autoincrement())
+  tahun_anggaran           Int        // contoh: 2026
+  bulan                    Int        // 1 s/d 12
+  denominasi_id            Int
+  denominasi               Denominasi @relation(fields: [denominasi_id], references: [id])
+  target_penyerahan_bilyet BigInt     // Target penyerahan ke BI dalam bilyet
+  target_pengemasan_bilyet BigInt     // Target pengemasan doos dalam bilyet
+  sisa_hari_kerja          Int        // Jumlah sisa hari kerja bulan berjalan
+  created_at               DateTime   @default(now())
+  updated_at               DateTime   @updatedAt
+
+  @@unique([tahun_anggaran, bulan, denominasi_id])
+  @@map("target_bulanan")
+}
+
+// -----------------------------------------------------------------------------
+// Alur Operasional Produksi (Batch, Bon Masuk, Pack Detail)
+// -----------------------------------------------------------------------------
+
+model Batch {
+  id             Int      @id @default(autoincrement())
+  nomor_batch    String   // Nomor order / batch (contoh: "ORD-001")
+  tahun_anggaran Int      // contoh: 2026
+  seri           String   // contoh: "AA-BA"
+  kepala         String   // contoh: "0"
+  emisi_id       Int
+  emisi          Emisi    @relation(fields: [emisi_id], references: [id])
+  jumlah_pack    Int      @default(100)
+  status         String   @default("pending") // pending | in_progress | completed
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  // Relations
+  bon_masuk          BonMasuk[]
+  packs              PackDetail[]
+  proses_sortir      ProsesSortir[]
+  hasil_kemas        HasilKemas[]
+  pengiriman_details PengirimanDetail[]
+
+  @@unique([nomor_batch, tahun_anggaran])
+  @@map("batch")
+}
+
+model BonMasuk {
+  id                  Int                @id @default(autoincrement())
+  no_segel            String             @unique // Nomor segel unik dari bon Khazai
+  batch_id            Int
+  batch               Batch              @relation(fields: [batch_id], references: [id])
+  tanggal_masuk       DateTime           @db.Date
+  jam_masuk           String             // format "08:30"
+  pack_dari           Int                // contoh: 1
+  pack_sampai         Int                // contoh: 50
+  jumlah_bilyet       BigInt             // total bilyet dalam bon
+  jenis_mesin_sortir  String?            // metadata mesin di Khazai (contoh: "BPS M7")
+  kategori_penerimaan KategoriPenerimaan @default(MASINAL)
+  shift_id            Int
+  shift               Shift              @relation(fields: [shift_id], references: [id])
+  operator_id         Int
+  operator            User               @relation(fields: [operator_id], references: [id])
+  catatan             String?            @db.Text
+  created_at          DateTime           @default(now())
+  updated_at          DateTime           @updatedAt
+
+  // Relations
+  packs PackDetail[]
+
+  @@map("bon_masuk")
+}
+
+model PackDetail {
+  id            Int         @id @default(autoincrement())
+  batch_id      Int
+  batch         Batch       @relation(fields: [batch_id], references: [id])
+  bon_masuk_id  Int?
+  bon_masuk     BonMasuk?   @relation(fields: [bon_masuk_id], references: [id])
+  nomor_pack    Int         // 1 s/d 100
+  jumlah_brood  Int         @default(45)
+  jumlah_bilyet BigInt      @default(45000)
+  hasil_kemas_id Int?
+  hasil_kemas   HasilKemas? @relation(fields: [hasil_kemas_id], references: [id])
+  no_doos_range String?     // contoh: "Doos 1-9"
+  status        StatusPack  @default(PENDING)
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
+
+  // Relations
+  sortir_pack_details SortirPackDetail[]
+  kemas_pack_details  KemasPackDetail[]
+
+  @@unique([batch_id, nomor_pack])
+  @@map("pack_detail")
+}
+
+// -----------------------------------------------------------------------------
+// Modul Proses Sortir (Pengurutan Pack Kelipatan 4, Zero Reject)
+// -----------------------------------------------------------------------------
+
+model ProsesSortir {
+  id             Int          @id @default(autoincrement())
+  batch_id       Int
+  batch          Batch        @relation(fields: [batch_id], references: [id])
+  pack_dari      Int
+  pack_sampai    Int
+  total_pack     Int          // Wajib kelipatan 4: 4, 8, 12, dst.
+  shift_id       Int
+  shift          Shift        @relation(fields: [shift_id], references: [id])
+  operator_id    Int
+  operator       User         @relation(fields: [operator_id], references: [id])
+  tanggal_sortir DateTime     @db.Date
+  total_brood    Int          // total_pack * 45 (100% utuh tanpa reject)
+  total_bilyet   BigInt       // total_brood * 1000
+  status         StatusSortir @default(IN_PROGRESS)
+  catatan        String?      @db.Text
+  started_at     DateTime     @default(now())
+  completed_at   DateTime?
+  created_at     DateTime     @default(now())
+  updated_at     DateTime     @updatedAt
+
+  // Relations
+  sortir_pack_details SortirPackDetail[]
+  hasil_kemas         HasilKemas[]
+
+  @@map("proses_sortir")
+}
+
+model SortirPackDetail {
+  id               Int          @id @default(autoincrement())
+  proses_sortir_id Int
+  proses_sortir    ProsesSortir @relation(fields: [proses_sortir_id], references: [id], onDelete: Cascade)
+  pack_detail_id   Int
+  pack_detail      PackDetail   @relation(fields: [pack_detail_id], references: [id], onDelete: Cascade)
+
+  @@unique([proses_sortir_id, pack_detail_id])
+  @@map("sortir_pack_detail")
+}
+
+// -----------------------------------------------------------------------------
+// Modul Pengemasan (Hasil Kemas Doos, Rasio 4 Pack = 9 Doos)
+// -----------------------------------------------------------------------------
+
+model HasilKemas {
+  id               Int           @id @default(autoincrement())
+  batch_id         Int
+  batch            Batch         @relation(fields: [batch_id], references: [id])
+  proses_sortir_id Int?
+  proses_sortir    ProsesSortir? @relation(fields: [proses_sortir_id], references: [id])
+  denominasi_id    Int
+  denominasi       Denominasi    @relation(fields: [denominasi_id], references: [id])
+  tahun_anggaran   Int
+  pack_dari        Int
+  pack_sampai      Int
+  total_pack       Int           // Kelipatan 4
+  no_doos_awal     Int           // Doos awal (misal: 1)
+  no_doos_akhir    Int           // Doos akhir (misal: 9)
+  total_doos       Int           // (total_pack / 4) * 9
+  total_bilyet     BigInt        // total_pack * 45000
+  no_ba_pengemasan String        // Nomor BA Pengemasan harian (contoh: "157")
+  shift_id         Int
+  shift            Shift         @relation(fields: [shift_id], references: [id])
+  operator_id      Int
+  operator         User          @relation(fields: [operator_id], references: [id])
+  tanggal_kemas    DateTime      @db.Date
+  status           StatusKemas   @default(READY)
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+
+  // Relations
+  kemas_pack_details KemasPackDetail[]
+  packs_in_kemas     PackDetail[]
+  pengiriman_details PengirimanDetail[]
+
+  @@map("hasil_kemas")
+}
+
+model KemasPackDetail {
+  id             Int        @id @default(autoincrement())
+  hasil_kemas_id Int
+  hasil_kemas    HasilKemas @relation(fields: [hasil_kemas_id], references: [id], onDelete: Cascade)
+  pack_detail_id Int
+  pack_detail    PackDetail @relation(fields: [pack_detail_id], references: [id], onDelete: Cascade)
+
+  @@unique([hasil_kemas_id, pack_detail_id])
+  @@map("kemas_pack_detail")
+}
+
+// -----------------------------------------------------------------------------
+// Modul Pengiriman (Pengiriman ke Bank Indonesia & Cetak Dokumen)
+// -----------------------------------------------------------------------------
+
+model Pengiriman {
+  id                    Int              @id @default(autoincrement())
+  nomor_surat_jalan     String           @unique // Nomor laporan/surat jalan
+  tanggal_kirim         DateTime         @db.Date
+  tahun_anggaran        Int              // contoh: 2026
+  denominasi_id         Int
+  denominasi            Denominasi       @relation(fields: [denominasi_id], references: [id])
+  sandi_emisi           String           // Sandi emisi (contoh: "Y'22")
+  no_doos_awal          Int              // contoh: 45251
+  no_doos_akhir         Int              // contoh: 47250
+  total_doos            Int              // contoh: 2000
+  total_bilyet          BigInt           // total_doos * 20.000 (contoh: 40.000.000)
+  total_nominal         Decimal          @db.Decimal(20, 2) // total_bilyet * nilai rupiah
+  no_ba_penyerahan      String?          // contoh: "27/B/Y/TE'2022/43/2026"
+  no_ba_pengemasan_rekap String?         // rekap no BA pengemasan (contoh: "157-159")
+  keterangan            String           @default("UTAS")
+  tujuan                String           @default("Bank Indonesia")
+  lokasi_penyerahan     String           @default("Karawang")
+  penyerah_nama         String           // Nama Kepala Seksi
+  penyerah_jabatan      String           @default("Kepala Seksi")
+  penerima_nama         String?
+  created_by            Int
+  creator               User             @relation("PengirimanCreatedBy", fields: [created_by], references: [id])
+  approved_by           Int?
+  approver              User?            @relation("PengirimanApprovedBy", fields: [approved_by], references: [id])
+  status                StatusPengiriman @default(DRAFT)
+  catatan               String?          @db.Text
+  created_at            DateTime         @default(now())
+  updated_at            DateTime         @updatedAt
+  shipped_at            DateTime?
+
+  // Relations
+  details PengirimanDetail[]
+
+  @@map("pengiriman")
+}
+
+model PengirimanDetail {
+  id                  Int         @id @default(autoincrement())
+  pengiriman_id       Int
+  pengiriman          Pengiriman  @relation(fields: [pengiriman_id], references: [id], onDelete: Cascade)
+  hasil_kemas_id      Int?
+  hasil_kemas         HasilKemas? @relation(fields: [hasil_kemas_id], references: [id])
+  batch_id            Int?
+  batch               Batch?      @relation(fields: [batch_id], references: [id])
+  no_doos_awal        Int
+  no_doos_akhir       Int
+  jumlah_kemasan_doos Int
+  no_ba_penyerahan    String?
+  keterangan          String      @default("UTAS")
+  tanggal_pengemasan  DateTime?   @db.Date
+  no_ba_pengemasan    String?
+
+  @@map("pengiriman_detail")
+}
+
+// -----------------------------------------------------------------------------
+// Modul Laporan Tambahan: HCTS & Rencana Penyerahan
+// -----------------------------------------------------------------------------
+
+model TransaksiHcts {
+  id                      Int        @id @default(autoincrement())
+  tanggal                 DateTime   @db.Date
+  denominasi_id           Int
+  denominasi              Denominasi @relation(fields: [denominasi_id], references: [id])
+  penerimaan_bilyet       BigInt     @default(0) // Penerimaan HCTS hari kemarin
+  penyerahan_bilyet       BigInt     @default(0) // Penyerahan HCTS hari ini
+  akumulasi_penyerahan_bi BigInt     @default(0) // Akumulasi penyerahan ke BI
+  persediaan_hcts         BigInt     @default(0) // Saldo persediaan HCTS
+  jumlah_ct_siap_hitung   Int        @default(0) // CT Siap Hitung
+  catatan                 String?    @db.Text
+  created_at              DateTime   @default(now())
+  updated_at              DateTime   @updatedAt
+
+  @@map("transaksi_hcts")
+}
+
+model RencanaPenyerahan {
+  id                       Int        @id @default(autoincrement())
+  tanggal_rencana          DateTime   @db.Date
+  denominasi_id            Int
+  denominasi               Denominasi @relation(fields: [denominasi_id], references: [id])
+  kurang_pengemasan_bilyet BigInt     @default(0)
+  kurang_pengemasan_doos   Int        @default(0)
+  kurang_penerimaan_bilyet BigInt     @default(0)
+  kurang_penerimaan_vell   Int        @default(0)
+  catatan                  String?    @db.Text
+  created_at               DateTime   @default(now())
+  updated_at               DateTime   @updatedAt
+
+  @@map("rencana_penyerahan")
+}
+
+// -----------------------------------------------------------------------------
+// Audit Trail
+// -----------------------------------------------------------------------------
+
+model AuditLog {
+  id         Int         @id @default(autoincrement())
+  user_id    Int?
+  user       User?       @relation(fields: [user_id], references: [id])
+  action     AuditAction
+  module     String      // bon_masuk | sortir | kemas | pengiriman | master
+  table_name String
+  record_id  Int?
+  old_value  Json?
+  new_value  Json?
+  ip_address String?
+  created_at DateTime    @default(now())
+
+  @@map("audit_log")
+}

@@ -1,5 +1,6 @@
-﻿import express from "express";
+import express from "express";
 import cors from "cors";
+import prisma from "./lib/prisma.js";
 
 const app = express();
 
@@ -26,10 +27,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health Check Endpoint
-app.get("/api/health", (req, res) => {
+app.get("/api/health", async (req, res) => {
+  let dbStatus = "connected";
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+  } catch {
+    dbStatus = "disconnected";
+  }
+
   res.status(200).json({
     status: "ok",
     service: "khazprokhir-backend",
+    database: dbStatus,
     environment: process.env.NODE_ENV || "development",
     timestamp: new Date().toISOString(),
     uptime: Math.floor(process.uptime()),
