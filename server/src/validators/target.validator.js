@@ -181,3 +181,4 @@ export const updateRencanaPenyerahanSchema = z.object({
     .optional(),
   catatan: z.string().trim().nullable().optional(),
 });
+

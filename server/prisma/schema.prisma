@@ -86,7 +86,7 @@ model User {
 
 model Denominasi {
   id        Int     @id @default(autoincrement())
-  nama      String  // contoh: "Rp100.000", "Rp50.000"
+  nama      String  // kode huruf pecahan (contoh: "Y", "X", "W", "V", "U", "T", "S")
   nilai     Int     // contoh: 100000, 50000
   is_active Boolean @default(true)
 

@@ -4,7 +4,7 @@ import { z } from 'zod';
 // 1. Validasi Master Denominasi
 // ==========================================
 export const createDenominasiSchema = z.object({
-  nama: z.string().trim().min(1, 'Nama denominasi wajib diisi (contoh: "Rp100.000")'),
+  nama: z.string().trim().min(1, 'Nama denominasi wajib diisi (contoh: "Y", "X", "W", "V", "U", "T", "S")'),
   nilai: z.number().int().positive('Nilai nominal harus berupa angka bulat positif (contoh: 100000)'),
   is_active: z.boolean().optional().default(true),
 });
@@ -79,3 +79,4 @@ export const updateUserSchema = z.object({
     .optional(),
   is_active: z.boolean().optional(),
 });
+

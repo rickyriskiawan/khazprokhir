@@ -77,3 +77,4 @@ rencanaPenyerahanRouter.delete(
   authorize('SUPERVISOR'),
   deleteRencanaPenyerahan
 );
+

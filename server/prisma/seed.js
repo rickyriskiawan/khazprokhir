@@ -9,13 +9,13 @@ async function main() {
   // 1. Seeding Master Denominasi & Emisi (Uang Kertas TE 2022)
   console.log('💵 Seeding Master Denominasi & Emisi TE 2022...');
   const denominasiData = [
-    { nama: 'Rp100.000', nilai: 100000, sandi: "Y'22" },
-    { nama: 'Rp50.000', nilai: 50000, sandi: "X'22" },
-    { nama: 'Rp20.000', nilai: 20000, sandi: "W'22" },
-    { nama: 'Rp10.000', nilai: 10000, sandi: "V'22" },
-    { nama: 'Rp5.000', nilai: 5000, sandi: "U'22" },
-    { nama: 'Rp2.000', nilai: 2000, sandi: "T'22" },
-    { nama: 'Rp1.000', nilai: 1000, sandi: "S'22" },
+    { nama: 'Y', nilai: 100000, sandi: "Y'22" },
+    { nama: 'X', nilai: 50000, sandi: "X'22" },
+    { nama: 'W', nilai: 20000, sandi: "W'22" },
+    { nama: 'V', nilai: 10000, sandi: "V'22" },
+    { nama: 'U', nilai: 5000, sandi: "U'22" },
+    { nama: 'T', nilai: 2000, sandi: "T'22" },
+    { nama: 'S', nilai: 1000, sandi: "S'22" },
   ];
 
   const createdDenominasi = [];
@@ -36,7 +36,13 @@ async function main() {
       });
       console.log(`  ✓ Created Denominasi: ${denom.nama}`);
     } else {
-      console.log(`  - Denominasi exists: ${denom.nama}`);
+      denom = await prisma.denominasi.update({
+        where: { id: denom.id },
+        data: {
+          nama: item.nama,
+        },
+      });
+      console.log(`  ✓ Updated Denominasi: ${denom.nama} (${denom.nilai})`);
     }
     createdDenominasi.push({ ...denom, sandi: item.sandi });
 
