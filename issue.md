@@ -12,7 +12,7 @@ Agar tidak ada pengerjaan yang terlewat dari dokumen `implementation_plan.md`, a
 
 - [x] **Step 1: Inisialisasi Project, Setup Environment (Dev vs Prod), & Docker Base** *(Selesai - PR [#2](https://github.com/rickyriskiawan/khazprokhir/pull/2))*
 - [x] **Step 2: Skema Database (Prisma ORM), Migrasi, & Seeding Master Data Awal** *(Selesai - PR [#4](https://github.com/rickyriskiawan/khazprokhir/pull/4))*
-- [x] **Step 3: Arsitektur Backend, Core Utilities (Konversi Satuan & Aturan Bisnis), & Auth/RBAC** *(Selesai - Siap Review via PR)*
+- [x] **Step 3: Arsitektur Backend, Core Utilities (Konversi Satuan & Aturan Bisnis), & Auth/RBAC** *(Selesai - PR [#6](https://github.com/rickyriskiawan/khazprokhir/pull/6))*
 - [ ] **Step 4: API Master Data & Modul Target / Perencanaan Produksi**
 - [ ] **Step 5: Modul 1 - Penerimaan Barang Masuk (Bon Masuk Khazai & Registrasi Batch/Pack)**
 - [ ] **Step 6: Modul 2 - Proses Sortir & Penataan Pack (Kelipatan 4, Zero Reject, Sesi & Koreksi)**
@@ -27,9 +27,10 @@ Agar tidak ada pengerjaan yang terlewat dari dokumen `implementation_plan.md`, a
 
 ## 🎯 CURRENT STEP: ISSUE #03
 ### Judul: Arsitektur Backend, Core Utilities (Konversi Satuan & Aturan Bisnis), & Auth/RBAC
-- **GitHub Issue**: [#5](https://github.com/rickyriskiawan/khazprokhir/issues/5)
+- **GitHub Issue**: [#5](https://github.com/rickyriskiawan/khazprokhir/issues/5) *(Closed)*
+- **Pull Request**: [#6](https://github.com/rickyriskiawan/khazprokhir/pull/6) *(Pending Review)*
 - **Branch**: `feat/step-3-backend-arch-utils-auth`
-- **Status**: Selesai (Siap Direview via PR)
+- **Status**: Selesai (PR Diajukan)
 
 ### 1. Tujuan & Ruang Lingkup
 Membangun fondasi logika bisnis inti, utilitas konversi satuan hierarki fisik uang kertas, penegakan aturan bisnis operasional Khazprokhir, sistem autentikasi berbasis JWT, serta middleware otorisasi Role-Based Access Control (RBAC). Modul ini menjadi fondasi logika dan keamanan bagi seluruh modul operasional berikutnya.
