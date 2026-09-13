@@ -12,7 +12,7 @@ Agar tidak ada pengerjaan yang terlewat dari dokumen `implementation_plan.md`, a
 
 - [x] **Step 1: Inisialisasi Project, Setup Environment (Dev vs Prod), & Docker Base** *(Selesai - PR [#2](https://github.com/rickyriskiawan/khazprokhir/pull/2))*
 - [x] **Step 2: Skema Database (Prisma ORM), Migrasi, & Seeding Master Data Awal** *(Selesai - PR [#4](https://github.com/rickyriskiawan/khazprokhir/pull/4))*
-- [ ] **Step 3: Arsitektur Backend, Core Utilities (Konversi Satuan & Aturan Bisnis), & Auth/RBAC**
+- [x] **Step 3: Arsitektur Backend, Core Utilities (Konversi Satuan & Aturan Bisnis), & Auth/RBAC** *(Selesai - PR [#6](https://github.com/rickyriskiawan/khazprokhir/pull/6))*
 - [ ] **Step 4: API Master Data & Modul Target / Perencanaan Produksi**
 - [ ] **Step 5: Modul 1 - Penerimaan Barang Masuk (Bon Masuk Khazai & Registrasi Batch/Pack)**
 - [ ] **Step 6: Modul 2 - Proses Sortir & Penataan Pack (Kelipatan 4, Zero Reject, Sesi & Koreksi)**
@@ -25,93 +25,89 @@ Agar tidak ada pengerjaan yang terlewat dari dokumen `implementation_plan.md`, a
 
 ---
 
-## 🎯 CURRENT STEP: ISSUE #02
-### Judul: Skema Database (Prisma ORM), Migrasi, & Seeding Master Data Awal
-- **GitHub Issue**: [#3](https://github.com/rickyriskiawan/khazprokhir/issues/3) *(Closed)*
-- **Pull Request**: [#4](https://github.com/rickyriskiawan/khazprokhir/pull/4) *(Pending Review)*
-- **Branch**: `feat/step-2-db-schema-and-seed`
+## 🎯 CURRENT STEP: ISSUE #03
+### Judul: Arsitektur Backend, Core Utilities (Konversi Satuan & Aturan Bisnis), & Auth/RBAC
+- **GitHub Issue**: [#5](https://github.com/rickyriskiawan/khazprokhir/issues/5) *(Closed)*
+- **Pull Request**: [#6](https://github.com/rickyriskiawan/khazprokhir/pull/6) *(Pending Review)*
+- **Branch**: `feat/step-3-backend-arch-utils-auth`
 - **Status**: Selesai (PR Diajukan)
 
 ### 1. Tujuan & Ruang Lingkup
-Mengimplementasikan skema database relasional secara komprehensif menggunakan **Prisma ORM** pada backend Node.js (`server/`) sesuai ERD dan aturan bisnis Khazprokhir. Meliputi pembuatan model entitas lengkap, relasi referensial, penegakan constraint integritas data (unique constraint, check range, status enum), eksekusi migrasi awal ke PostgreSQL lokal, penyediaan singleton instance Prisma Client, serta pembuatan skrip seeding master data awal (denominasi rupiah TE 2022 S'22-Y'22, master shift, akun pengguna awal dengan hash bcrypt, dan target awal TA 2026).
+Membangun fondasi logika bisnis inti, utilitas konversi satuan hierarki fisik uang kertas, penegakan aturan bisnis operasional Khazprokhir, sistem autentikasi berbasis JWT, serta middleware otorisasi Role-Based Access Control (RBAC). Modul ini menjadi fondasi logika dan keamanan bagi seluruh modul operasional berikutnya.
 
 ### 2. Instruksi High-Level
 
-#### A. Pembuatan Skema Prisma (`server/prisma/schema.prisma`)
-Definisikan datasource (`postgresql`) dan generator (`prisma-client-js`), serta seluruh entitas model:
-1. **Enums**:
-   - `Role`: `OPERATOR`, `SUPERVISOR`, `MANAGEMENT`, `AUDITOR`
-   - `KategoriPenerimaan`: `MASINAL`, `PARSIAL`
-   - `StatusPack`: `PENDING`, `RECEIVED`, `SORTED`, `PACKED`, `SHIPPED`
-   - `StatusSortir`: `IN_PROGRESS`, `COMPLETED`
-   - `StatusKemas`: `READY`, `SHIPPED`
-   - `StatusPengiriman`: `DRAFT`, `APPROVED`, `SHIPPED`
-   - `AuditAction`: `CREATE`, `UPDATE`, `DELETE`
-2. **Model Master & Autentikasi**:
-   - `User`: `id`, `username` (unique), `password_hash`, `full_name`, `role`, `is_active`, `created_at`, `updated_at`.
-   - `Denominasi`: `id`, `nama`, `nilai` (int), `is_active`.
-   - `Emisi`: `id`, `kode_emisi`, `sandi`, `tahun`, `denominasi_id` (FK), `is_active`.
-   - `Shift`: `id`, `nama`, `jam_mulai`, `jam_selesai`, `is_active`.
-3. **Model Perencanaan & Target**:
-   - `TargetTahunan`: `id`, `tahun_anggaran`, `denominasi_id` (FK), `target_bilyet` (BigInt), `target_brood` (BigInt), `target_pack` (Int), `catatan`, timestamps.
-   - `TargetBulanan`: `id`, `tahun_anggaran`, `bulan` (1-12), `denominasi_id` (FK), `target_penyerahan_bilyet` (BigInt), `target_pengemasan_bilyet` (BigInt), `sisa_hari_kerja` (Int), timestamps.
-4. **Model Alur Operasional Produksi**:
-   - `Batch`: `id`, `nomor_batch`, `tahun_anggaran`, `seri`, `kepala`, `emisi_id` (FK), `jumlah_pack` (default 100), `status`, timestamps. Unique constraint: `@@unique([nomor_batch, tahun_anggaran])`.
-   - `BonMasuk`: `id`, `no_segel` (unique), `batch_id` (FK), `tanggal_masuk`, `jam_masuk`, `pack_dari`, `pack_sampai`, `jumlah_bilyet` (BigInt), `jenis_mesin_sortir`, `kategori_penerimaan`, `shift_id` (FK), `operator_id` (FK), `catatan`, timestamps.
-   - `PackDetail`: `id`, `batch_id` (FK), `bon_masuk_id` (FK, nullable), `nomor_pack` (1-100), `jumlah_brood` (default 45), `jumlah_bilyet` (BigInt, default 45000), `hasil_kemas_id` (FK, nullable), `no_doos_range` (nullable), `status`, timestamps. Unique constraint: `@@unique([batch_id, nomor_pack])`.
-   - `ProsesSortir` & `SortirPackDetail`: Relasi penataan/pengurutan pack kelipatan 4 tanpa reject.
-   - `HasilKemas` & `KemasPackDetail`: Relasi kardus kemas doos (4 pack = 9 doos). Scoping nomor doos per pecahan dan tahun anggaran.
-   - `Pengiriman` & `PengirimanDetail`: Rekap pengiriman ke Bank Indonesia, `nomor_surat_jalan` (unique), `no_ba_penyerahan`, total doos, total bilyet, total nominal rupiah.
-5. **Model Laporan Tambahan & Audit**:
-   - `TransaksiHcts`: Persediaan & mutasi HCTS (Hasil Cetak Tidak Sempurna) harian.
-   - `RencanaPenyerahan`: Rencana serah mendatang, kekurangan kemas & terima.
-   - `AuditLog`: Log append-only aktivitas transaksi sistem.
+#### A. Core Utilities Konversi Satuan (`server/src/utils/converter.js`)
+Implementasikan fungsi konversi hierarki fisik uang kertas secara presisi:
+- **Konstanta Dasar**:
+  - `BILYET_PER_BROOD = 1000`
+  - `BROOD_PER_PACK = 45`
+  - `BILYET_PER_PACK = 45000` (`45 * 1000`)
+  - `BROOD_PER_DOOS = 20`
+  - `BILYET_PER_DOOS = 20000` (`20 * 1000`)
+  - `PACK_PER_BATCH = 100`
+  - `DOOS_PER_BATCH = 225`
+  - `BROOD_PER_BATCH = 4500`
+  - `BILYET_PER_BATCH = 4500000`
+- **Fungsi Helper Konversi**:
+  - `packToBrood(pack)`
+  - `packToBilyet(pack)`
+  - `broodToBilyet(brood)`
+  - `doosToBilyet(doos)`
+  - `doosToBrood(doos)`
+  - `calculateDoosFromPack(pack)` (Wajib rasio 4 pack = 9 doos: `(pack / 4) * 9`)
+  - `calculateNominal(bilyet, nilaiPecahan)`
+  - `formatRupiah(number)`
 
-#### B. Instance Prisma Client (`server/src/lib/prisma.js`)
-- Buat modul pembungkus Prisma Client singleton dengan handling graceful logging pada mode development dan pemutusan koneksi otomatis saat proses berhenti.
+#### B. Aturan Bisnis & Validasi (`server/src/utils/businessRules.js`)
+- `isKelipatanEmpat(totalPack)`: Memastikan jumlah pack merupakan kelipatan 4 (`totalPack % 4 === 0` dan `> 0`).
+- `validatePackRange(packDari, packSampai)`: Memastikan `1 <= packDari <= packSampai <= 100`.
+- `validateDoosRatio(totalPack, totalDoos)`: Memverifikasi `totalDoos === (totalPack / 4) * 9`.
+- `detectGaps(numbers)`: Mendeteksi nomor urut yang terlewat dalam array angka (misal untuk nomor doos dan nomor pack).
 
-#### C. Migrasi Database PostgreSQL
-- Pastikan container database PostgreSQL berjalan (`docker compose up -d`).
-- Jalankan migrasi Prisma awal:
-  ```bash
-  npx prisma migrate dev --name init_khazprokhir_schema
-  ```
+#### C. Standardized Response Format (`server/src/utils/response.js`)
+Menyediakan helper respons terstandarisasi untuk Express:
+- `successResponse(res, { status = 200, message, data, meta })`
+- `errorResponse(res, { status = 500, message, error, details })`
 
-#### D. Skrip Seeding Master Data (`server/prisma/seed.js`)
-Buat script seeding yang bersifat idempoten (menggunakan `upsert`):
-1. **Master Denominasi & Emisi (TE 2022)**:
-   - Rp100.000 (Sandi: `Y'22`, Nilai: 100000)
-   - Rp50.000 (Sandi: `X'22`, Nilai: 50000)
-   - Rp20.000 (Sandi: `W'22`, Nilai: 20000)
-   - Rp10.000 (Sandi: `V'22`, Nilai: 10000)
-   - Rp5.000 (Sandi: `U'22`, Nilai: 5000)
-   - Rp2.000 (Sandi: `T'22`, Nilai: 2000)
-   - Rp1.000 (Sandi: `S'22`, Nilai: 1000)
-2. **Master Shift**:
-   - Shift 1 (06:00 - 14:00)
-   - Shift 2 (14:00 - 22:00)
-   - Shift 3 (22:00 - 06:00)
-3. **Akun Pengguna Default**:
-   - `operator` / Password hash bcrypt (Role: `OPERATOR`, Nama: Operator Khazprokhir)
-   - `supervisor` / Password hash bcrypt (Role: `SUPERVISOR`, Nama: M. Rulli Maulana / Kepala Seksi)
-   - `manajemen` / Password hash bcrypt (Role: `MANAGEMENT`, Nama: Pimpinan Departemen)
-   - `auditor` / Password hash bcrypt (Role: `AUDITOR`, Nama: Tim Kepatuhan / Auditor)
-4. **Data Awal Target TA 2026**:
-   - Default target tahunan dan target bulanan sebagai basis verifikasi modul laporan.
+#### D. Autentikasi JWT & User Controller (`server/src/controllers/auth.controller.js` & `server/src/routes/auth.routes.js`)
+- Dependensi: Tambahkan `jsonwebtoken` ke `server/package.json`.
+- `POST /api/auth/login`:
+  - Menerima `username` dan `password`.
+  - Validasi keberadaan user dan `is_active === true`.
+  - Verifikasi password hash menggunakan `bcryptjs`.
+  - Terbitkan token JWT yang memuat `{ id, username, role, full_name }` dengan masa berlaku (dari env `JWT_EXPIRES_IN`, default `1d`).
+  - Mengembalikan respons JSON user profile (tanpa `password_hash`) beserta token.
+- `GET /api/auth/me`:
+  - Mengambil data profil user saat ini berdasarkan decoded JWT token.
+- `POST /api/auth/logout`:
+  - Response sukses client-side token invalidation.
 
-#### E. Konfigurasi `package.json`
-- Tambahkan konfigurasi `"prisma": { "seed": "node prisma/seed.js" }` di `server/package.json`.
-- Tambahkan shortcut scripts:
-  - `"db:migrate": "prisma migrate dev"`
-  - `"db:seed": "prisma db seed"`
-  - `"db:studio": "prisma studio"`
+#### E. Middleware Layer (`server/src/middleware/`)
+- `auth.middleware.js`:
+  - Membaca header `Authorization: Bearer <token>`.
+  - Verifikasi token dengan `JWT_SECRET`.
+  - Menyematkan objek `req.user` pada request context.
+  - Mengembalikan 401 Unauthorized bila token tidak ada atau tidak valid/expired.
+- `rbac.middleware.js`:
+  - Helper fungsi `authorize(...allowedRoles)`.
+  - Memeriksa apakah `req.user.role` termasuk dalam `allowedRoles`.
+  - Mengembalikan 403 Forbidden bila role tidak memiliki izin.
+- `audit.middleware.js` & Helper Logger:
+  - Helper `createAuditLog({ userId, action, module, tableName, recordId, oldValue, newValue, ipAddress })` untuk mencatat rekam jejak aktivitas ke tabel `audit_log`.
+
+#### F. Automated Testing (`server/test/`)
+- Unit test untuk seluruh fungsi konverter dan aturan bisnis.
+- Integration test untuk rute autentikasi (`POST /api/auth/login`, `GET /api/auth/me`, dan verifikasi guard RBAC).
 
 ### 3. Kriteria Penerimaan (Acceptance Criteria)
-- [x] File `server/prisma/schema.prisma` terdefinisi lengkap mencakup seluruh entitas, relasi, enum, dan constraint.
-- [x] Migrasi database `init_khazprokhir_schema` berhasil dieksekusi ke PostgreSQL lokal tanpa error.
-- [x] Script seeding `prisma/seed.js` berhasil dijalankan (`npm run db:seed` atau `npx prisma db seed`) dan bersifat idempoten.
-- [x] Seluruh data master (7 denominasi, 7 emisi, 3 shift, 4 user role, dan sample target) terverifikasi tersimpan di database.
-- [x] Modul Prisma Client singleton di `server/src/lib/prisma.js` siap di-import oleh layer service/controller.
+- [x] Modul utilitas konversi satuan (`server/src/utils/converter.js`) mengonversi bilyet, brood, pack, doos, dan nominal rupiah secara 100% presisi.
+- [x] Aturan bisnis (`server/src/utils/businessRules.js`) memvalidasi kelipatan 4 pack, batas rentang 1-100, rasio 4 pack = 9 doos, dan deteksi gap dengan akurat.
+- [x] Endpoint `POST /api/auth/login` berhasil mengautentikasi pengguna, menerbitkan JWT, dan menolak password yang salah.
+- [x] Endpoint `GET /api/auth/me` mengembalikan data pengguna terautentikasi dan menolak akses tanpa token (401 Unauthorized).
+- [x] Middleware RBAC (`authorize`) memblokir akses pengguna yang rolenya tidak diizinkan (403 Forbidden).
+- [x] Helper audit trail berhasil mencatat log ke tabel `audit_log`.
+- [x] Seluruh unit dan integration test berjalan sukses (`npm test`).
 
 ---
 
@@ -119,7 +115,7 @@ Buat script seeding yang bersifat idempoten (menggunakan `upsert`):
 
 ### Step 1: Inisialisasi Struktur Project, Konfigurasi Environment (Dev vs Prod), dan Docker Setup
 - **GitHub Issue**: [#1](https://github.com/rickyriskiawan/khazprokhir/issues/1) *(Closed)*
-- **Pull Request**: [#2](https://github.com/rickyriskiawan/khazprokhir/pull/2) *(Pending Review)*
+- **Pull Request**: [#2](https://github.com/rickyriskiawan/khazprokhir/pull/2) *(Merged to main)*
 - **Branch**: `feat/step-1-init-project-and-env`
 - **Hasil**:
   - [x] Struktur folder `client/` (React + Vite + TailwindCSS) dan `server/` (Express + Prisma) terbentuk rapi.
@@ -127,3 +123,15 @@ Buat script seeding yang bersifat idempoten (menggunakan `upsert`):
   - [x] Healthcheck endpoint `GET /api/health` merespons status 200 OK.
   - [x] Frontend React Vite berjalan dan terhubung ke backend.
   - [x] Konfigurasi environment terpisah jelas antara development (`.env.development`) dan template production (`.env.production.example`).
+
+### Step 2: Skema Database (Prisma ORM), Migrasi, & Seeding Master Data Awal
+- **GitHub Issue**: [#3](https://github.com/rickyriskiawan/khazprokhir/issues/3) *(Closed)*
+- **Pull Request**: [#4](https://github.com/rickyriskiawan/khazprokhir/pull/4) *(Merged to main)*
+- **Branch**: `feat/step-2-db-schema-and-seed`
+- **Hasil**:
+  - [x] File `server/prisma/schema.prisma` terdefinisi lengkap mencakup 13 entitas model, relasi, enum, dan constraint.
+  - [x] Migrasi database `init_khazprokhir_schema` berhasil dieksekusi ke PostgreSQL lokal tanpa error.
+  - [x] Script seeding `prisma/seed.js` berhasil dijalankan dan terbukti idempoten.
+  - [x] Seluruh data master (7 denominasi, 7 emisi, 3 shift, 4 user role, dan target TA 2026) terverifikasi tersimpan di database.
+  - [x] Modul Prisma Client singleton di `server/src/lib/prisma.js` siap di-import oleh layer service/controller.
+  - [x] Endpoint `GET /api/health` merespons status koneksi database (`database: "connected"`).

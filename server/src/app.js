@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import prisma from "./lib/prisma.js";
+import authRoutes from "./routes/auth.routes.js";
 
 const app = express();
 
@@ -44,6 +45,9 @@ app.get("/api/health", async (req, res) => {
     uptime: Math.floor(process.uptime()),
   });
 });
+
+// API Routes
+app.use("/api/auth", authRoutes);
 
 // 404 Route Handler
 app.use((req, res) => {
