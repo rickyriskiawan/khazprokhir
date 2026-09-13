@@ -13,8 +13,8 @@ Agar tidak ada pengerjaan yang terlewat dari dokumen `implementation_plan.md`, a
 - [x] **Step 1: Inisialisasi Project, Setup Environment (Dev vs Prod), & Docker Base** *(Selesai - PR [#2](https://github.com/rickyriskiawan/khazprokhir/pull/2))*
 - [x] **Step 2: Skema Database (Prisma ORM), Migrasi, & Seeding Master Data Awal** *(Selesai - PR [#4](https://github.com/rickyriskiawan/khazprokhir/pull/4))*
 - [x] **Step 3: Arsitektur Backend, Core Utilities (Konversi Satuan & Aturan Bisnis), & Auth/RBAC** *(Selesai - PR [#6](https://github.com/rickyriskiawan/khazprokhir/pull/6))*
-- [ ] **Step 4: API Master Data & Modul Target / Perencanaan Produksi** *(Aktif - Issue [#7](https://github.com/rickyriskiawan/khazprokhir/issues/7))*
-- [ ] **Step 5: Modul 1 - Penerimaan Barang Masuk (Bon Masuk Khazai & Registrasi Batch/Pack)**
+- [x] **Step 4: API Master Data & Modul Target / Perencanaan Produksi** *(Selesai - PR [#8](https://github.com/rickyriskiawan/khazprokhir/pull/8))*
+- [ ] **Step 5: Modul 1 - Penerimaan Barang Masuk (Bon Masuk Khazai & Registrasi Batch/Pack)** *(Aktif / Siap Dikerjakan)*
 - [ ] **Step 6: Modul 2 - Proses Sortir & Penataan Pack (Kelipatan 4, Zero Reject, Sesi & Koreksi)**
 - [ ] **Step 7: Modul 3 - Pengemasan Doos / Hasil Kemas (Rasio 4 Pack = 9 Doos, Penomoran Doos & BA Kemas)**
 - [ ] **Step 8: Modul 4 - Monitoring Doos, Buku Register & Deteksi Gap Otomatis**
@@ -25,63 +25,53 @@ Agar tidak ada pengerjaan yang terlewat dari dokumen `implementation_plan.md`, a
 
 ---
 
-## 🎯 CURRENT STEP: ISSUE #04
-### Judul: API Master Data & Modul Target / Perencanaan Produksi
-- **GitHub Issue**: [#7](https://github.com/rickyriskiawan/khazprokhir/issues/7)
-- **Branch Rekomendasi**: `feat/step-4-api-master-and-target`
+## 🎯 CURRENT STEP: ISSUE #05
+### Judul: Modul 1 - Penerimaan Barang Masuk (Bon Masuk Khazai & Registrasi Batch/Pack)
+- **GitHub Issue**: *(Akan dibuat saat pengerjaan dimulai)*
+- **Branch Rekomendasi**: `feat/step-5-bon-masuk-and-batch`
 - **Status**: Siap Dikerjakan (Menunggu Persetujuan Pengguna)
 
 ### 1. Tujuan & Ruang Lingkup
-Mengimplementasikan seluruh endpoint RESTful API untuk pengelolaan **Master Data** (Denominasi, Emisi, Shift, Manajemen Akun User) serta **Modul Target dan Perencanaan Produksi** (Target Tahunan dengan kalkulasi otomatis bilyet/brood/pack, Target Bulanan dengan sisa hari kerja, Transaksi Persediaan HCTS, dan Rencana Penyerahan). Dilengkapi validasi skema input (Zod), proteksi role-based access control (RBAC), serta pencatatan audit trail otomatis.
+Mengimplementasikan seluruh endpoint RESTful API untuk **Modul Barang Masuk (Input Bon dari Khazai)**. Menangani pencatatan bon masuk fisik berdasar nomor segel (`no_segel`) unik, pembuatan atau pengaitan entitas `batch` (nomor order, seri, kepala, denominasi, emisi), auto-generasi dan pembaharuan status 100 record `pack_detail` menjadi `RECEIVED`, kalkulasi volume lembar bilyet, validasi range nomor pack (1–100) tanpa overlap, serta ringkasan penerimaan harian.
 
 ### 2. Instruksi High-Level
 
-#### A. Master Denominasi, Emisi, & Shift (`/api/master/`)
-- `GET /api/master/denominasi`: Mengambil seluruh denominasi aktif beserta emisi terkait.
-- `POST /api/master/denominasi`, `PUT /api/master/denominasi/:id`, `DELETE /api/master/denominasi/:id` (Role: `SUPERVISOR`).
-- `GET /api/master/emisi`, `POST /api/master/emisi`, `PUT /api/master/emisi/:id`, `DELETE /api/master/emisi/:id` (Role: `SUPERVISOR`).
-- `GET /api/master/shift`, `POST /api/master/shift`, `PUT /api/master/shift/:id` (Role: `SUPERVISOR`).
+#### A. Pengelolaan Batch (`/api/batches`)
+- `GET /api/batches`: Mengambil daftar batch dengan filter `tahun_anggaran`, `nomor_batch`, `emisi_id`, `status`. Mengembalikan relasi emisi, denominasi, rekap jumlah pack yang telah diterima vs total (100 pack).
+- `GET /api/batches/:id`: Mengambil detail batch lengkap dengan status individual 100 pack (1 s/d 100).
+- `POST /api/batches`: Registrasi batch baru secara eksplisit (opsional jika dibuat via bon masuk). Validasi keunikan kombinasi `[nomor_batch, tahun_anggaran]`.
 
-#### B. Manajemen Akun User (`/api/master/users`)
-- `GET /api/master/users`: List seluruh pengguna dengan opsi filter role & status aktif (data disanitasi tanpa `password_hash`).
-- `POST /api/master/users`: Pendaftaran user baru dengan password hash bcrypt (Role: `SUPERVISOR`).
-- `PUT /api/master/users/:id`: Pembaruan profil, role, atau ganti password (Role: `SUPERVISOR`).
-- `DELETE /api/master/users/:id`: Penonaktifan akun (`is_active: false`) untuk menjaga integritas relasi referensial (Role: `SUPERVISOR`).
+#### B. Penerimaan Bon Masuk (`/api/bon-masuk`)
+- `GET /api/bon-masuk`: List bon masuk dengan opsi filter & pagination (`tahun_anggaran`, `no_segel`, `tanggal_masuk`, `batch_id`, `shift_id`).
+- `GET /api/bon-masuk/:id`: Detail bon masuk beserta rentang pack dan daftar pack terkait.
+- `POST /api/bon-masuk`:
+  - Input: `tahun_anggaran`, `no_segel`, `tanggal_masuk`, `jam_masuk`, `nomor_batch`, `seri`, `kepala`, `emisi_id`, `pack_dari`, `pack_sampai`, `jenis_mesin_sortir`, `kategori_penerimaan` (`MASINAL` | `PARSIAL`), `shift_id`, `catatan`.
+  - **Logika Bisnis & Integritas Data**:
+    1. Periksa apakah batch (`nomor_batch` + `tahun_anggaran`) sudah ada. Jika belum ada, buat batch baru dengan metadata seri, kepala, dan emisi. Jika sudah ada, kunci metadata dari batch existing.
+    2. Validasi rentang pack: `1 <= pack_dari <= pack_sampai <= 100`.
+    3. Validasi tumpang tindih (*overlap*): Pastikan tidak ada nomor pack dalam rentang tersebut yang sudah berstatus `RECEIVED` atau lebih tinggi pada batch yang sama.
+    4. Auto-kalkulasi bilyet: `jumlah_bilyet = (pack_sampai - pack_dari + 1) * 45 * 1000`.
+    5. Buat data `bon_masuk` dengan `operator_id = req.user.id`.
+    6. Buat / update record `pack_detail` untuk nomor pack dalam rentang tersebut dengan `status: RECEIVED` dan relasi ke `bon_masuk_id`.
+- `DELETE /api/bon-masuk/:id`: Pembatalan bon masuk (Role: `SUPERVISOR`). Mengembalikan status pack terkait ke `PENDING` atau menghapusnya jika belum diproses lebih lanjut, serta mencatat audit log.
+- `GET /api/bon-masuk/summary/today`: Ringkasan data penerimaan hari ini (total bon masuk, total bilyet, rekap per denominasi).
 
-#### C. Target Produksi Tahunan (`/api/target-tahunan`)
-- `GET /api/target-tahunan`: Filter berdasarkan `tahun_anggaran` dan `denominasi_id`.
-- `POST /api/target-tahunan`:
-  - Input: `tahun_anggaran`, `denominasi_id`, `target_bilyet`, `catatan`.
-  - Kalkulasi otomatis di backend:
-    - `target_brood = target_bilyet / 1000`
-    - `target_pack = target_brood / 45`
-  - Proteksi keunikan: kombinasi `[tahun_anggaran, denominasi_id]` unik.
-- `PUT /api/target-tahunan/:id` & `DELETE /api/target-tahunan/:id` (Role: `SUPERVISOR`).
-
-#### D. Target Produksi Bulanan (`/api/target-bulanan`)
-- `GET /api/target-bulanan`: Filter per `tahun_anggaran`, `bulan` (1-12), dan `denominasi_id`.
-- `POST /api/target-bulanan`:
-  - Input: `tahun_anggaran`, `bulan` (1-12), `denominasi_id`, `target_penyerahan_bilyet`, `target_pengemasan_bilyet`, `sisa_hari_kerja`.
-  - Proteksi keunikan: kombinasi `[tahun_anggaran, bulan, denominasi_id]` unik.
-- `PUT /api/target-bulanan/:id` & `DELETE /api/target-bulanan/:id` (Role: `SUPERVISOR`).
-
-#### E. Transaksi HCTS & Rencana Penyerahan (`/api/hcts`, `/api/rencana-penyerahan`)
-- `GET /api/hcts` & `POST /api/hcts`: Input dan rekap data mutasi persediaan HCTS (Hasil Cetak Tidak Sempurna) harian.
-- `GET /api/rencana-penyerahan` & `POST /api/rencana-penyerahan`: Input rencana penyerahan mendatang & monitoring kekurangan kemas/terima.
-
-#### F. Validasi Zod & Audit Trail
-- Buat file validator `server/src/validators/master.validator.js` dan `server/src/validators/target.validator.js`.
-- Setiap operasi mutasi (POST, PUT, DELETE) otomatis memanggil `createAuditLog` untuk mencatat riwayat ke tabel `audit_log`.
+#### C. Validasi Zod & RBAC
+- Buat file validator `server/src/validators/bon-masuk.validator.js`.
+- Endpoint `POST /api/bon-masuk` dapat diakses oleh role `OPERATOR` dan `SUPERVISOR`.
+- Endpoint `DELETE /api/bon-masuk/:id` dibatasi hanya untuk role `SUPERVISOR`.
+- Setiap mutasi data wajib memanggil `createAuditLog({ module: 'bon_masuk', ... })`.
 
 ### 3. Kriteria Penerimaan (Acceptance Criteria)
-- [x] Seluruh endpoint Master Data (denominasi, emisi, shift, user) dapat diakses dengan respons JSON standar.
-- [x] Pengubahan data master (POST, PUT, DELETE) hanya dapat dilakukan oleh role `SUPERVISOR` (role `OPERATOR` ditolak 403 Forbidden).
-- [x] Pembuatan dan pembaruan akun user mengenkripsi password dengan bcrypt dan tidak mengekspos hash ke response.
-- [x] Endpoint Target Tahunan menghitung `target_brood` dan `target_pack` secara otomatis dan presisi.
-- [x] Endpoint Target Bulanan memvalidasi parameter bulan (1-12) dan sisa hari kerja.
-- [x] Endpoint Persediaan HCTS dan Rencana Penyerahan berfungsi untuk input, pembacaan, dan update data.
-- [x] Setiap aktivitas mutasi tercatat ke tabel `audit_log`.
-- [x] Seluruh automated test berjalan sukses (`npm test`).
+- [ ] Endpoint `POST /api/bon-masuk` berhasil mencatat penerimaan bon fisik dari Khazai dengan nomor segel unik (`no_segel`).
+- [ ] Validasi keunikan batch per tahun anggaran (`nomor_batch + tahun_anggaran`). Jika batch belum ada dibuat otomatis; jika sudah ada, metadata seri/kepala/emisi terkunci dari batch existing.
+- [ ] Auto-kalkulasi volume lembar bilyet: `jumlah_bilyet = (pack_sampai - pack_dari + 1) * 45.000`.
+- [ ] Meng-generate / memperbarui status record `pack_detail` menjadi `RECEIVED` sesuai range tanpa overlap nomor pack dalam 1 batch.
+- [ ] Validasi rentang nomor pack berada dalam batas 1 s/d 100 (`pack_dari <= pack_sampai`).
+- [ ] Role `OPERATOR` dan `SUPERVISOR` dapat menginput bon masuk.
+- [ ] Pembatalan bon masuk hanya dapat dilakukan oleh role `SUPERVISOR` dan me-revert status pack terkait.
+- [ ] Seluruh mutasi data tercatat di tabel `audit_log`.
+- [ ] Seluruh automated test berjalan sukses (`npm test`).
 
 ---
 
@@ -122,3 +112,18 @@ Mengimplementasikan seluruh endpoint RESTful API untuk pengelolaan **Master Data
   - [x] Middleware RBAC (`authorize`) memblokir akses pengguna yang rolenya tidak diizinkan (403 Forbidden).
   - [x] Helper audit trail berhasil mencatat log ke tabel `audit_log`.
   - [x] Seluruh unit dan integration test berjalan sukses (`npm test`).
+
+### Step 4: API Master Data & Modul Target / Perencanaan Produksi
+- **GitHub Issue**: [#7](https://github.com/rickyriskiawan/khazprokhir/issues/7) *(Closed)*
+- **Pull Request**: [#8](https://github.com/rickyriskiawan/khazprokhir/pull/8) *(Merged / Pending Merge to main)*
+- **Branch**: `feat/step-4-api-master-and-target`
+- **Hasil**:
+  - [x] Seluruh endpoint Master Data (denominasi dengan kode huruf S s/d Y, emisi, shift, user) dapat diakses dengan respons JSON standar.
+  - [x] Pengubahan data master (POST, PUT, DELETE) hanya dapat dilakukan oleh role `SUPERVISOR` (role `OPERATOR` ditolak 403 Forbidden).
+  - [x] Pembuatan dan pembaruan akun user mengenkripsi password dengan bcrypt dan tidak mengekspos hash ke response.
+  - [x] Endpoint Target Tahunan menghitung `target_brood` dan `target_pack` secara otomatis dan presisi.
+  - [x] Endpoint Target Bulanan memvalidasi parameter bulan (1-12) dan sisa hari kerja.
+  - [x] Endpoint Persediaan HCTS dan Rencana Penyerahan berfungsi untuk input, pembacaan, dan update data.
+  - [x] Setiap aktivitas mutasi tercatat ke tabel `audit_log`.
+  - [x] Master denominasi disesuaikan dengan kode huruf resmi: 1000 = S, 2000 = T, 5000 = U, 10000 = V, 20000 = W, 50000 = X, 100000 = Y.
+  - [x] Seluruh 59 automated test berjalan sukses (`npm test`).
