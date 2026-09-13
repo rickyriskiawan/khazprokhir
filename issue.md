@@ -11,7 +11,7 @@ Setiap langkah harus disetujui oleh pengguna terlebih dahulu sebelum dieksekusi.
 Agar tidak ada pengerjaan yang terlewat dari dokumen `implementation_plan.md`, alur pengerjaan dibagi menjadi 12 langkah terstruktur:
 
 - [x] **Step 1: Inisialisasi Project, Setup Environment (Dev vs Prod), & Docker Base** *(Selesai - PR [#2](https://github.com/rickyriskiawan/khazprokhir/pull/2))*
-- [x] **Step 2: Skema Database (Prisma ORM), Migrasi, & Seeding Master Data Awal** *(Selesai - Siap Review via PR)*
+- [x] **Step 2: Skema Database (Prisma ORM), Migrasi, & Seeding Master Data Awal** *(Selesai - PR [#4](https://github.com/rickyriskiawan/khazprokhir/pull/4))*
 - [ ] **Step 3: Arsitektur Backend, Core Utilities (Konversi Satuan & Aturan Bisnis), & Auth/RBAC**
 - [ ] **Step 4: API Master Data & Modul Target / Perencanaan Produksi**
 - [ ] **Step 5: Modul 1 - Penerimaan Barang Masuk (Bon Masuk Khazai & Registrasi Batch/Pack)**
@@ -27,9 +27,10 @@ Agar tidak ada pengerjaan yang terlewat dari dokumen `implementation_plan.md`, a
 
 ## 🎯 CURRENT STEP: ISSUE #02
 ### Judul: Skema Database (Prisma ORM), Migrasi, & Seeding Master Data Awal
-- **GitHub Issue**: [#3](https://github.com/rickyriskiawan/khazprokhir/issues/3)
+- **GitHub Issue**: [#3](https://github.com/rickyriskiawan/khazprokhir/issues/3) *(Closed)*
+- **Pull Request**: [#4](https://github.com/rickyriskiawan/khazprokhir/pull/4) *(Pending Review)*
 - **Branch**: `feat/step-2-db-schema-and-seed`
-- **Status**: Selesai (Siap Direview via PR)
+- **Status**: Selesai (PR Diajukan)
 
 ### 1. Tujuan & Ruang Lingkup
 Mengimplementasikan skema database relasional secara komprehensif menggunakan **Prisma ORM** pada backend Node.js (`server/`) sesuai ERD dan aturan bisnis Khazprokhir. Meliputi pembuatan model entitas lengkap, relasi referensial, penegakan constraint integritas data (unique constraint, check range, status enum), eksekusi migrasi awal ke PostgreSQL lokal, penyediaan singleton instance Prisma Client, serta pembuatan skrip seeding master data awal (denominasi rupiah TE 2022 S'22-Y'22, master shift, akun pengguna awal dengan hash bcrypt, dan target awal TA 2026).
