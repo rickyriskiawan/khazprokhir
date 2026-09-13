@@ -2,6 +2,9 @@ import express from "express";
 import cors from "cors";
 import prisma from "./lib/prisma.js";
 import authRoutes from "./routes/auth.routes.js";
+import masterRoutes from "./routes/master.routes.js";
+import { targetTahunanRouter, targetBulananRouter } from "./routes/target.routes.js";
+import { hctsRouter, rencanaPenyerahanRouter } from "./routes/planning.routes.js";
 
 const app = express();
 
@@ -48,6 +51,11 @@ app.get("/api/health", async (req, res) => {
 
 // API Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/master", masterRoutes);
+app.use("/api/target-tahunan", targetTahunanRouter);
+app.use("/api/target-bulanan", targetBulananRouter);
+app.use("/api/hcts", hctsRouter);
+app.use("/api/rencana-penyerahan", rencanaPenyerahanRouter);
 
 // 404 Route Handler
 app.use((req, res) => {

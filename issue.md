@@ -13,7 +13,7 @@ Agar tidak ada pengerjaan yang terlewat dari dokumen `implementation_plan.md`, a
 - [x] **Step 1: Inisialisasi Project, Setup Environment (Dev vs Prod), & Docker Base** *(Selesai - PR [#2](https://github.com/rickyriskiawan/khazprokhir/pull/2))*
 - [x] **Step 2: Skema Database (Prisma ORM), Migrasi, & Seeding Master Data Awal** *(Selesai - PR [#4](https://github.com/rickyriskiawan/khazprokhir/pull/4))*
 - [x] **Step 3: Arsitektur Backend, Core Utilities (Konversi Satuan & Aturan Bisnis), & Auth/RBAC** *(Selesai - PR [#6](https://github.com/rickyriskiawan/khazprokhir/pull/6))*
-- [ ] **Step 4: API Master Data & Modul Target / Perencanaan Produksi**
+- [ ] **Step 4: API Master Data & Modul Target / Perencanaan Produksi** *(Aktif - Issue [#7](https://github.com/rickyriskiawan/khazprokhir/issues/7))*
 - [ ] **Step 5: Modul 1 - Penerimaan Barang Masuk (Bon Masuk Khazai & Registrasi Batch/Pack)**
 - [ ] **Step 6: Modul 2 - Proses Sortir & Penataan Pack (Kelipatan 4, Zero Reject, Sesi & Koreksi)**
 - [ ] **Step 7: Modul 3 - Pengemasan Doos / Hasil Kemas (Rasio 4 Pack = 9 Doos, Penomoran Doos & BA Kemas)**
@@ -25,89 +25,63 @@ Agar tidak ada pengerjaan yang terlewat dari dokumen `implementation_plan.md`, a
 
 ---
 
-## 🎯 CURRENT STEP: ISSUE #03
-### Judul: Arsitektur Backend, Core Utilities (Konversi Satuan & Aturan Bisnis), & Auth/RBAC
-- **GitHub Issue**: [#5](https://github.com/rickyriskiawan/khazprokhir/issues/5) *(Closed)*
-- **Pull Request**: [#6](https://github.com/rickyriskiawan/khazprokhir/pull/6) *(Pending Review)*
-- **Branch**: `feat/step-3-backend-arch-utils-auth`
-- **Status**: Selesai (PR Diajukan)
+## 🎯 CURRENT STEP: ISSUE #04
+### Judul: API Master Data & Modul Target / Perencanaan Produksi
+- **GitHub Issue**: [#7](https://github.com/rickyriskiawan/khazprokhir/issues/7)
+- **Branch Rekomendasi**: `feat/step-4-api-master-and-target`
+- **Status**: Siap Dikerjakan (Menunggu Persetujuan Pengguna)
 
 ### 1. Tujuan & Ruang Lingkup
-Membangun fondasi logika bisnis inti, utilitas konversi satuan hierarki fisik uang kertas, penegakan aturan bisnis operasional Khazprokhir, sistem autentikasi berbasis JWT, serta middleware otorisasi Role-Based Access Control (RBAC). Modul ini menjadi fondasi logika dan keamanan bagi seluruh modul operasional berikutnya.
+Mengimplementasikan seluruh endpoint RESTful API untuk pengelolaan **Master Data** (Denominasi, Emisi, Shift, Manajemen Akun User) serta **Modul Target dan Perencanaan Produksi** (Target Tahunan dengan kalkulasi otomatis bilyet/brood/pack, Target Bulanan dengan sisa hari kerja, Transaksi Persediaan HCTS, dan Rencana Penyerahan). Dilengkapi validasi skema input (Zod), proteksi role-based access control (RBAC), serta pencatatan audit trail otomatis.
 
 ### 2. Instruksi High-Level
 
-#### A. Core Utilities Konversi Satuan (`server/src/utils/converter.js`)
-Implementasikan fungsi konversi hierarki fisik uang kertas secara presisi:
-- **Konstanta Dasar**:
-  - `BILYET_PER_BROOD = 1000`
-  - `BROOD_PER_PACK = 45`
-  - `BILYET_PER_PACK = 45000` (`45 * 1000`)
-  - `BROOD_PER_DOOS = 20`
-  - `BILYET_PER_DOOS = 20000` (`20 * 1000`)
-  - `PACK_PER_BATCH = 100`
-  - `DOOS_PER_BATCH = 225`
-  - `BROOD_PER_BATCH = 4500`
-  - `BILYET_PER_BATCH = 4500000`
-- **Fungsi Helper Konversi**:
-  - `packToBrood(pack)`
-  - `packToBilyet(pack)`
-  - `broodToBilyet(brood)`
-  - `doosToBilyet(doos)`
-  - `doosToBrood(doos)`
-  - `calculateDoosFromPack(pack)` (Wajib rasio 4 pack = 9 doos: `(pack / 4) * 9`)
-  - `calculateNominal(bilyet, nilaiPecahan)`
-  - `formatRupiah(number)`
+#### A. Master Denominasi, Emisi, & Shift (`/api/master/`)
+- `GET /api/master/denominasi`: Mengambil seluruh denominasi aktif beserta emisi terkait.
+- `POST /api/master/denominasi`, `PUT /api/master/denominasi/:id`, `DELETE /api/master/denominasi/:id` (Role: `SUPERVISOR`).
+- `GET /api/master/emisi`, `POST /api/master/emisi`, `PUT /api/master/emisi/:id`, `DELETE /api/master/emisi/:id` (Role: `SUPERVISOR`).
+- `GET /api/master/shift`, `POST /api/master/shift`, `PUT /api/master/shift/:id` (Role: `SUPERVISOR`).
 
-#### B. Aturan Bisnis & Validasi (`server/src/utils/businessRules.js`)
-- `isKelipatanEmpat(totalPack)`: Memastikan jumlah pack merupakan kelipatan 4 (`totalPack % 4 === 0` dan `> 0`).
-- `validatePackRange(packDari, packSampai)`: Memastikan `1 <= packDari <= packSampai <= 100`.
-- `validateDoosRatio(totalPack, totalDoos)`: Memverifikasi `totalDoos === (totalPack / 4) * 9`.
-- `detectGaps(numbers)`: Mendeteksi nomor urut yang terlewat dalam array angka (misal untuk nomor doos dan nomor pack).
+#### B. Manajemen Akun User (`/api/master/users`)
+- `GET /api/master/users`: List seluruh pengguna dengan opsi filter role & status aktif (data disanitasi tanpa `password_hash`).
+- `POST /api/master/users`: Pendaftaran user baru dengan password hash bcrypt (Role: `SUPERVISOR`).
+- `PUT /api/master/users/:id`: Pembaruan profil, role, atau ganti password (Role: `SUPERVISOR`).
+- `DELETE /api/master/users/:id`: Penonaktifan akun (`is_active: false`) untuk menjaga integritas relasi referensial (Role: `SUPERVISOR`).
 
-#### C. Standardized Response Format (`server/src/utils/response.js`)
-Menyediakan helper respons terstandarisasi untuk Express:
-- `successResponse(res, { status = 200, message, data, meta })`
-- `errorResponse(res, { status = 500, message, error, details })`
+#### C. Target Produksi Tahunan (`/api/target-tahunan`)
+- `GET /api/target-tahunan`: Filter berdasarkan `tahun_anggaran` dan `denominasi_id`.
+- `POST /api/target-tahunan`:
+  - Input: `tahun_anggaran`, `denominasi_id`, `target_bilyet`, `catatan`.
+  - Kalkulasi otomatis di backend:
+    - `target_brood = target_bilyet / 1000`
+    - `target_pack = target_brood / 45`
+  - Proteksi keunikan: kombinasi `[tahun_anggaran, denominasi_id]` unik.
+- `PUT /api/target-tahunan/:id` & `DELETE /api/target-tahunan/:id` (Role: `SUPERVISOR`).
 
-#### D. Autentikasi JWT & User Controller (`server/src/controllers/auth.controller.js` & `server/src/routes/auth.routes.js`)
-- Dependensi: Tambahkan `jsonwebtoken` ke `server/package.json`.
-- `POST /api/auth/login`:
-  - Menerima `username` dan `password`.
-  - Validasi keberadaan user dan `is_active === true`.
-  - Verifikasi password hash menggunakan `bcryptjs`.
-  - Terbitkan token JWT yang memuat `{ id, username, role, full_name }` dengan masa berlaku (dari env `JWT_EXPIRES_IN`, default `1d`).
-  - Mengembalikan respons JSON user profile (tanpa `password_hash`) beserta token.
-- `GET /api/auth/me`:
-  - Mengambil data profil user saat ini berdasarkan decoded JWT token.
-- `POST /api/auth/logout`:
-  - Response sukses client-side token invalidation.
+#### D. Target Produksi Bulanan (`/api/target-bulanan`)
+- `GET /api/target-bulanan`: Filter per `tahun_anggaran`, `bulan` (1-12), dan `denominasi_id`.
+- `POST /api/target-bulanan`:
+  - Input: `tahun_anggaran`, `bulan` (1-12), `denominasi_id`, `target_penyerahan_bilyet`, `target_pengemasan_bilyet`, `sisa_hari_kerja`.
+  - Proteksi keunikan: kombinasi `[tahun_anggaran, bulan, denominasi_id]` unik.
+- `PUT /api/target-bulanan/:id` & `DELETE /api/target-bulanan/:id` (Role: `SUPERVISOR`).
 
-#### E. Middleware Layer (`server/src/middleware/`)
-- `auth.middleware.js`:
-  - Membaca header `Authorization: Bearer <token>`.
-  - Verifikasi token dengan `JWT_SECRET`.
-  - Menyematkan objek `req.user` pada request context.
-  - Mengembalikan 401 Unauthorized bila token tidak ada atau tidak valid/expired.
-- `rbac.middleware.js`:
-  - Helper fungsi `authorize(...allowedRoles)`.
-  - Memeriksa apakah `req.user.role` termasuk dalam `allowedRoles`.
-  - Mengembalikan 403 Forbidden bila role tidak memiliki izin.
-- `audit.middleware.js` & Helper Logger:
-  - Helper `createAuditLog({ userId, action, module, tableName, recordId, oldValue, newValue, ipAddress })` untuk mencatat rekam jejak aktivitas ke tabel `audit_log`.
+#### E. Transaksi HCTS & Rencana Penyerahan (`/api/hcts`, `/api/rencana-penyerahan`)
+- `GET /api/hcts` & `POST /api/hcts`: Input dan rekap data mutasi persediaan HCTS (Hasil Cetak Tidak Sempurna) harian.
+- `GET /api/rencana-penyerahan` & `POST /api/rencana-penyerahan`: Input rencana penyerahan mendatang & monitoring kekurangan kemas/terima.
 
-#### F. Automated Testing (`server/test/`)
-- Unit test untuk seluruh fungsi konverter dan aturan bisnis.
-- Integration test untuk rute autentikasi (`POST /api/auth/login`, `GET /api/auth/me`, dan verifikasi guard RBAC).
+#### F. Validasi Zod & Audit Trail
+- Buat file validator `server/src/validators/master.validator.js` dan `server/src/validators/target.validator.js`.
+- Setiap operasi mutasi (POST, PUT, DELETE) otomatis memanggil `createAuditLog` untuk mencatat riwayat ke tabel `audit_log`.
 
 ### 3. Kriteria Penerimaan (Acceptance Criteria)
-- [x] Modul utilitas konversi satuan (`server/src/utils/converter.js`) mengonversi bilyet, brood, pack, doos, dan nominal rupiah secara 100% presisi.
-- [x] Aturan bisnis (`server/src/utils/businessRules.js`) memvalidasi kelipatan 4 pack, batas rentang 1-100, rasio 4 pack = 9 doos, dan deteksi gap dengan akurat.
-- [x] Endpoint `POST /api/auth/login` berhasil mengautentikasi pengguna, menerbitkan JWT, dan menolak password yang salah.
-- [x] Endpoint `GET /api/auth/me` mengembalikan data pengguna terautentikasi dan menolak akses tanpa token (401 Unauthorized).
-- [x] Middleware RBAC (`authorize`) memblokir akses pengguna yang rolenya tidak diizinkan (403 Forbidden).
-- [x] Helper audit trail berhasil mencatat log ke tabel `audit_log`.
-- [x] Seluruh unit dan integration test berjalan sukses (`npm test`).
+- [x] Seluruh endpoint Master Data (denominasi, emisi, shift, user) dapat diakses dengan respons JSON standar.
+- [x] Pengubahan data master (POST, PUT, DELETE) hanya dapat dilakukan oleh role `SUPERVISOR` (role `OPERATOR` ditolak 403 Forbidden).
+- [x] Pembuatan dan pembaruan akun user mengenkripsi password dengan bcrypt dan tidak mengekspos hash ke response.
+- [x] Endpoint Target Tahunan menghitung `target_brood` dan `target_pack` secara otomatis dan presisi.
+- [x] Endpoint Target Bulanan memvalidasi parameter bulan (1-12) dan sisa hari kerja.
+- [x] Endpoint Persediaan HCTS dan Rencana Penyerahan berfungsi untuk input, pembacaan, dan update data.
+- [x] Setiap aktivitas mutasi tercatat ke tabel `audit_log`.
+- [x] Seluruh automated test berjalan sukses (`npm test`).
 
 ---
 
@@ -135,3 +109,16 @@ Menyediakan helper respons terstandarisasi untuk Express:
   - [x] Seluruh data master (7 denominasi, 7 emisi, 3 shift, 4 user role, dan target TA 2026) terverifikasi tersimpan di database.
   - [x] Modul Prisma Client singleton di `server/src/lib/prisma.js` siap di-import oleh layer service/controller.
   - [x] Endpoint `GET /api/health` merespons status koneksi database (`database: "connected"`).
+
+### Step 3: Arsitektur Backend, Core Utilities (Konversi Satuan & Aturan Bisnis), & Auth/RBAC
+- **GitHub Issue**: [#5](https://github.com/rickyriskiawan/khazprokhir/issues/5) *(Closed)*
+- **Pull Request**: [#6](https://github.com/rickyriskiawan/khazprokhir/pull/6) *(Merged to main)*
+- **Branch**: `feat/step-3-backend-arch-utils-auth`
+- **Hasil**:
+  - [x] Modul utilitas konversi satuan (`converter.js`) mengonversi bilyet, brood, pack, doos, dan nominal rupiah secara 100% presisi.
+  - [x] Aturan bisnis (`businessRules.js`) memvalidasi kelipatan 4 pack, batas rentang 1-100, rasio 4 pack = 9 doos, dan deteksi gap dengan akurat.
+  - [x] Endpoint `POST /api/auth/login` berhasil mengautentikasi pengguna, menerbitkan JWT, dan menolak password yang salah.
+  - [x] Endpoint `GET /api/auth/me` mengembalikan data pengguna terautentikasi dan menolak akses tanpa token (401 Unauthorized).
+  - [x] Middleware RBAC (`authorize`) memblokir akses pengguna yang rolenya tidak diizinkan (403 Forbidden).
+  - [x] Helper audit trail berhasil mencatat log ke tabel `audit_log`.
+  - [x] Seluruh unit dan integration test berjalan sukses (`npm test`).
