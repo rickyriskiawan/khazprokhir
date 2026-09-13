@@ -11,7 +11,7 @@ Setiap langkah harus disetujui oleh pengguna terlebih dahulu sebelum dieksekusi.
 Agar tidak ada pengerjaan yang terlewat dari dokumen `implementation_plan.md`, alur pengerjaan dibagi menjadi 12 langkah terstruktur:
 
 - [x] **Step 1: Inisialisasi Project, Setup Environment (Dev vs Prod), & Docker Base** *(Selesai - PR [#2](https://github.com/rickyriskiawan/khazprokhir/pull/2))*
-- [ ] **Step 2: Skema Database (Prisma ORM), Migrasi, & Seeding Master Data Awal** *(Aktif - Issue [#3](https://github.com/rickyriskiawan/khazprokhir/issues/3))*
+- [x] **Step 2: Skema Database (Prisma ORM), Migrasi, & Seeding Master Data Awal** *(Selesai - Siap Review via PR)*
 - [ ] **Step 3: Arsitektur Backend, Core Utilities (Konversi Satuan & Aturan Bisnis), & Auth/RBAC**
 - [ ] **Step 4: API Master Data & Modul Target / Perencanaan Produksi**
 - [ ] **Step 5: Modul 1 - Penerimaan Barang Masuk (Bon Masuk Khazai & Registrasi Batch/Pack)**
@@ -28,8 +28,8 @@ Agar tidak ada pengerjaan yang terlewat dari dokumen `implementation_plan.md`, a
 ## 🎯 CURRENT STEP: ISSUE #02
 ### Judul: Skema Database (Prisma ORM), Migrasi, & Seeding Master Data Awal
 - **GitHub Issue**: [#3](https://github.com/rickyriskiawan/khazprokhir/issues/3)
-- **Branch Rekomendasi**: `feat/step-2-db-schema-and-seed`
-- **Status**: Siap Dikerjakan (Menunggu Persetujuan Pengguna)
+- **Branch**: `feat/step-2-db-schema-and-seed`
+- **Status**: Selesai (Siap Direview via PR)
 
 ### 1. Tujuan & Ruang Lingkup
 Mengimplementasikan skema database relasional secara komprehensif menggunakan **Prisma ORM** pada backend Node.js (`server/`) sesuai ERD dan aturan bisnis Khazprokhir. Meliputi pembuatan model entitas lengkap, relasi referensial, penegakan constraint integritas data (unique constraint, check range, status enum), eksekusi migrasi awal ke PostgreSQL lokal, penyediaan singleton instance Prisma Client, serta pembuatan skrip seeding master data awal (denominasi rupiah TE 2022 S'22-Y'22, master shift, akun pengguna awal dengan hash bcrypt, dan target awal TA 2026).
@@ -106,11 +106,11 @@ Buat script seeding yang bersifat idempoten (menggunakan `upsert`):
   - `"db:studio": "prisma studio"`
 
 ### 3. Kriteria Penerimaan (Acceptance Criteria)
-- [ ] File `server/prisma/schema.prisma` terdefinisi lengkap mencakup seluruh entitas, relasi, enum, dan constraint.
-- [ ] Migrasi database `init_khazprokhir_schema` berhasil dieksekusi ke PostgreSQL lokal tanpa error.
-- [ ] Script seeding `prisma/seed.js` berhasil dijalankan (`npm run db:seed` atau `npx prisma db seed`) dan bersifat idempoten.
-- [ ] Seluruh data master (7 denominasi, 7 emisi, 3 shift, 4 user role, dan sample target) terverifikasi tersimpan di database.
-- [ ] Modul Prisma Client singleton di `server/src/lib/prisma.js` siap di-import oleh layer service/controller.
+- [x] File `server/prisma/schema.prisma` terdefinisi lengkap mencakup seluruh entitas, relasi, enum, dan constraint.
+- [x] Migrasi database `init_khazprokhir_schema` berhasil dieksekusi ke PostgreSQL lokal tanpa error.
+- [x] Script seeding `prisma/seed.js` berhasil dijalankan (`npm run db:seed` atau `npx prisma db seed`) dan bersifat idempoten.
+- [x] Seluruh data master (7 denominasi, 7 emisi, 3 shift, 4 user role, dan sample target) terverifikasi tersimpan di database.
+- [x] Modul Prisma Client singleton di `server/src/lib/prisma.js` siap di-import oleh layer service/controller.
 
 ---
 
