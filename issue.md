@@ -12,7 +12,7 @@ Agar tidak ada pengerjaan yang terlewat dari dokumen `implementation_plan.md`, a
 
 - [x] **Step 1: Inisialisasi Project, Setup Environment (Dev vs Prod), & Docker Base** *(Selesai - PR [#2](https://github.com/rickyriskiawan/khazprokhir/pull/2))*
 - [x] **Step 2: Skema Database (Prisma ORM), Migrasi, & Seeding Master Data Awal** *(Selesai - PR [#4](https://github.com/rickyriskiawan/khazprokhir/pull/4))*
-- [ ] **Step 3: Arsitektur Backend, Core Utilities (Konversi Satuan & Aturan Bisnis), & Auth/RBAC** *(Aktif - Issue [#5](https://github.com/rickyriskiawan/khazprokhir/issues/5))*
+- [x] **Step 3: Arsitektur Backend, Core Utilities (Konversi Satuan & Aturan Bisnis), & Auth/RBAC** *(Selesai - Siap Review via PR)*
 - [ ] **Step 4: API Master Data & Modul Target / Perencanaan Produksi**
 - [ ] **Step 5: Modul 1 - Penerimaan Barang Masuk (Bon Masuk Khazai & Registrasi Batch/Pack)**
 - [ ] **Step 6: Modul 2 - Proses Sortir & Penataan Pack (Kelipatan 4, Zero Reject, Sesi & Koreksi)**
@@ -28,8 +28,8 @@ Agar tidak ada pengerjaan yang terlewat dari dokumen `implementation_plan.md`, a
 ## 🎯 CURRENT STEP: ISSUE #03
 ### Judul: Arsitektur Backend, Core Utilities (Konversi Satuan & Aturan Bisnis), & Auth/RBAC
 - **GitHub Issue**: [#5](https://github.com/rickyriskiawan/khazprokhir/issues/5)
-- **Branch Rekomendasi**: `feat/step-3-backend-arch-utils-auth`
-- **Status**: Siap Dikerjakan (Menunggu Persetujuan Pengguna)
+- **Branch**: `feat/step-3-backend-arch-utils-auth`
+- **Status**: Selesai (Siap Direview via PR)
 
 ### 1. Tujuan & Ruang Lingkup
 Membangun fondasi logika bisnis inti, utilitas konversi satuan hierarki fisik uang kertas, penegakan aturan bisnis operasional Khazprokhir, sistem autentikasi berbasis JWT, serta middleware otorisasi Role-Based Access Control (RBAC). Modul ini menjadi fondasi logika dan keamanan bagi seluruh modul operasional berikutnya.
@@ -100,13 +100,13 @@ Menyediakan helper respons terstandarisasi untuk Express:
 - Integration test untuk rute autentikasi (`POST /api/auth/login`, `GET /api/auth/me`, dan verifikasi guard RBAC).
 
 ### 3. Kriteria Penerimaan (Acceptance Criteria)
-- [ ] Modul utilitas konversi satuan (`server/src/utils/converter.js`) mengonversi bilyet, brood, pack, doos, dan nominal rupiah secara 100% presisi.
-- [ ] Aturan bisnis (`server/src/utils/businessRules.js`) memvalidasi kelipatan 4 pack, batas rentang 1-100, rasio 4 pack = 9 doos, dan deteksi gap dengan akurat.
-- [ ] Endpoint `POST /api/auth/login` berhasil mengautentikasi pengguna, menerbitkan JWT, dan menolak password yang salah.
-- [ ] Endpoint `GET /api/auth/me` mengembalikan data pengguna terautentikasi dan menolak akses tanpa token (401 Unauthorized).
-- [ ] Middleware RBAC (`authorize`) memblokir akses pengguna yang rolenya tidak diizinkan (403 Forbidden).
-- [ ] Helper audit trail berhasil mencatat log ke tabel `audit_log`.
-- [ ] Seluruh unit dan integration test berjalan sukses (`npm test`).
+- [x] Modul utilitas konversi satuan (`server/src/utils/converter.js`) mengonversi bilyet, brood, pack, doos, dan nominal rupiah secara 100% presisi.
+- [x] Aturan bisnis (`server/src/utils/businessRules.js`) memvalidasi kelipatan 4 pack, batas rentang 1-100, rasio 4 pack = 9 doos, dan deteksi gap dengan akurat.
+- [x] Endpoint `POST /api/auth/login` berhasil mengautentikasi pengguna, menerbitkan JWT, dan menolak password yang salah.
+- [x] Endpoint `GET /api/auth/me` mengembalikan data pengguna terautentikasi dan menolak akses tanpa token (401 Unauthorized).
+- [x] Middleware RBAC (`authorize`) memblokir akses pengguna yang rolenya tidak diizinkan (403 Forbidden).
+- [x] Helper audit trail berhasil mencatat log ke tabel `audit_log`.
+- [x] Seluruh unit dan integration test berjalan sukses (`npm test`).
 
 ---
 
