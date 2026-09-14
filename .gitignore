@@ -33,5 +33,6 @@ yarn-error.log*
 *.sln
 *.sw?
 
-# Temporary prompt/scratch
+# Temporary prompt/scratch & local tracking
 prompt.txt
+issue.md
