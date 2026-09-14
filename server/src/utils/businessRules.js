@@ -151,3 +151,37 @@ export function isConsecutive(numbers) {
   }
   return true;
 }
+
+/**
+ * Memeriksa safety locking pada sesi sortir.
+ * Sesi sortir terkunci jika:
+ * 1. Sudah terhubung dengan data hasil kemas doos (tabel hasil_kemas), ATAU
+ * 2. Terdapat pack di dalamnya yang sudah berstatus PACKED atau SHIPPED.
+ *
+ * @param {object} session Record proses_sortir yang menyertakan hasil_kemas dan sortir_pack_details.pack_detail
+ * @param {string} [actionLabel='diubah atau dibatalkan'] Tindakan yang sedang dicoba (misal: 'diperbarui', 'dibatalkan')
+ * @returns {{ isLocked: boolean, message?: string }}
+ */
+export function checkSortirSafetyLock(session, actionLabel = 'diubah atau dibatalkan') {
+  if (!session) return { isLocked: false };
+
+  if (session.hasil_kemas && session.hasil_kemas.length > 0) {
+    return {
+      isLocked: true,
+      message: `Sesi sortir terkunci: Tidak dapat ${actionLabel} karena pack telah terhubung dengan data hasil kemas doos. Batalkan proses pengemasan terlebih dahulu.`,
+    };
+  }
+
+  const hasPackedPacks = session.sortir_pack_details?.some(
+    (spd) => spd.pack_detail?.status === 'PACKED' || spd.pack_detail?.status === 'SHIPPED'
+  );
+
+  if (hasPackedPacks) {
+    return {
+      isLocked: true,
+      message: `Sesi sortir terkunci: Tidak dapat ${actionLabel} karena sebagian atau seluruh pack telah berstatus PACKED atau SHIPPED.`,
+    };
+  }
+
+  return { isLocked: false };
+}
