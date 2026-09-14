@@ -5,6 +5,8 @@ import authRoutes from "./routes/auth.routes.js";
 import masterRoutes from "./routes/master.routes.js";
 import { targetTahunanRouter, targetBulananRouter } from "./routes/target.routes.js";
 import { hctsRouter, rencanaPenyerahanRouter } from "./routes/planning.routes.js";
+import batchRoutes from "./routes/batch.routes.js";
+import bonMasukRoutes from "./routes/bon-masuk.routes.js";
 
 const app = express();
 
@@ -56,6 +58,8 @@ app.use("/api/target-tahunan", targetTahunanRouter);
 app.use("/api/target-bulanan", targetBulananRouter);
 app.use("/api/hcts", hctsRouter);
 app.use("/api/rencana-penyerahan", rencanaPenyerahanRouter);
+app.use("/api/batches", batchRoutes);
+app.use("/api/bon-masuk", bonMasukRoutes);
 
 // 404 Route Handler
 app.use((req, res) => {
