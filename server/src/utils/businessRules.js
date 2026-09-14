@@ -185,3 +185,45 @@ export function checkSortirSafetyLock(session, actionLabel = 'diubah atau dibata
 
   return { isLocked: false };
 }
+
+/**
+ * Memeriksa safety locking pada data hasil kemas doos.
+ * Hasil kemas terkunci jika:
+ * 1. Status hasil kemas sudah SHIPPED, ATAU
+ * 2. Sudah terhubung dengan data pengiriman ke Bank Indonesia (tabel pengiriman_details), ATAU
+ * 3. Terdapat pack di dalamnya yang sudah berstatus SHIPPED.
+ *
+ * @param {object} session Record hasil_kemas yang menyertakan pengiriman_details dan kemas_pack_details.pack_detail
+ * @param {string} [actionLabel='diubah atau dibatalkan'] Tindakan yang sedang dicoba (misal: 'diperbarui', 'dibatalkan')
+ * @returns {{ isLocked: boolean, message?: string }}
+ */
+export function checkKemasSafetyLock(session, actionLabel = 'diubah atau dibatalkan') {
+  if (!session) return { isLocked: false };
+
+  if (session.status === 'SHIPPED') {
+    return {
+      isLocked: true,
+      message: `Hasil kemas terkunci: Tidak dapat ${actionLabel} karena doos sudah dalam status SHIPPED (telah dikirim ke Bank Indonesia).`,
+    };
+  }
+
+  if (session.pengiriman_details && session.pengiriman_details.length > 0) {
+    return {
+      isLocked: true,
+      message: `Hasil kemas terkunci: Tidak dapat ${actionLabel} karena doos telah terhubung dengan data pengiriman ke Bank Indonesia. Batalkan pengiriman terlebih dahulu.`,
+    };
+  }
+
+  const hasShippedPacks = session.kemas_pack_details?.some(
+    (kpd) => kpd.pack_detail?.status === 'SHIPPED'
+  );
+
+  if (hasShippedPacks) {
+    return {
+      isLocked: true,
+      message: `Hasil kemas terkunci: Tidak dapat ${actionLabel} karena pack di dalamnya telah berstatus SHIPPED.`,
+    };
+  }
+
+  return { isLocked: false };
+}

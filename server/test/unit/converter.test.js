@@ -23,6 +23,7 @@ import {
   detectGaps,
   isConsecutive,
   checkSortirSafetyLock,
+  checkKemasSafetyLock,
 } from '../../src/utils/businessRules.js';
 
 describe('Unit Test: Konversi Satuan Uang Kertas', () => {
@@ -201,4 +202,49 @@ describe('Unit Test: Aturan Bisnis & Validasi', () => {
     };
     assert.equal(checkSortirSafetyLock(shippedStatusSession).isLocked, true);
   });
+
+  it('checkKemasSafetyLock harus mendeteksi status terkunci dengan benar', () => {
+    // Hasil kemas status READY tanpa pengiriman dan pack PACKED -> Tidak terkunci
+    const readyKemas = {
+      status: 'READY',
+      pengiriman_details: [],
+      kemas_pack_details: [
+        { pack_detail: { status: 'PACKED' } },
+        { pack_detail: { status: 'PACKED' } },
+      ],
+    };
+    assert.equal(checkKemasSafetyLock(readyKemas).isLocked, false);
+
+    // Hasil kemas dengan status SHIPPED -> Terkunci
+    const shippedKemas = {
+      status: 'SHIPPED',
+      pengiriman_details: [],
+      kemas_pack_details: [{ pack_detail: { status: 'PACKED' } }],
+    };
+    const shippedLock = checkKemasSafetyLock(shippedKemas, 'dibatalkan');
+    assert.equal(shippedLock.isLocked, true);
+    assert.match(shippedLock.message, /SHIPPED/i);
+
+    // Hasil kemas dengan relasi pengiriman_details -> Terkunci
+    const sentKemas = {
+      status: 'READY',
+      pengiriman_details: [{ id: 1 }],
+      kemas_pack_details: [{ pack_detail: { status: 'PACKED' } }],
+    };
+    const sentLock = checkKemasSafetyLock(sentKemas, 'diperbarui');
+    assert.equal(sentLock.isLocked, true);
+    assert.match(sentLock.message, /pengiriman ke Bank Indonesia/i);
+
+    // Hasil kemas dengan salah satu pack status SHIPPED -> Terkunci
+    const packShippedKemas = {
+      status: 'READY',
+      pengiriman_details: [],
+      kemas_pack_details: [
+        { pack_detail: { status: 'PACKED' } },
+        { pack_detail: { status: 'SHIPPED' } },
+      ],
+    };
+    assert.equal(checkKemasSafetyLock(packShippedKemas).isLocked, true);
+  });
 });
+
