@@ -10,6 +10,7 @@ import {
   getAvailableSortedPacks,
   getNextDoosNumber,
   updateKemas,
+  completeKemas,
   deleteKemas,
   getKemasSummaryToday,
 } from '../controllers/kemas.controller.js';
@@ -17,6 +18,7 @@ import {
 import {
   createKemasSchema,
   updateKemasSchema,
+  completeKemasSchema,
 } from '../validators/kemas.validator.js';
 
 const router = Router();
@@ -47,6 +49,14 @@ router.put(
   authorize('OPERATOR', 'SUPERVISOR'),
   validate(updateKemasSchema),
   updateKemas
+);
+
+router.post(
+  '/:id/complete',
+  authenticateToken,
+  authorize('OPERATOR', 'SUPERVISOR'),
+  validate(completeKemasSchema),
+  completeKemas
 );
 
 router.delete(

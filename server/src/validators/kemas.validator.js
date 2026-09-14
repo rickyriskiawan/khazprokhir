@@ -35,6 +35,7 @@ export const createKemasSchema = z
       .min(1, 'Nomor Berita Acara (BA) Pengemasan wajib diisi')
       .max(50, 'Nomor BA Pengemasan maksimal 50 karakter'),
     proses_sortir_id: z.number().int().positive().nullable().optional(),
+    status: z.enum(['SIAP_KEMAS', 'READY']).optional().default('SIAP_KEMAS'),
     catatan: z.string().trim().nullable().optional(),
   })
   .refine((data) => data.pack_dari <= data.pack_sampai, {
@@ -60,3 +61,13 @@ export const updateKemasSchema = z.object({
     .optional(),
   catatan: z.string().trim().nullable().optional(),
 });
+
+// ==========================================
+// 3. Validasi Konfirmasi Selesai Fisik Kemas
+// ==========================================
+export const completeKemasSchema = z.object({
+  shift_id: z.number().int().positive('Shift kerja harus berupa angka bulat positif').optional(),
+  tanggal_kemas: dateStringSchema.optional(),
+  catatan: z.string().trim().nullable().optional(),
+});
+

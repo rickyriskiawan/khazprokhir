@@ -9,6 +9,7 @@ let operatorToken;
 let supervisorToken;
 let testBatchId;
 let testShiftId;
+let testShift2Id;
 let createdKemasId;
 let secondKemasId;
 
@@ -148,8 +149,9 @@ describe('Integration Test: Modul 3 - Pengemasan Doos / Hasil Kemas (Step 7)', (
     supervisorToken = spvData.data.token;
 
     // Ambil shift yang aktif
-    const shift = await prisma.shift.findFirst({ where: { is_active: true } });
-    testShiftId = shift.id;
+    const shifts = await prisma.shift.findMany({ where: { is_active: true } });
+    testShiftId = shifts[0].id;
+    testShift2Id = shifts.length > 1 ? shifts[1].id : shifts[0].id;
 
     // 1. Siapkan Bon Masuk untuk batch KEMAS-TEST-BATCH-01 (Pack 1 s/d 40 RECEIVED)
     const bonRes = await fetch(`${baseUrl}/api/bon-masuk`, {
@@ -284,7 +286,7 @@ describe('Integration Test: Modul 3 - Pengemasan Doos / Hasil Kemas (Step 7)', (
     assert.match(json.message, /belum berstatus SORTED/i);
   });
 
-  it('POST /api/kemas - Berhasil mencatat pengemasan doos (Rasio 4 Pack = 9 Doos: 8 Pack = 18 Doos)', async () => {
+  it('POST /api/kemas - Berhasil mencatat booking pengemasan doos default SIAP_KEMAS (Rasio 4 Pack = 9 Doos: 8 Pack = 18 Doos)', async () => {
     // Pack 1 s/d 8 = 8 pack -> menghasilkan 18 doos (Doos 1 s/d 18)
     const res = await fetch(`${baseUrl}/api/kemas`, {
       method: 'POST',
@@ -300,7 +302,7 @@ describe('Integration Test: Modul 3 - Pengemasan Doos / Hasil Kemas (Step 7)', (
         pack_sampai: 8,
         no_doos_awal: 1,
         no_ba_pengemasan: 'BA-KEMAS-1001',
-        catatan: 'Pengemasan doos batch 01 gelombang 1',
+        catatan: 'Pengemasan doos batch 01 gelombang 1 (SIAP_KEMAS)',
       }),
     });
 
@@ -312,27 +314,27 @@ describe('Integration Test: Modul 3 - Pengemasan Doos / Hasil Kemas (Step 7)', (
     assert.strictEqual(json.data.no_doos_awal, 1);
     assert.strictEqual(json.data.no_doos_akhir, 18);
     assert.strictEqual(json.data.total_bilyet, '360000'); // 8 * 45.000 = 360.000
-    assert.strictEqual(json.data.status, 'READY');
+    assert.strictEqual(json.data.status, 'SIAP_KEMAS');
     assert.strictEqual(json.data.no_ba_pengemasan, 'BA-KEMAS-1001');
 
     createdKemasId = json.data.id;
 
-    // Verifikasi pembaruan status PackDetail di database: PACKED & no_doos_range terisi
-    const packedPacks = await prisma.packDetail.findMany({
+    // Verifikasi pembaruan status PackDetail di database: tetap SORTED karena SIAP_KEMAS, tapi hasil_kemas_id & no_doos_range terisi
+    const bookedPacks = await prisma.packDetail.findMany({
       where: {
         batch_id: testBatchId,
         nomor_pack: { gte: 1, lte: 8 },
       },
     });
 
-    assert.strictEqual(packedPacks.length, 8);
-    for (const pack of packedPacks) {
-      assert.strictEqual(pack.status, 'PACKED');
+    assert.strictEqual(bookedPacks.length, 8);
+    for (const pack of bookedPacks) {
+      assert.strictEqual(pack.status, 'SORTED');
       assert.strictEqual(pack.hasil_kemas_id, createdKemasId);
       assert.strictEqual(pack.no_doos_range, 'Doos 1-18');
     }
 
-    // Pack 9..20 harus tetap berstatus SORTED
+    // Pack 9..20 harus tetap berstatus SORTED dan hasil_kemas_id null
     const sortedPacks = await prisma.packDetail.findMany({
       where: {
         batch_id: testBatchId,
@@ -360,6 +362,108 @@ describe('Integration Test: Modul 3 - Pengemasan Doos / Hasil Kemas (Step 7)', (
       },
     });
     assert.ok(audit, 'Audit log CREATE kemas harus tercatat');
+  });
+
+  it('GET /api/kemas/available-packs/:batchId - Mengecualikan pack yang sudah dibooking SIAP_KEMAS', async () => {
+    const res = await fetch(`${baseUrl}/api/kemas/available-packs/${testBatchId}`, {
+      headers: { Authorization: `Bearer ${operatorToken}` },
+    });
+    const json = await res.json();
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(json.success, true);
+    assert.strictEqual(json.data.total_available, 12);
+    assert.strictEqual(json.data.available_pack_numbers.length, 12);
+    assert.strictEqual(json.data.available_pack_numbers[0], 9);
+    assert.strictEqual(json.data.available_pack_numbers[11], 20);
+  });
+
+  it('POST /api/kemas - Menolak booking jika pack sudah dibooking oleh hasil kemas lain (PackAlreadyBooked)', async () => {
+    const res = await fetch(`${baseUrl}/api/kemas`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${operatorToken}`,
+      },
+      body: JSON.stringify({
+        batch_id: testBatchId,
+        shift_id: testShiftId,
+        tanggal_kemas: '2026-09-15',
+        pack_dari: 1,
+        pack_sampai: 4,
+        no_doos_awal: 19,
+        no_ba_pengemasan: 'BA-KEMAS-DUPLIKAT',
+      }),
+    });
+
+    const json = await res.json();
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(json.success, false);
+    assert.strictEqual(json.error, 'PackAlreadyBooked');
+  });
+
+  it('POST /api/kemas/:id/complete - Berhasil menyelesaikan realisasi fisik pengemasan antar-shift (Shift 2)', async () => {
+    const res = await fetch(`${baseUrl}/api/kemas/${createdKemasId}/complete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${operatorToken}`,
+      },
+      body: JSON.stringify({
+        shift_id: testShift2Id,
+        tanggal_kemas: '2026-09-15',
+        catatan: 'Diselesaikan fisiknya pada Shift 2',
+      }),
+    });
+
+    const json = await res.json();
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(json.success, true);
+    assert.strictEqual(json.data.status, 'READY');
+    assert.strictEqual(json.data.shift_id, testShift2Id);
+    assert.strictEqual(json.data.catatan, 'Diselesaikan fisiknya pada Shift 2');
+
+    // Verifikasi pack 1..8 sekarang berstatus PACKED
+    const packedPacks = await prisma.packDetail.findMany({
+      where: {
+        batch_id: testBatchId,
+        nomor_pack: { gte: 1, lte: 8 },
+      },
+    });
+    assert.strictEqual(packedPacks.length, 8);
+    for (const pack of packedPacks) {
+      assert.strictEqual(pack.status, 'PACKED');
+    }
+
+    // Verifikasi audit log UPDATE (penyelesaian fisik antar-shift)
+    const audit = await prisma.auditLog.findFirst({
+      where: {
+        module: 'kemas',
+        action: 'UPDATE',
+        record_id: createdKemasId,
+      },
+    });
+    assert.ok(audit, 'Audit log UPDATE kemas harus tercatat');
+    assert.strictEqual(audit.new_value.status, 'READY');
+  });
+
+  it('POST /api/kemas/:id/complete - Menolak penyelesaian jika status sudah READY (bukan SIAP_KEMAS)', async () => {
+    const res = await fetch(`${baseUrl}/api/kemas/${createdKemasId}/complete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${operatorToken}`,
+      },
+      body: JSON.stringify({
+        shift_id: testShift2Id,
+        tanggal_kemas: '2026-09-15',
+      }),
+    });
+
+    const json = await res.json();
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(json.success, false);
+    assert.strictEqual(json.error, 'InvalidStatusError');
   });
 
   it('GET /api/kemas/next-doos-number - Menghitung nomor doos berikutnya secara presisi setelah ada doos tercatat', async () => {
@@ -401,7 +505,7 @@ describe('Integration Test: Modul 3 - Pengemasan Doos / Hasil Kemas (Step 7)', (
     assert.match(json.message, /bertabrakan dengan hasil kemas/i);
   });
 
-  it('POST /api/kemas - Berhasil mencatat kemasan kedua dengan kelipatan 4 pack berikutnya (Doos 19 s/d 27)', async () => {
+  it('POST /api/kemas - Berhasil mencatat kemasan kedua langsung dengan status READY (Doos 19 s/d 27)', async () => {
     // Pack 9 s/d 12 = 4 pack -> menghasilkan 9 doos (Doos 19 s/d 27)
     const res = await fetch(`${baseUrl}/api/kemas`, {
       method: 'POST',
@@ -417,6 +521,7 @@ describe('Integration Test: Modul 3 - Pengemasan Doos / Hasil Kemas (Step 7)', (
         pack_sampai: 12,
         no_doos_awal: 19,
         no_ba_pengemasan: 'BA-KEMAS-1002',
+        status: 'READY',
       }),
     });
 
@@ -428,8 +533,21 @@ describe('Integration Test: Modul 3 - Pengemasan Doos / Hasil Kemas (Step 7)', (
     assert.strictEqual(json.data.no_doos_awal, 19);
     assert.strictEqual(json.data.no_doos_akhir, 27);
     assert.strictEqual(json.data.total_bilyet, '180000'); // 4 * 45.000 = 180.000
+    assert.strictEqual(json.data.status, 'READY');
 
     secondKemasId = json.data.id;
+
+    // Verifikasi pack 9..12 langsung PACKED
+    const packedPacks = await prisma.packDetail.findMany({
+      where: {
+        batch_id: testBatchId,
+        nomor_pack: { gte: 9, lte: 12 },
+      },
+    });
+    assert.strictEqual(packedPacks.length, 4);
+    for (const pack of packedPacks) {
+      assert.strictEqual(pack.status, 'PACKED');
+    }
   });
 
   it('GET /api/kemas - Mengambil daftar hasil kemas dengan pagination & filter', async () => {
@@ -470,6 +588,9 @@ describe('Integration Test: Modul 3 - Pengemasan Doos / Hasil Kemas (Step 7)', (
     assert.ok(json.data.total_pack >= 12);
     assert.ok(json.data.total_doos >= 27);
     assert.ok(json.data.rincian_denominasi.length >= 1);
+    assert.ok(json.data.output_selesai);
+    assert.ok(json.data.output_selesai.total_kemas >= 2);
+    assert.ok(json.data.antrian_wip);
   });
 
   it('PUT /api/kemas/:id - Memperbarui metadata hasil kemas doos', async () => {
@@ -622,5 +743,35 @@ describe('Integration Test: Modul 3 - Pengemasan Doos / Hasil Kemas (Step 7)', (
     assert.strictEqual(json.data.total_doos, 9);
     assert.strictEqual(json.data.no_doos_awal, 1);
     assert.strictEqual(json.data.no_doos_akhir, 9);
+    assert.strictEqual(json.data.status, 'SIAP_KEMAS');
+  });
+
+  it('DELETE /api/kemas/:id - SUPERVISOR berhasil membatalkan booking SIAP_KEMAS dan mengembalikan pack ke status SORTED murni', async () => {
+    const lastKemas = await prisma.hasilKemas.findFirst({
+      where: { no_ba_pengemasan: 'BA-KEMAS-1003' },
+    });
+    assert.ok(lastKemas);
+    assert.strictEqual(lastKemas.status, 'SIAP_KEMAS');
+
+    const res = await fetch(`${baseUrl}/api/kemas/${lastKemas.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${supervisorToken}` },
+    });
+
+    const json = await res.json();
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(json.success, true);
+    assert.strictEqual(json.data.reverted_status, 'SORTED');
+
+    // Verifikasi pack 1 s/d 4 kembali bersih (hasil_kemas_id null, no_doos_range null)
+    const packs = await prisma.packDetail.findMany({
+      where: { batch_id: testBatchId, nomor_pack: { in: [1, 2, 3, 4] } },
+    });
+    assert.strictEqual(packs.length, 4);
+    for (const pack of packs) {
+      assert.strictEqual(pack.status, 'SORTED');
+      assert.strictEqual(pack.hasil_kemas_id, null);
+      assert.strictEqual(pack.no_doos_range, null);
+    }
   });
 });
