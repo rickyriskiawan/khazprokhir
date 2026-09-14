@@ -22,6 +22,7 @@ import {
   validateDoosRange,
   detectGaps,
   isConsecutive,
+  checkSortirSafetyLock,
 } from '../../src/utils/businessRules.js';
 
 describe('Unit Test: Konversi Satuan Uang Kertas', () => {
@@ -157,5 +158,47 @@ describe('Unit Test: Aturan Bisnis & Validasi', () => {
     assert.equal(isConsecutive([4, 2, 1, 3]), true); // urutan acak tetap berurutan nilainya
     assert.equal(isConsecutive([1, 3, 4]), false);
     assert.equal(isConsecutive([1, 2, 2, 3]), false); // duplikat bukan consecutive murni
+  });
+
+  it('checkSortirSafetyLock harus mendeteksi status terkunci dengan benar', () => {
+    // Sesi normal tanpa kemas dan status SORTED -> Tidak terkunci
+    const normalSession = {
+      hasil_kemas: [],
+      sortir_pack_details: [
+        { pack_detail: { status: 'SORTED' } },
+        { pack_detail: { status: 'SORTED' } },
+      ],
+    };
+    assert.equal(checkSortirSafetyLock(normalSession).isLocked, false);
+
+    // Sesi dengan relasi hasil_kemas -> Terkunci
+    const packedKemasSession = {
+      hasil_kemas: [{ id: 1 }],
+      sortir_pack_details: [{ pack_detail: { status: 'SORTED' } }],
+    };
+    const kemasLock = checkSortirSafetyLock(packedKemasSession, 'dibatalkan');
+    assert.equal(kemasLock.isLocked, true);
+    assert.match(kemasLock.message, /hasil kemas doos/i);
+
+    // Sesi dengan salah satu pack status PACKED -> Terkunci
+    const packedStatusSession = {
+      hasil_kemas: [],
+      sortir_pack_details: [
+        { pack_detail: { status: 'SORTED' } },
+        { pack_detail: { status: 'PACKED' } },
+      ],
+    };
+    const packLock = checkSortirSafetyLock(packedStatusSession, 'diperbarui');
+    assert.equal(packLock.isLocked, true);
+    assert.match(packLock.message, /PACKED atau SHIPPED/i);
+
+    // Sesi dengan salah satu pack status SHIPPED -> Terkunci
+    const shippedStatusSession = {
+      hasil_kemas: [],
+      sortir_pack_details: [
+        { pack_detail: { status: 'SHIPPED' } },
+      ],
+    };
+    assert.equal(checkSortirSafetyLock(shippedStatusSession).isLocked, true);
   });
 });

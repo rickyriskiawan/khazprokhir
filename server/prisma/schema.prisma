@@ -261,6 +261,8 @@ model ProsesSortir {
   shift          Shift        @relation(fields: [shift_id], references: [id])
   operator_id    Int
   operator       User         @relation(fields: [operator_id], references: [id])
+  penyortir_1    String       // Nama petugas fisik penyortir 1
+  penyortir_2    String       // Nama petugas fisik penyortir 2
   tanggal_sortir DateTime     @db.Date
   total_brood    Int          // total_pack * 45 (100% utuh tanpa reject)
   total_bilyet   BigInt       // total_brood * 1000
