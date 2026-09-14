@@ -33,6 +33,7 @@ export async function createKemas(req, res) {
       no_doos_awal,
       no_ba_pengemasan,
       proses_sortir_id,
+      status = 'SIAP_KEMAS',
       catatan,
     } = req.body;
 
@@ -122,6 +123,17 @@ export async function createKemas(req, res) {
       });
     }
 
+    // Periksa apakah ada pack yang sudah di-booking dalam antrian kemas lain
+    const alreadyBookedPacks = requestedPacks.filter((p) => p.hasil_kemas_id !== null);
+    if (alreadyBookedPacks.length > 0) {
+      const bookedDetails = alreadyBookedPacks.map((p) => `#${p.nomor_pack}`).join(', ');
+      return errorResponse(res, {
+        status: 400,
+        error: 'PackAlreadyBooked',
+        message: `Gagal melakukan pengemasan: Pack berikut sudah terdaftar dalam antrian kemas lain: ${bookedDetails}.`,
+      });
+    }
+
     // 5. Kalkulasi Doos & Bilyet (Rasio 4 Pack = 9 Doos)
     const totalDoos = calculateDoosFromPack(totalPack);
     const noDoosAkhir = no_doos_awal + totalDoos - 1;
@@ -174,7 +186,7 @@ export async function createKemas(req, res) {
           shift_id,
           operator_id: req.user.id,
           tanggal_kemas,
-          status: 'READY',
+          status,
           catatan: catatan || null,
         },
         include: {
@@ -204,7 +216,7 @@ export async function createKemas(req, res) {
         data: kemasDetailsData,
       });
 
-      // C. Update status seluruh pack menjadi PACKED dan set no_doos_range & hasil_kemas_id
+      // C. Update pack: jika status === 'READY' -> status = 'PACKED'; jika 'SIAP_KEMAS' -> tetap 'SORTED'
       await tx.packDetail.updateMany({
         where: {
           batch_id,
@@ -214,7 +226,7 @@ export async function createKemas(req, res) {
           },
         },
         data: {
-          status: 'PACKED',
+          status: status === 'READY' ? 'PACKED' : 'SORTED',
           hasil_kemas_id: kemas.id,
           no_doos_range: `Doos ${no_doos_awal}-${noDoosAkhir}`,
         },
@@ -248,9 +260,10 @@ export async function createKemas(req, res) {
       ipAddress: req.ip,
     });
 
+    const statusLabel = status === 'READY' ? 'selesai dikemas (READY)' : 'didaftarkan siap kemas (SIAP_KEMAS)';
     return successResponse(res, {
       status: 201,
-      message: `Hasil pengemasan doos berhasil dicatat (${totalPack} pack = ${totalDoos} doos [Doos ${no_doos_awal}-${noDoosAkhir}]).`,
+      message: `Hasil pengemasan doos berhasil ${statusLabel} (${totalPack} pack = ${totalDoos} doos [Doos ${no_doos_awal}-${noDoosAkhir}]).`,
       data: createdKemas,
     });
   } catch (err) {
@@ -466,6 +479,7 @@ export async function getAvailableSortedPacks(req, res) {
       where: {
         batch_id: bId,
         status: 'SORTED',
+        hasil_kemas_id: null,
       },
       orderBy: { nomor_pack: 'asc' },
     });
@@ -710,6 +724,145 @@ export async function updateKemas(req, res) {
 }
 
 /**
+ * Konfirmasi selesai pengemasan fisik doos (Penyelesaian Fisik Antar-Shift)
+ * Mengubah status hasil kemas dari SIAP_KEMAS menjadi READY
+ * Mendukung pembaruan shift_id (shift aktual yang menyelesaikan fisik) dan tanggal_kemas
+ * POST /api/kemas/:id/complete
+ */
+export async function completeKemas(req, res) {
+  try {
+    const { id } = req.params;
+    const kemasId = parseInt(id, 10);
+
+    if (isNaN(kemasId)) {
+      return errorResponse(res, {
+        status: 400,
+        error: 'BadRequest',
+        message: 'ID hasil kemas harus berupa angka.',
+      });
+    }
+
+    const kemas = await prisma.hasilKemas.findUnique({
+      where: { id: kemasId },
+      include: {
+        batch: {
+          include: {
+            emisi: {
+              include: { denominasi: true },
+            },
+          },
+        },
+        kemas_pack_details: true,
+      },
+    });
+
+    if (!kemas) {
+      return errorResponse(res, {
+        status: 404,
+        error: 'NotFound',
+        message: `Hasil kemas dengan ID ${kemasId} tidak ditemukan.`,
+      });
+    }
+
+    if (kemas.status !== 'SIAP_KEMAS') {
+      return errorResponse(res, {
+        status: 400,
+        error: 'InvalidStatusError',
+        message: `Hanya hasil kemas dengan status SIAP_KEMAS yang dapat diselesaikan (Status saat ini: ${kemas.status}).`,
+      });
+    }
+
+    const { shift_id, tanggal_kemas, catatan } = req.body;
+
+    if (shift_id) {
+      const shift = await prisma.shift.findUnique({
+        where: { id: shift_id },
+      });
+      if (!shift) {
+        return errorResponse(res, {
+          status: 404,
+          error: 'NotFound',
+          message: `Shift dengan ID ${shift_id} tidak ditemukan.`,
+        });
+      }
+    }
+
+    const updateData = {
+      status: 'READY',
+    };
+    if (shift_id !== undefined) updateData.shift_id = shift_id;
+    if (tanggal_kemas !== undefined) updateData.tanggal_kemas = tanggal_kemas;
+    if (catatan !== undefined) updateData.catatan = catatan || null;
+
+    const completedKemas = await prisma.$transaction(async (tx) => {
+      // 1. Update HasilKemas
+      const updated = await tx.hasilKemas.update({
+        where: { id: kemasId },
+        data: updateData,
+        include: {
+          batch: {
+            include: {
+              emisi: {
+                include: { denominasi: true },
+              },
+            },
+          },
+          denominasi: true,
+          shift: true,
+          operator: {
+            select: USER_SAFE_SELECT,
+          },
+          proses_sortir: true,
+        },
+      });
+
+      // 2. Update status seluruh PackDetail menjadi PACKED
+      const packIds = kemas.kemas_pack_details.map((kpd) => kpd.pack_detail_id);
+      if (packIds.length > 0) {
+        await tx.packDetail.updateMany({
+          where: { id: { in: packIds } },
+          data: { status: 'PACKED' },
+        });
+      }
+
+      return updated;
+    });
+
+    // 3. Audit Log
+    await createAuditLog({
+      userId: req.user?.id,
+      action: 'UPDATE',
+      module: 'kemas',
+      tableName: 'hasil_kemas',
+      recordId: kemasId,
+      oldValue: {
+        status: kemas.status,
+        shift_id: kemas.shift_id,
+        tanggal_kemas: kemas.tanggal_kemas,
+      },
+      newValue: {
+        status: 'READY',
+        shift_id: completedKemas.shift_id,
+        tanggal_kemas: completedKemas.tanggal_kemas,
+      },
+      ipAddress: req.ip,
+    });
+
+    return successResponse(res, {
+      status: 200,
+      message: `Hasil kemas ID ${kemasId} (Doos ${kemas.no_doos_awal}-${kemas.no_doos_akhir}) berhasil diselesaikan. Status kemasan berubah menjadi READY (${kemas.total_pack} pack berstatus PACKED).`,
+      data: completedKemas,
+    });
+  } catch (err) {
+    return errorResponse(res, {
+      status: 500,
+      message: 'Gagal menyelesaikan pengemasan fisik doos.',
+      error: err.message,
+    });
+  }
+}
+
+/**
  * Pembatalan hasil kemas doos (Hanya oleh SUPERVISOR)
  * Mengembalikan status pack kembali ke SORTED dan menghapus record kemas
  * DELETE /api/kemas/:id
@@ -869,12 +1022,35 @@ export async function getKemasSummaryToday(req, res) {
     let totalDoos = 0;
     let totalBilyet = 0n;
 
+    // Pisahkan output fisik jadi (READY / SHIPPED) vs antrian siap kemas (SIAP_KEMAS)
+    let totalKemasReady = 0;
+    let totalPackReady = 0;
+    let totalDoosReady = 0;
+    let totalBilyetReady = 0n;
+
+    let totalKemasSiapKemas = 0;
+    let totalPackSiapKemas = 0;
+    let totalDoosSiapKemas = 0;
+    let totalBilyetSiapKemas = 0n;
+
     const perDenominasi = {};
 
     for (const k of kemasRecords) {
       totalPack += k.total_pack;
       totalDoos += k.total_doos;
       totalBilyet += BigInt(k.total_bilyet);
+
+      if (k.status === 'READY' || k.status === 'SHIPPED') {
+        totalKemasReady += 1;
+        totalPackReady += k.total_pack;
+        totalDoosReady += k.total_doos;
+        totalBilyetReady += BigInt(k.total_bilyet);
+      } else if (k.status === 'SIAP_KEMAS') {
+        totalKemasSiapKemas += 1;
+        totalPackSiapKemas += k.total_pack;
+        totalDoosSiapKemas += k.total_doos;
+        totalBilyetSiapKemas += BigInt(k.total_bilyet);
+      }
 
       const denomName = k.denominasi?.nama || k.batch?.emisi?.denominasi?.nama || 'UNKNOWN';
       const denomNilai = k.denominasi?.nilai || k.batch?.emisi?.denominasi?.nilai || 0;
@@ -887,6 +1063,12 @@ export async function getKemasSummaryToday(req, res) {
           total_pack: 0,
           total_doos: 0,
           total_bilyet: 0n,
+          total_pack_ready: 0,
+          total_doos_ready: 0,
+          total_bilyet_ready: 0n,
+          total_pack_siap_kemas: 0,
+          total_doos_siap_kemas: 0,
+          total_bilyet_siap_kemas: 0n,
         };
       }
 
@@ -894,11 +1076,23 @@ export async function getKemasSummaryToday(req, res) {
       perDenominasi[denomName].total_pack += k.total_pack;
       perDenominasi[denomName].total_doos += k.total_doos;
       perDenominasi[denomName].total_bilyet += BigInt(k.total_bilyet);
+
+      if (k.status === 'READY' || k.status === 'SHIPPED') {
+        perDenominasi[denomName].total_pack_ready += k.total_pack;
+        perDenominasi[denomName].total_doos_ready += k.total_doos;
+        perDenominasi[denomName].total_bilyet_ready += BigInt(k.total_bilyet);
+      } else if (k.status === 'SIAP_KEMAS') {
+        perDenominasi[denomName].total_pack_siap_kemas += k.total_pack;
+        perDenominasi[denomName].total_doos_siap_kemas += k.total_doos;
+        perDenominasi[denomName].total_bilyet_siap_kemas += BigInt(k.total_bilyet);
+      }
     }
 
     const rincianDenominasi = Object.values(perDenominasi).map((item) => ({
       ...item,
       total_bilyet: item.total_bilyet.toString(),
+      total_bilyet_ready: item.total_bilyet_ready.toString(),
+      total_bilyet_siap_kemas: item.total_bilyet_siap_kemas.toString(),
     }));
 
     return successResponse(res, {
@@ -910,6 +1104,18 @@ export async function getKemasSummaryToday(req, res) {
         total_pack: totalPack,
         total_doos: totalDoos,
         total_bilyet: totalBilyet.toString(),
+        output_selesai: {
+          total_kemas: totalKemasReady,
+          total_pack: totalPackReady,
+          total_doos: totalDoosReady,
+          total_bilyet: totalBilyetReady.toString(),
+        },
+        antrian_wip: {
+          total_kemas: totalKemasSiapKemas,
+          total_pack: totalPackSiapKemas,
+          total_doos: totalDoosSiapKemas,
+          total_bilyet: totalBilyetSiapKemas.toString(),
+        },
         rincian_denominasi: rincianDenominasi,
       },
     });

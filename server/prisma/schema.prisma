@@ -39,6 +39,7 @@ enum StatusSortir {
 }
 
 enum StatusKemas {
+  SIAP_KEMAS
   READY
   SHIPPED
 }
@@ -317,7 +318,7 @@ model HasilKemas {
   operator_id      Int
   operator         User          @relation(fields: [operator_id], references: [id])
   tanggal_kemas    DateTime      @db.Date
-  status           StatusKemas   @default(READY)
+  status           StatusKemas   @default(SIAP_KEMAS)
   catatan          String?       @db.Text
   created_at       DateTime      @default(now())
   updated_at       DateTime      @updatedAt
