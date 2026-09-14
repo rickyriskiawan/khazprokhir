@@ -398,6 +398,46 @@ describe('Integration Test: Modul 2 - Proses Sortir & Penataan Pack (Step 6)', (
     assert.strictEqual(json.data.total_brood >= 360, true);
   });
 
+  it('Safety Locking - Menolak update atau delete sesi sortir jika pack telah berstatus PACKED', async () => {
+    // Ubah sementara pack 1 menjadi PACKED
+    await prisma.packDetail.updateMany({
+      where: { batch_id: testBatchId, nomor_pack: 1 },
+      data: { status: 'PACKED' },
+    });
+
+    try {
+      // Coba PUT update
+      const updateRes = await fetch(`${baseUrl}/api/sortir/${createdSortirId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${operatorToken}`,
+        },
+        body: JSON.stringify({ catatan: 'Coba ubah catatan yang terkunci' }),
+      });
+      const updateJson = await updateRes.json();
+      assert.strictEqual(updateRes.status, 400);
+      assert.strictEqual(updateJson.error, 'LockedSortirSession');
+      assert.match(updateJson.message, /terkunci/i);
+
+      // Coba DELETE
+      const delRes = await fetch(`${baseUrl}/api/sortir/${createdSortirId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${supervisorToken}` },
+      });
+      const delJson = await delRes.json();
+      assert.strictEqual(delRes.status, 400);
+      assert.strictEqual(delJson.error, 'LockedSortirSession');
+      assert.match(delJson.message, /terkunci/i);
+    } finally {
+      // Kembalikan pack 1 ke SORTED agar test delete berikutnya dapat berjalan
+      await prisma.packDetail.updateMany({
+        where: { batch_id: testBatchId, nomor_pack: 1 },
+        data: { status: 'SORTED' },
+      });
+    }
+  });
+
   it('DELETE /api/sortir/:id - Ditolak jika dilakukan oleh OPERATOR (403 Forbidden)', async () => {
     const res = await fetch(`${baseUrl}/api/sortir/${createdSortirId}`, {
       method: 'DELETE',

@@ -56,3 +56,4 @@ export const updateSortirSchema = z.object({
   penyortir_2: z.string().trim().min(1, 'Nama Penyortir 2 tidak boleh kosong').max(100).optional(),
   catatan: z.string().trim().nullable().optional(),
 });
+

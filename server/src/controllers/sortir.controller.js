@@ -11,6 +11,45 @@ const USER_SAFE_SELECT = {
   role: true,
 };
 
+const SORTIR_LOCK_CHECK_INCLUDE = {
+  sortir_pack_details: {
+    include: { pack_detail: true },
+  },
+  hasil_kemas: true,
+};
+
+/**
+ * Memeriksa safety locking pada sesi sortir.
+ * Sesi sortir terkunci jika:
+ * 1. Sudah terhubung dengan data hasil kemas doos (tabel hasil_kemas), ATAU
+ * 2. Terdapat pack di dalamnya yang sudah berstatus PACKED atau SHIPPED.
+ *
+ * @param {object} session Record proses_sortir yang menyertakan hasil_kemas dan sortir_pack_details.pack_detail
+ * @param {string} actionLabel Tindakan yang sedang dicoba (misal: 'diperbarui', 'dibatalkan')
+ * @returns {{ isLocked: boolean, message?: string }}
+ */
+function checkSortirSafetyLock(session, actionLabel = 'diubah atau dibatalkan') {
+  if (session.hasil_kemas && session.hasil_kemas.length > 0) {
+    return {
+      isLocked: true,
+      message: `Sesi sortir terkunci: Tidak dapat ${actionLabel} karena pack telah terhubung dengan data hasil kemas doos. Batalkan proses pengemasan terlebih dahulu.`,
+    };
+  }
+
+  const hasPackedPacks = session.sortir_pack_details?.some(
+    (spd) => spd.pack_detail?.status === 'PACKED' || spd.pack_detail?.status === 'SHIPPED'
+  );
+
+  if (hasPackedPacks) {
+    return {
+      isLocked: true,
+      message: `Sesi sortir terkunci: Tidak dapat ${actionLabel} karena sebagian atau seluruh pack telah berstatus PACKED atau SHIPPED.`,
+    };
+  }
+
+  return { isLocked: false };
+}
+
 /**
  * Membuat sesi sortir baru (Zero Reject, Kelipatan 4 Pack)
  * POST /api/sortir
@@ -453,12 +492,7 @@ export async function updateSortir(req, res) {
 
     const existing = await prisma.prosesSortir.findUnique({
       where: { id: sortirId },
-      include: {
-        sortir_pack_details: {
-          include: { pack_detail: true },
-        },
-        hasil_kemas: true,
-      },
+      include: SORTIR_LOCK_CHECK_INCLUDE,
     });
 
     if (!existing) {
@@ -469,26 +503,13 @@ export async function updateSortir(req, res) {
       });
     }
 
-    // Safety Locking: Cek apakah pack sudah masuk ke proses pengemasan doos
-    if (existing.hasil_kemas && existing.hasil_kemas.length > 0) {
+    // Safety Locking
+    const lockCheck = checkSortirSafetyLock(existing, 'diperbarui');
+    if (lockCheck.isLocked) {
       return errorResponse(res, {
         status: 400,
         error: 'LockedSortirSession',
-        message:
-          'Sesi sortir terkunci: Pack telah terhubung dengan data hasil kemas doos. Batalkan proses pengemasan terlebih dahulu.',
-      });
-    }
-
-    const hasPackedPacks = existing.sortir_pack_details.some(
-      (spd) => spd.pack_detail.status === 'PACKED' || spd.pack_detail.status === 'SHIPPED'
-    );
-
-    if (hasPackedPacks) {
-      return errorResponse(res, {
-        status: 400,
-        error: 'LockedSortirSession',
-        message:
-          'Sesi sortir terkunci: Sebagian atau seluruh pack telah berstatus PACKED atau SHIPPED.',
+        message: lockCheck.message,
       });
     }
 
@@ -657,12 +678,7 @@ export async function deleteSortir(req, res) {
 
     const existing = await prisma.prosesSortir.findUnique({
       where: { id: sortirId },
-      include: {
-        sortir_pack_details: {
-          include: { pack_detail: true },
-        },
-        hasil_kemas: true,
-      },
+      include: SORTIR_LOCK_CHECK_INCLUDE,
     });
 
     if (!existing) {
@@ -673,26 +689,13 @@ export async function deleteSortir(req, res) {
       });
     }
 
-    // Safety Locking: Cek apakah ada pack yang sudah dikemas (PACKED / SHIPPED) atau punya relasi hasil_kemas
-    if (existing.hasil_kemas && existing.hasil_kemas.length > 0) {
+    // Safety Locking
+    const lockCheck = checkSortirSafetyLock(existing, 'dibatalkan');
+    if (lockCheck.isLocked) {
       return errorResponse(res, {
         status: 400,
         error: 'LockedSortirSession',
-        message:
-          'Sesi sortir tidak dapat dibatalkan karena pack telah terhubung dengan data hasil kemas doos. Batalkan proses pengemasan terlebih dahulu.',
-      });
-    }
-
-    const hasLockedPacks = existing.sortir_pack_details.some(
-      (spd) => spd.pack_detail.status === 'PACKED' || spd.pack_detail.status === 'SHIPPED'
-    );
-
-    if (hasLockedPacks) {
-      return errorResponse(res, {
-        status: 400,
-        error: 'LockedSortirSession',
-        message:
-          'Sesi sortir tidak dapat dibatalkan karena sebagian pack telah berstatus PACKED atau SHIPPED.',
+        message: lockCheck.message,
       });
     }
 
