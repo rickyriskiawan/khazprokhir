@@ -318,6 +318,7 @@ model HasilKemas {
   operator         User          @relation(fields: [operator_id], references: [id])
   tanggal_kemas    DateTime      @db.Date
   status           StatusKemas   @default(READY)
+  catatan          String?       @db.Text
   created_at       DateTime      @default(now())
   updated_at       DateTime      @updatedAt
 
