@@ -48,6 +48,7 @@ enum StatusPengiriman {
   DRAFT
   APPROVED
   SHIPPED
+  CANCELLED
 }
 
 enum AuditAction {

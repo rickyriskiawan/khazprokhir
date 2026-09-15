@@ -175,3 +175,79 @@ export function formatNumber(num) {
   if (isNaN(val)) return '0';
   return val.toLocaleString('id-ID');
 }
+
+const INDONESIAN_MONTHS = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
+/**
+ * Format tanggal ke format resmi Bahasa Indonesia (contoh: "15 September 2026")
+ * @param {string|Date} dateInput 
+ * @returns {string}
+ */
+export function formatIndonesianDate(dateInput) {
+  if (!dateInput) return '-';
+  if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateInput)) {
+    const [yearStr, monthStr, dayStr] = dateInput.slice(0, 10).split('-');
+    const day = parseInt(dayStr, 10);
+    const month = INDONESIAN_MONTHS[parseInt(monthStr, 10) - 1];
+    const year = parseInt(yearStr, 10);
+    if (month && !isNaN(day) && !isNaN(year)) {
+      return `${day} ${month} ${year}`;
+    }
+  }
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '-';
+  return `${d.getDate()} ${INDONESIAN_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/**
+ * Konversi angka atau BigInt ke teks kata-kata terbilang Bahasa Indonesia
+ * Mendukung bilangan hingga skala Triliun secara presisi (contoh: 20.000.000.000 -> "Dua Puluh Miliar")
+ * @param {number|bigint|string} amount 
+ * @returns {string}
+ */
+export function terbilang(amount) {
+  if (amount === undefined || amount === null || amount === '') return '';
+  const num = typeof amount === 'bigint' ? amount : BigInt(Math.floor(Number(amount)));
+  if (num === 0n) return 'Nol';
+  if (num < 0n) return 'Minus ' + terbilang(-num);
+
+  const units = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
+
+  function convert(n) {
+    if (n < 12n) {
+      return units[Number(n)];
+    } else if (n < 20n) {
+      return convert(n - 10n) + ' Belas';
+    } else if (n < 100n) {
+      const sisa = n % 10n;
+      return convert(n / 10n) + ' Puluh' + (sisa > 0n ? ' ' + convert(sisa) : '');
+    } else if (n < 200n) {
+      const sisa = n % 100n;
+      return 'Seratus' + (sisa > 0n ? ' ' + convert(sisa) : '');
+    } else if (n < 1000n) {
+      const sisa = n % 100n;
+      return convert(n / 100n) + ' Ratus' + (sisa > 0n ? ' ' + convert(sisa) : '');
+    } else if (n < 2000n) {
+      const sisa = n % 1000n;
+      return 'Seribu' + (sisa > 0n ? ' ' + convert(sisa) : '');
+    } else if (n < 1_000_000n) {
+      const sisa = n % 1000n;
+      return convert(n / 1000n) + ' Ribu' + (sisa > 0n ? ' ' + convert(sisa) : '');
+    } else if (n < 1_000_000_000n) {
+      const sisa = n % 1_000_000n;
+      return convert(n / 1_000_000n) + ' Juta' + (sisa > 0n ? ' ' + convert(sisa) : '');
+    } else if (n < 1_000_000_000_000n) {
+      const sisa = n % 1_000_000_000n;
+      return convert(n / 1_000_000_000n) + ' Miliar' + (sisa > 0n ? ' ' + convert(sisa) : '');
+    } else if (n < 1_000_000_000_000_000n) {
+      const sisa = n % 1_000_000_000_000n;
+      return convert(n / 1_000_000_000_000n) + ' Triliun' + (sisa > 0n ? ' ' + convert(sisa) : '');
+    }
+    return n.toString();
+  }
+
+  return convert(num);
+}

@@ -261,3 +261,131 @@ export function formatDoosRanges(numbers) {
 
   return ranges;
 }
+
+/**
+ * Memvalidasi daftar hasil kemas yang akan dikirim ke Bank Indonesia
+ * Persyaratan:
+ * 1. hasilKemasList tidak boleh kosong
+ * 2. Seluruh doos harus memiliki denominasi_id dan tahun_anggaran yang cocok
+ * 3. Seluruh doos harus berstatus READY (bukan SIAP_KEMAS atau SHIPPED)
+ * 4. Nomor doos tidak boleh tumpang tindih (overlap)
+ * 5. Nomor doos harus berurutan secara kontinyu tanpa celah (no gap)
+ * 
+ * @param {Array<object>} hasilKemasList Daftar record HasilKemas
+ * @param {number} [denominasiId] ID Denominasi target
+ * @param {number} [tahunAnggaran] Tahun anggaran target
+ * @returns {{ valid: boolean, error?: string, message?: string, sorted?: Array<object>, minDoos?: number, maxDoos?: number, totalDoos?: number, totalBilyet?: bigint, totalNominal?: number, baRekap?: string }}
+ */
+export function validatePengirimanDoos(hasilKemasList, denominasiId, tahunAnggaran) {
+  if (!Array.isArray(hasilKemasList) || hasilKemasList.length === 0) {
+    return {
+      valid: false,
+      error: 'EmptyHasilKemasList',
+      message: 'Daftar hasil kemas untuk pengiriman tidak boleh kosong.',
+    };
+  }
+
+  const dId = denominasiId ? Number(denominasiId) : null;
+  const ta = tahunAnggaran ? Number(tahunAnggaran) : null;
+
+  // 1. Periksa keseragaman denominasi, tahun anggaran, dan status READY
+  for (const item of hasilKemasList) {
+    if (dId && item.denominasi_id !== dId) {
+      return {
+        valid: false,
+        error: 'DenominasiMismatch',
+        message: `Terdapat hasil kemas (ID ${item.id}) dengan denominasi berbeda (${item.denominasi_id} vs ${dId}).`,
+      };
+    }
+    if (ta && item.tahun_anggaran !== ta) {
+      return {
+        valid: false,
+        error: 'TahunAnggaranMismatch',
+        message: `Terdapat hasil kemas (ID ${item.id}) dengan tahun anggaran berbeda (${item.tahun_anggaran} vs ${ta}).`,
+      };
+    }
+    if (item.status === 'SIAP_KEMAS') {
+      return {
+        valid: false,
+        error: 'HasilKemasNotReady',
+        message: `Hasil kemas (ID ${item.id}, Doos ${item.no_doos_awal}-${item.no_doos_akhir}) masih berstatus SIAP_KEMAS dan belum siap dikirim. Selesaikan proses kemas fisik terlebih dahulu.`,
+      };
+    }
+    if (item.status === 'SHIPPED') {
+      return {
+        valid: false,
+        error: 'HasilKemasAlreadyShipped',
+        message: `Hasil kemas (ID ${item.id}, Doos ${item.no_doos_awal}-${item.no_doos_akhir}) sudah pernah dikirim ke Bank Indonesia.`,
+      };
+    }
+    if (item.status !== 'READY') {
+      return {
+        valid: false,
+        error: 'InvalidStatusKemas',
+        message: `Hasil kemas (ID ${item.id}) memiliki status tidak valid: ${item.status}. Hanya status READY yang dapat dikirim.`,
+      };
+    }
+  }
+
+  // 2. Urutkan berdasarkan no_doos_awal
+  const sorted = [...hasilKemasList].sort((a, b) => a.no_doos_awal - b.no_doos_awal);
+
+  // 3. Periksa kontinuitas (tanpa overlap dan tanpa gap)
+  let totalDoosSum = 0;
+  let totalBilyetSum = 0n;
+  let totalNominalSum = 0;
+  const baList = [];
+
+  for (let i = 0; i < sorted.length; i++) {
+    const current = sorted[i];
+    const rangeCount = current.no_doos_akhir - current.no_doos_awal + 1;
+    if (rangeCount !== current.total_doos) {
+      return {
+        valid: false,
+        error: 'InvalidDoosRange',
+        message: `Rentang doos ${current.no_doos_awal}-${current.no_doos_akhir} (${rangeCount} doos) tidak cocok dengan total doos tercatat (${current.total_doos}) pada ID ${current.id}.`,
+      };
+    }
+
+    if (i > 0) {
+      const prev = sorted[i - 1];
+      // Cek overlap
+      if (current.no_doos_awal <= prev.no_doos_akhir) {
+        return {
+          valid: false,
+          error: 'DoosOverlapDetected',
+          message: `Tumpang tindih (overlap) nomor doos terdeteksi antara Doos ${prev.no_doos_awal}-${prev.no_doos_akhir} dan Doos ${current.no_doos_awal}-${current.no_doos_akhir}.`,
+        };
+      }
+      // Cek gap
+      if (current.no_doos_awal > prev.no_doos_akhir + 1) {
+        return {
+          valid: false,
+          error: 'DoosGapDetected',
+          message: `Celah (gap) nomor doos terdeteksi antara Doos ${prev.no_doos_akhir} dan Doos ${current.no_doos_awal}. Pengiriman ke BI harus berurutan tanpa ada doos yang terlewat.`,
+        };
+      }
+    }
+
+    totalDoosSum += current.total_doos;
+    totalBilyetSum += BigInt(current.total_bilyet);
+    totalNominalSum += Number(current.total_nominal || 0);
+    if (current.no_ba_pengemasan && !baList.includes(current.no_ba_pengemasan)) {
+      baList.push(current.no_ba_pengemasan);
+    }
+  }
+
+  const minDoos = sorted[0].no_doos_awal;
+  const maxDoos = sorted[sorted.length - 1].no_doos_akhir;
+
+  return {
+    valid: true,
+    sorted,
+    minDoos,
+    maxDoos,
+    totalDoos: totalDoosSum,
+    totalBilyet: totalBilyetSum,
+    totalNominal: totalNominalSum,
+    baRekap: baList.join(', '),
+  };
+}
