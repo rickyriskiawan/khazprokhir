@@ -9,6 +9,7 @@ import batchRoutes from "./routes/batch.routes.js";
 import bonMasukRoutes from "./routes/bon-masuk.routes.js";
 import sortirRoutes from "./routes/sortir.routes.js";
 import kemasRoutes from "./routes/kemas.routes.js";
+import monitoringDoosRoutes from "./routes/monitoring-doos.routes.js";
 
 const app = express();
 
@@ -64,6 +65,7 @@ app.use("/api/batches", batchRoutes);
 app.use("/api/bon-masuk", bonMasukRoutes);
 app.use("/api/sortir", sortirRoutes);
 app.use("/api/kemas", kemasRoutes);
+app.use("/api/monitoring-doos", monitoringDoosRoutes);
 
 // 404 Route Handler
 app.use((req, res) => {

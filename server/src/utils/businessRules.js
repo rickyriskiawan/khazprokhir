@@ -227,3 +227,37 @@ export function checkKemasSafetyLock(session, actionLabel = 'diubah atau dibatal
 
   return { isLocked: false };
 }
+
+/**
+ * Memformat daftar nomor doos menjadi rentang string yang mudah dibaca
+ * Contoh: [1, 2, 3, 5, 7, 8, 9] -> ["Doos 1-3", "Doos 5", "Doos 7-9"]
+ * @param {number[]} numbers 
+ * @returns {string[]}
+ */
+export function formatDoosRanges(numbers) {
+  if (!Array.isArray(numbers) || numbers.length === 0) return [];
+
+  const sorted = [...new Set(numbers.map(Number))].filter(n => Number.isInteger(n) && n > 0).sort((a, b) => a - b);
+  if (sorted.length === 0) return [];
+
+  const ranges = [];
+  let start = sorted[0];
+  let prev = sorted[0];
+
+  for (let i = 1; i <= sorted.length; i++) {
+    const current = sorted[i];
+    if (current === prev + 1) {
+      prev = current;
+    } else {
+      if (start === prev) {
+        ranges.push(`Doos ${start}`);
+      } else {
+        ranges.push(`Doos ${start}-${prev}`);
+      }
+      start = current;
+      prev = current;
+    }
+  }
+
+  return ranges;
+}
