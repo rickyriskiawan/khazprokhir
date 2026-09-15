@@ -13,6 +13,8 @@ import {
   calculateNominal,
   formatRupiah,
   formatNumber,
+  formatIndonesianDate,
+  terbilang,
 } from '../../src/utils/converter.js';
 
 import {
@@ -25,6 +27,7 @@ import {
   checkSortirSafetyLock,
   checkKemasSafetyLock,
   formatDoosRanges,
+  validatePengirimanDoos,
 } from '../../src/utils/businessRules.js';
 
 describe('Unit Test: Konversi Satuan Uang Kertas', () => {
@@ -257,6 +260,95 @@ describe('Unit Test: Aturan Bisnis & Validasi', () => {
     assert.deepEqual(formatDoosRanges([10, 11, 12, 15, 20, 21]), ['Doos 10-12', 'Doos 15', 'Doos 20-21']);
     // Menghilangkan duplikat dan mengurutkan
     assert.deepEqual(formatDoosRanges([3, 1, 2, 2]), ['Doos 1-3']);
+  });
+
+  it('terbilang harus mengonversi angka ke kata-kata bahasa Indonesia dengan benar', () => {
+    assert.equal(terbilang(0), 'Nol');
+    assert.equal(terbilang(1), 'Satu');
+    assert.equal(terbilang(10), 'Sepuluh');
+    assert.equal(terbilang(11), 'Sebelas');
+    assert.equal(terbilang(15), 'Lima Belas');
+    assert.equal(terbilang(20), 'Dua Puluh');
+    assert.equal(terbilang(25), 'Dua Puluh Lima');
+    assert.equal(terbilang(100), 'Seratus');
+    assert.equal(terbilang(105), 'Seratus Lima');
+    assert.equal(terbilang(112), 'Seratus Dua Belas');
+    assert.equal(terbilang(200), 'Dua Ratus');
+    assert.equal(terbilang(1000), 'Seribu');
+    assert.equal(terbilang(1050), 'Seribu Lima Puluh');
+    assert.equal(terbilang(2000), 'Dua Ribu');
+    assert.equal(terbilang(100_000), 'Seratus Ribu');
+    assert.equal(terbilang(1_000_000), 'Satu Juta');
+    assert.equal(terbilang(20_000_000_000), 'Dua Puluh Miliar');
+    assert.equal(terbilang(4_000_000_000_000n), 'Empat Triliun');
+    assert.equal(terbilang(40_000_000_000_000n), 'Empat Puluh Triliun');
+  });
+
+  it('formatIndonesianDate harus memformat tanggal dengan benar', () => {
+    assert.equal(formatIndonesianDate('2026-09-15'), '15 September 2026');
+    assert.equal(formatIndonesianDate('2026-01-01'), '1 Januari 2026');
+    assert.equal(formatIndonesianDate('2026-12-31'), '31 Desember 2026');
+    assert.equal(formatIndonesianDate(''), '-');
+    assert.equal(formatIndonesianDate(null), '-');
+  });
+
+  it('validatePengirimanDoos harus memvalidasi keseragaman, kontinuitas tanpa gap, dan status READY', () => {
+    // 1. Kosong
+    const resEmpty = validatePengirimanDoos([], 1, 2026);
+    assert.equal(resEmpty.valid, false);
+    assert.equal(resEmpty.error, 'EmptyHasilKemasList');
+
+    // 2. Denominasi mismatch
+    const resDenom = validatePengirimanDoos([
+      { id: 1, denominasi_id: 1, tahun_anggaran: 2026, status: 'READY', no_doos_awal: 1, no_doos_akhir: 9, total_doos: 9, total_bilyet: 180000n, total_nominal: 18000000000 },
+      { id: 2, denominasi_id: 2, tahun_anggaran: 2026, status: 'READY', no_doos_awal: 10, no_doos_akhir: 18, total_doos: 9, total_bilyet: 180000n, total_nominal: 18000000000 },
+    ], 1, 2026);
+    assert.equal(resDenom.valid, false);
+    assert.equal(resDenom.error, 'DenominasiMismatch');
+
+    // 3. Status bukan READY (misal SIAP_KEMAS)
+    const resNotReady = validatePengirimanDoos([
+      { id: 1, denominasi_id: 1, tahun_anggaran: 2026, status: 'SIAP_KEMAS', no_doos_awal: 1, no_doos_akhir: 9, total_doos: 9, total_bilyet: 180000n, total_nominal: 18000000000 },
+    ], 1, 2026);
+    assert.equal(resNotReady.valid, false);
+    assert.equal(resNotReady.error, 'HasilKemasNotReady');
+
+    // 4. Status sudah SHIPPED
+    const resAlreadyShipped = validatePengirimanDoos([
+      { id: 1, denominasi_id: 1, tahun_anggaran: 2026, status: 'SHIPPED', no_doos_awal: 1, no_doos_akhir: 9, total_doos: 9, total_bilyet: 180000n, total_nominal: 18000000000 },
+    ], 1, 2026);
+    assert.equal(resAlreadyShipped.valid, false);
+    assert.equal(resAlreadyShipped.error, 'HasilKemasAlreadyShipped');
+
+    // 5. Gap nomor doos terdeteksi
+    const resGap = validatePengirimanDoos([
+      { id: 1, denominasi_id: 1, tahun_anggaran: 2026, status: 'READY', no_doos_awal: 1, no_doos_akhir: 9, total_doos: 9, total_bilyet: 180000n, total_nominal: 18000000000, no_ba_pengemasan: 'BA-01' },
+      { id: 2, denominasi_id: 1, tahun_anggaran: 2026, status: 'READY', no_doos_awal: 19, no_doos_akhir: 27, total_doos: 9, total_bilyet: 180000n, total_nominal: 18000000000, no_ba_pengemasan: 'BA-02' },
+    ], 1, 2026);
+    assert.equal(resGap.valid, false);
+    assert.equal(resGap.error, 'DoosGapDetected');
+    assert.match(resGap.message, /Celah \(gap\) nomor doos terdeteksi/);
+
+    // 6. Overlap nomor doos terdeteksi
+    const resOverlap = validatePengirimanDoos([
+      { id: 1, denominasi_id: 1, tahun_anggaran: 2026, status: 'READY', no_doos_awal: 1, no_doos_akhir: 9, total_doos: 9, total_bilyet: 180000n, total_nominal: 18000000000 },
+      { id: 2, denominasi_id: 1, tahun_anggaran: 2026, status: 'READY', no_doos_awal: 5, no_doos_akhir: 13, total_doos: 9, total_bilyet: 180000n, total_nominal: 18000000000 },
+    ], 1, 2026);
+    assert.equal(resOverlap.valid, false);
+    assert.equal(resOverlap.error, 'DoosOverlapDetected');
+
+    // 7. Sukses valid & berurutan (Doos 1-9 dan Doos 10-18)
+    const resValid = validatePengirimanDoos([
+      { id: 2, denominasi_id: 1, tahun_anggaran: 2026, status: 'READY', no_doos_awal: 10, no_doos_akhir: 18, total_doos: 9, total_bilyet: 180000n, total_nominal: 18000000000, no_ba_pengemasan: 'BA-02' },
+      { id: 1, denominasi_id: 1, tahun_anggaran: 2026, status: 'READY', no_doos_awal: 1, no_doos_akhir: 9, total_doos: 9, total_bilyet: 180000n, total_nominal: 18000000000, no_ba_pengemasan: 'BA-01' },
+    ], 1, 2026);
+    assert.equal(resValid.valid, true);
+    assert.equal(resValid.minDoos, 1);
+    assert.equal(resValid.maxDoos, 18);
+    assert.equal(resValid.totalDoos, 18);
+    assert.equal(resValid.totalBilyet, 360000n);
+    assert.equal(resValid.totalNominal, 36000000000);
+    assert.equal(resValid.baRekap, 'BA-01, BA-02');
   });
 });
 

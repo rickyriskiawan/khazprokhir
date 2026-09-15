@@ -10,6 +10,7 @@ import bonMasukRoutes from "./routes/bon-masuk.routes.js";
 import sortirRoutes from "./routes/sortir.routes.js";
 import kemasRoutes from "./routes/kemas.routes.js";
 import monitoringDoosRoutes from "./routes/monitoring-doos.routes.js";
+import pengirimanRoutes from "./routes/pengiriman.routes.js";
 
 const app = express();
 
@@ -66,6 +67,7 @@ app.use("/api/bon-masuk", bonMasukRoutes);
 app.use("/api/sortir", sortirRoutes);
 app.use("/api/kemas", kemasRoutes);
 app.use("/api/monitoring-doos", monitoringDoosRoutes);
+app.use("/api/pengiriman", pengirimanRoutes);
 
 // 404 Route Handler
 app.use((req, res) => {
