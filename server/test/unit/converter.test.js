@@ -24,6 +24,7 @@ import {
   isConsecutive,
   checkSortirSafetyLock,
   checkKemasSafetyLock,
+  formatDoosRanges,
 } from '../../src/utils/businessRules.js';
 
 describe('Unit Test: Konversi Satuan Uang Kertas', () => {
@@ -246,5 +247,17 @@ describe('Unit Test: Aturan Bisnis & Validasi', () => {
     };
     assert.equal(checkKemasSafetyLock(packShippedKemas).isLocked, true);
   });
+
+  it('formatDoosRanges harus mengelompokkan nomor berurutan menjadi string rentang yang rapi', () => {
+    assert.deepEqual(formatDoosRanges([]), []);
+    assert.deepEqual(formatDoosRanges([1]), ['Doos 1']);
+    assert.deepEqual(formatDoosRanges([1, 2, 3]), ['Doos 1-3']);
+    assert.deepEqual(formatDoosRanges([1, 2, 3, 5, 7, 8, 9]), ['Doos 1-3', 'Doos 5', 'Doos 7-9']);
+    assert.deepEqual(formatDoosRanges([19, 20, 21, 22, 23, 24, 25, 26, 27]), ['Doos 19-27']);
+    assert.deepEqual(formatDoosRanges([10, 11, 12, 15, 20, 21]), ['Doos 10-12', 'Doos 15', 'Doos 20-21']);
+    // Menghilangkan duplikat dan mengurutkan
+    assert.deepEqual(formatDoosRanges([3, 1, 2, 2]), ['Doos 1-3']);
+  });
 });
+
 

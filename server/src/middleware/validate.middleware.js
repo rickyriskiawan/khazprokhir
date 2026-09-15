@@ -25,7 +25,16 @@ export const validate = (schema, source = 'body') => (req, res, next) => {
   }
 
   // Simpan data yang telah diparse/ditransformasi kembali ke request
-  req[source] = result.data;
+  try {
+    req[source] = result.data;
+  } catch {
+    Object.defineProperty(req, source, {
+      value: result.data,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
+  }
   next();
 };
 
