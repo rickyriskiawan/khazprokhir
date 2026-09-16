@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ShieldCheck, Lock, User, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import ThemeToggle from '../../components/common/ThemeToggle';
 import api from '../../services/api';
@@ -24,7 +24,7 @@ export default function LoginPage() {
       const { token, user } = res.data?.data || res.data;
       if (token && user) {
         setAuth(token, user);
-        navigate('/dashboard');
+        navigate('/');
       } else {
         throw new Error('Respons login tidak valid dari server');
       }
@@ -36,20 +36,22 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between transition-colors duration-200">
+    <div className="min-h-screen bg-canvas dark:bg-canvas-dark text-ink dark:text-ink-dark flex flex-col justify-between transition-colors duration-200">
       {/* Top Header */}
-      <header className="px-6 py-4 flex justify-between items-center border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+      <header className="px-6 md:px-8 py-5 flex justify-between items-center border-b border-border dark:border-border-dark bg-surface/70 dark:bg-surface-dark/70 backdrop-blur">
+        <Link to="/" className="flex items-center space-x-3 cursor-pointer">
+          <div className="w-10 h-10 rounded-full bg-pitch dark:bg-white text-white dark:text-pitch flex items-center justify-center font-bold text-sm shadow-sm tracking-tight">
             KP
           </div>
           <div>
-            <span className="font-bold text-sm tracking-tight block">KHAZPROKHIR</span>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block -mt-0.5">
+            <span className="font-bold text-sm tracking-tight block text-ink dark:text-white">
+              KHAZPROKHIR
+            </span>
+            <span className="text-[11px] text-ink-secondary dark:text-ink-secondary-dark block -mt-0.5 font-medium">
               Seksi Khazanah Produk Akhir
             </span>
           </div>
-        </div>
+        </Link>
         <ThemeToggle />
       </header>
 
@@ -57,23 +59,23 @@ export default function LoginPage() {
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-sm">
           {/* Card Container */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-sm dark:shadow-2xl transition-colors duration-200">
+          <div className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-3xl p-7 sm:p-9 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200">
             {/* Header Icon */}
-            <div className="text-center space-y-2 mb-6">
-              <div className="w-12 h-12 mx-auto rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-3">
-                <ShieldCheck className="w-6 h-6" />
+            <div className="text-center space-y-2 mb-7">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white mb-3 shadow-sm">
+                <ShieldCheck className="w-6 h-6" strokeWidth={1.75} />
               </div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+              <h1 className="text-xl font-bold tracking-tight text-ink dark:text-white">
                 Masuk Sistem
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Gunakan kredensial akun operasional Seksi Khazprokhir Anda.
+              <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                Akses operasional monitoring produksi uang kertas
               </p>
             </div>
 
             {/* Error Alert */}
             {errorMessage && (
-              <div className="mb-5 p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 flex items-start gap-2.5 text-rose-700 dark:text-rose-400 text-xs">
+              <div className="mb-5 p-3 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 flex items-start gap-2.5 text-rose-700 dark:text-rose-400 text-xs">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>{errorMessage}</span>
               </div>
@@ -82,11 +84,11 @@ export default function LoginPage() {
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                <label className="text-xs font-semibold text-ink dark:text-white block">
                   Username / ID Operator
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink-muted">
                     <User className="w-4 h-4" />
                   </div>
                   <input
@@ -94,18 +96,18 @@ export default function LoginPage() {
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Contoh: operator1"
-                    className="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                    placeholder="operator"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-full text-xs bg-surface-subtle dark:bg-surface-subtle-dark border border-border dark:border-border-dark text-ink dark:text-white placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-pitch/10 dark:focus:ring-white/10 transition-all"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                <label className="text-xs font-semibold text-ink dark:text-white block">
                   Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink-muted">
                     <Lock className="w-4 h-4" />
                   </div>
                   <input
@@ -113,8 +115,8 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Masukkan password"
-                    className="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                    placeholder="••••••••"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-full text-xs bg-surface-subtle dark:bg-surface-subtle-dark border border-border dark:border-border-dark text-ink dark:text-white placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-pitch/10 dark:focus:ring-white/10 transition-all"
                   />
                 </div>
               </div>
@@ -122,7 +124,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-2 py-2.5 px-4 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 dark:hover:bg-emerald-500 shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full mt-2 py-3 px-4 rounded-full text-xs font-bold text-white bg-pitch hover:bg-pitch-hover dark:bg-white dark:hover:bg-canvas dark:text-pitch shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isLoading ? (
                   <>
@@ -139,9 +141,9 @@ export default function LoginPage() {
             </form>
 
             {/* Test credentials info hint */}
-            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/80 text-center">
-              <p className="text-[11px] text-slate-400">
-                Akun default dev: <span className="font-mono text-emerald-600 dark:text-emerald-400">supervisor</span> / <span className="font-mono text-emerald-600 dark:text-emerald-400">password123</span>
+            <div className="mt-6 pt-4 border-t border-border dark:border-border-dark text-center">
+              <p className="text-[11px] text-ink-muted">
+                Akun dev: <span className="font-mono text-pitch dark:text-white font-semibold">supervisor</span> / <span className="font-mono text-pitch dark:text-white font-semibold">password123</span>
               </p>
             </div>
           </div>
@@ -149,8 +151,8 @@ export default function LoginPage() {
       </main>
 
       {/* Footer */}
-      <footer className="px-6 py-3 text-center border-t border-slate-200 dark:border-slate-800 text-xs text-slate-400">
-        Monitoring Produksi Uang Kertas &bull; Banknote Monitoring System
+      <footer className="px-6 py-4 text-center border-t border-border dark:border-border-dark text-xs text-ink-muted">
+        Seksi Khazanah Produk Akhir &bull; Banknote Monitoring System
       </footer>
     </div>
   );
