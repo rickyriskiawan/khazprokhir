@@ -9,31 +9,46 @@ export default {
     extend: {
       colors: {
         canvas: {
-          light: "#f1f3f7",
+          DEFAULT: "#f1f3f7",
           dark: "#090b0e",
         },
         surface: {
-          light: "#ffffff",
+          DEFAULT: "#ffffff",
           dark: "#12151c",
-          subtleLight: "#f8f9fb",
-          subtleDark: "#1a1f29",
+          subtle: "#f8f9fb",
+          "subtle-dark": "#1a1f29",
         },
         border: {
-          light: "#e8ebf1",
+          DEFAULT: "#e8ebf1",
+          dark: "#1e2430",
+        },
+        line: {
+          DEFAULT: "#e8ebf1",
           dark: "#1e2430",
         },
         pitch: {
-          light: "#0f1115",
-          dark: "#ffffff",
+          DEFAULT: "#0f1115",
+          hover: "#1f242d",
           card: "#0b0c10",
-          cardDark: "#1e232f",
+          "card-dark": "#1e232f",
+          track: "#272a33",
+          "track-dark": "#2e3646",
+        },
+        ink: {
+          DEFAULT: "#11141a",
+          light: "#11141a",
+          dark: "#f9fafb",
+          secondary: "#6b7280",
+          "secondary-dark": "#9ca3af",
+          muted: "#9ca3af",
+          "muted-dark": "#4b5563",
         },
         emerald: {
-          main: "#10b981",
+          DEFAULT: "#10b981",
           surface: "#ecfdf5",
           text: "#059669",
-          surfaceDark: "rgba(16, 185, 129, 0.12)",
-          textDark: "#6ee7b7",
+          "surface-dark": "rgba(16, 185, 129, 0.12)",
+          "text-dark": "#6ee7b7",
         },
       },
       borderRadius: {

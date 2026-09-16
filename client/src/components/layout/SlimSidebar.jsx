@@ -34,14 +34,14 @@ export default function SlimSidebar({ activeTab = 'dashboard', onTabChange }) {
     <aside 
       className={`${
         isSidebarExpanded ? 'w-64' : 'w-20'
-      } relative hidden md:flex flex-col justify-between py-6 bg-white dark:bg-[#12151c] border-r border-[#e8ebf1] dark:border-[#1e2430] shrink-0 sticky top-0 h-screen transition-all duration-300 ease-in-out z-40`}
+      } relative hidden md:flex flex-col justify-between py-6 bg-surface dark:bg-surface-dark border-r border-border dark:border-border-dark shrink-0 sticky top-0 h-screen transition-all duration-300 ease-in-out z-40`}
     >
       {/* 🌟 Floating Pill Toggle Button on the Right Border (Linear / Notion Style) */}
       <button
         type="button"
         onClick={toggleSidebar}
         title={isSidebarExpanded ? "Ciutkan Menu Sidebar" : "Perluas Menu Sidebar (Tampilkan Teks)"}
-        className="absolute -right-3.5 top-7 w-7 h-7 rounded-full bg-white dark:bg-[#12151c] border border-[#e8ebf1] dark:border-[#1e2430] shadow-md flex items-center justify-center text-[#6b7280] hover:text-[#0f1115] dark:hover:text-white transition-all duration-200 hover:scale-110 z-50 cursor-pointer"
+        className="absolute -right-3.5 top-7 w-7 h-7 rounded-full bg-surface dark:bg-surface-dark border border-border dark:border-border-dark shadow-md flex items-center justify-center text-ink-secondary hover:text-pitch dark:hover:text-white transition-all duration-200 hover:scale-110 z-50 cursor-pointer"
       >
         {isSidebarExpanded ? (
           <ChevronLeft className="w-4 h-4" strokeWidth={2.5} />
@@ -57,15 +57,15 @@ export default function SlimSidebar({ activeTab = 'dashboard', onTabChange }) {
           onClick={toggleSidebar}
           title={isSidebarExpanded ? "Klik untuk ciutkan" : "Klik untuk perluas"}
         >
-          <div className="w-11 h-11 rounded-full bg-[#0f1115] dark:bg-white text-white dark:text-[#0f1115] flex items-center justify-center font-bold text-sm shadow-md shrink-0 tracking-tighter group-hover:scale-105 transition-transform">
+          <div className="w-11 h-11 rounded-full bg-pitch dark:bg-white text-white dark:text-pitch flex items-center justify-center font-bold text-sm shadow-md shrink-0 tracking-tighter group-hover:scale-105 transition-transform">
             KP
           </div>
           {isSidebarExpanded && (
             <div className="flex flex-col overflow-hidden transition-opacity duration-300">
-              <span className="text-sm font-bold tracking-tight text-[#11141a] dark:text-white truncate">
+              <span className="text-sm font-bold tracking-tight text-ink dark:text-white truncate">
                 KHAZPROKHIR
               </span>
-              <span className="text-[10px] text-[#6b7280] dark:text-[#9ca3af] truncate">
+              <span className="text-[10px] text-ink-secondary dark:text-ink-secondary-dark truncate">
                 Monitoring Produksi
               </span>
             </div>
@@ -82,7 +82,7 @@ export default function SlimSidebar({ activeTab = 'dashboard', onTabChange }) {
             <div key={item.id} className="relative w-full">
               {/* Active Indicator Bar on Left Edge */}
               {isActive && (
-                <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-[#0f1115] dark:bg-white" />
+                <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-pitch dark:bg-white" />
               )}
 
               <button
@@ -93,8 +93,8 @@ export default function SlimSidebar({ activeTab = 'dashboard', onTabChange }) {
                   isSidebarExpanded ? 'px-3 py-2.5 gap-3.5' : 'justify-center h-11'
                 } ${
                   isActive
-                    ? 'text-[#0f1115] dark:text-white bg-[#f1f3f7] dark:bg-[#1a1f29] shadow-sm font-semibold'
-                    : 'text-[#6b7280] dark:text-[#9ca3af] hover:text-[#0f1115] dark:hover:text-white hover:bg-[#f8f9fb] dark:hover:bg-[#1a1f29]/60'
+                    ? 'text-pitch dark:text-white bg-canvas dark:bg-surface-subtle-dark shadow-sm font-semibold'
+                    : 'text-ink-secondary dark:text-ink-secondary-dark hover:text-pitch dark:hover:text-white hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark/60'
                 }`}
               >
                 <Icon className="w-5 h-5 shrink-0" strokeWidth={isActive ? 2 : 1.75} />
@@ -110,13 +110,13 @@ export default function SlimSidebar({ activeTab = 'dashboard', onTabChange }) {
       </nav>
 
       {/* 3. Bottom Actions: Expand Toggle Button & Logout */}
-      <div className="flex flex-col gap-2 w-full px-3 pt-4 border-t border-[#e8ebf1] dark:border-[#1e2430]">
+      <div className="flex flex-col gap-2 w-full px-3 pt-4 border-t border-border dark:border-border-dark">
         {/* Full button at bottom */}
         <button
           type="button"
           onClick={toggleSidebar}
           title={isSidebarExpanded ? "Ciutkan Sidebar" : "Perluas Sidebar"}
-          className={`w-full flex items-center rounded-2xl text-[#6b7280] dark:text-[#9ca3af] hover:text-[#0f1115] dark:hover:text-white hover:bg-[#f1f3f7] dark:hover:bg-[#1a1f29] transition-colors cursor-pointer ${
+          className={`w-full flex items-center rounded-2xl text-ink-secondary dark:text-ink-secondary-dark hover:text-pitch dark:hover:text-white hover:bg-canvas dark:hover:bg-surface-subtle-dark transition-colors cursor-pointer ${
             isSidebarExpanded ? 'px-3 py-2.5 gap-3.5' : 'justify-center h-11'
           }`}
         >
@@ -137,7 +137,7 @@ export default function SlimSidebar({ activeTab = 'dashboard', onTabChange }) {
           type="button"
           onClick={logout}
           title="Keluar / Logout"
-          className={`w-full flex items-center rounded-2xl text-[#9ca3af] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer ${
+          className={`w-full flex items-center rounded-2xl text-ink-muted hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer ${
             isSidebarExpanded ? 'px-3 py-2.5 gap-3.5' : 'justify-center h-11'
           }`}
         >

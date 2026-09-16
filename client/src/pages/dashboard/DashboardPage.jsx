@@ -104,7 +104,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#f1f3f7] dark:bg-[#090b0e] text-[#11141a] dark:text-[#f9fafb] flex font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-canvas dark:bg-canvas-dark text-ink dark:text-ink-dark flex font-sans transition-colors duration-200">
       {/* 1. Left Slim Sidebar */}
       <SlimSidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -130,87 +130,87 @@ export default function DashboardPage() {
           {/* ========================================================================= */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* Stat Card 1: Saldo Kas Bon Masuk */}
-            <div className="bg-white dark:bg-[#12151c] rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
+            <div className="bg-surface dark:bg-surface-dark rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
               <div className="flex items-center justify-between mb-4">
-                <div className="w-11 h-11 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white">
+                <div className="w-11 h-11 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white">
                   <CreditCard className="w-5 h-5" strokeWidth={1.75} />
                 </div>
-                <div className="w-6 h-6 rounded-full bg-[#f1f3f7] dark:bg-[#1a1f29] flex items-center justify-center text-[#9ca3af] cursor-pointer">
+                <div className="w-6 h-6 rounded-full bg-canvas dark:bg-surface-subtle-dark flex items-center justify-center text-ink-muted cursor-pointer">
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </div>
               </div>
               <div className="space-y-1">
-                <h3 className="text-2xl lg:text-[28px] font-extrabold tracking-tight text-[#0f1115] dark:text-white font-mono tabular-nums">
+                <h3 className="text-2xl lg:text-[28px] font-extrabold tracking-tight text-pitch dark:text-white font-mono tabular-nums">
                   Rp 1,45 M
                 </h3>
-                <p className="text-xs text-[#6b7280] dark:text-[#9ca3af] font-medium">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark font-medium">
                   Saldo Penerimaan Khazai
                 </p>
               </div>
             </div>
 
             {/* Stat Card 2: Jumlah Pack & Transaksi Sortir */}
-            <div className="bg-white dark:bg-[#12151c] rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
+            <div className="bg-surface dark:bg-surface-dark rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
               <div className="flex items-center justify-between mb-4">
-                <div className="w-11 h-11 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white">
+                <div className="w-11 h-11 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white">
                   <Layers className="w-5 h-5" strokeWidth={1.75} />
                 </div>
-                <div className="w-6 h-6 rounded-full bg-[#f1f3f7] dark:bg-[#1a1f29] flex items-center justify-center text-[#9ca3af] cursor-pointer">
+                <div className="w-6 h-6 rounded-full bg-canvas dark:bg-surface-subtle-dark flex items-center justify-center text-ink-muted cursor-pointer">
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </div>
               </div>
               <div className="space-y-1">
-                <h3 className="text-2xl lg:text-[28px] font-extrabold tracking-tight text-[#0f1115] dark:text-white font-mono tabular-nums">
+                <h3 className="text-2xl lg:text-[28px] font-extrabold tracking-tight text-pitch dark:text-white font-mono tabular-nums">
                   50 Pack
                 </h3>
-                <p className="text-xs text-[#6b7280] dark:text-[#9ca3af] font-medium">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark font-medium">
                   Selesai Sortir (Zero Reject)
                 </p>
               </div>
             </div>
 
             {/* Stat Card 3: Realisasi Hasil Kemas (4:9) */}
-            <div className="bg-white dark:bg-[#12151c] rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
+            <div className="bg-surface dark:bg-surface-dark rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
               <div className="flex items-center justify-between mb-4">
-                <div className="w-11 h-11 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white">
+                <div className="w-11 h-11 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white">
                   <TrendingUp className="w-5 h-5" strokeWidth={1.75} />
                 </div>
-                <div className="w-6 h-6 rounded-full bg-[#f1f3f7] dark:bg-[#1a1f29] flex items-center justify-center text-[#9ca3af] cursor-pointer">
+                <div className="w-6 h-6 rounded-full bg-canvas dark:bg-surface-subtle-dark flex items-center justify-center text-ink-muted cursor-pointer">
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </div>
               </div>
               <div className="space-y-1">
-                <h3 className="text-2xl lg:text-[28px] font-extrabold tracking-tight text-[#0f1115] dark:text-white font-mono tabular-nums">
+                <h3 className="text-2xl lg:text-[28px] font-extrabold tracking-tight text-pitch dark:text-white font-mono tabular-nums">
                   18 Doos
                 </h3>
-                <p className="text-xs text-[#6b7280] dark:text-[#9ca3af] font-medium">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark font-medium">
                   Realisasi Kemas Siap Kirim
                 </p>
               </div>
             </div>
 
             {/* Inverted High-Contrast Card: Formation Status */}
-            <div className="bg-[#0b0c10] dark:bg-[#1e232f] text-white rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
+            <div className="bg-pitch-card dark:bg-pitch-card-dark text-white rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
               {/* Header */}
               <div className="text-center space-y-0.5">
                 <h3 className="text-base font-bold tracking-tight text-white">
                   Status Produksi
                 </h3>
-                <p className="text-xs text-[#9ca3af] font-medium">
+                <p className="text-xs text-ink-muted font-medium">
                   Sedang Berjalan (Shift 2)
                 </p>
               </div>
 
               {/* Progress Bar Container */}
               <div className="my-4 space-y-2 text-center">
-                <div className="w-full h-2.5 bg-[#272a33] dark:bg-[#2e3646] rounded-full overflow-hidden p-0.5">
+                <div className="w-full h-2.5 bg-pitch-track dark:bg-pitch-track-dark rounded-full overflow-hidden p-0.5">
                   <div className="h-full bg-white rounded-full w-[68%] transition-all duration-500" />
                 </div>
                 <div>
                   <span className="text-xs font-semibold text-white block">
                     Target Kemas Terpenuhi
                   </span>
-                  <span className="text-[11px] text-[#9ca3af] block">
+                  <span className="text-[11px] text-ink-muted block">
                     68% Target Harian (18 / 27 Doos)
                   </span>
                 </div>
@@ -219,7 +219,7 @@ export default function DashboardPage() {
               {/* Action Button */}
               <button
                 type="button"
-                className="w-full py-3 rounded-full bg-white hover:bg-[#f1f3f7] text-[#0b0c10] dark:text-[#0f1117] font-bold text-xs tracking-wide transition shadow-sm cursor-pointer"
+                className="w-full py-3 rounded-full bg-white hover:bg-canvas text-pitch-card dark:text-pitch font-bold text-xs tracking-wide transition shadow-sm cursor-pointer"
               >
                 Lihat Detail Status
               </button>
@@ -231,14 +231,14 @@ export default function DashboardPage() {
           {/* ========================================================================= */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             {/* 2.1 Earning / Production Report Bar Chart (Span 2) */}
-            <div className="lg:col-span-2 bg-white dark:bg-[#12151c] rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
+            <div className="lg:col-span-2 bg-surface dark:bg-surface-dark rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
               {/* Header & Filter */}
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h3 className="text-base font-bold tracking-tight text-[#11141a] dark:text-white">
+                  <h3 className="text-base font-bold tracking-tight text-ink dark:text-white">
                     Laporan Output Produksi
                   </h3>
-                  <p className="text-xs text-[#6b7280] dark:text-[#9ca3af]">
+                  <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                     Capaian volume bilyet per bulan tahun anggaran 2026
                   </p>
                 </div>
@@ -246,7 +246,7 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-[#e8ebf1] dark:border-[#1e2430] bg-white dark:bg-[#12151c] text-xs font-semibold text-[#6b7280] dark:text-[#9ca3af] hover:text-[#11141a] dark:hover:text-white shadow-sm transition cursor-pointer"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark hover:text-ink dark:hover:text-white shadow-sm transition cursor-pointer"
                   >
                     <span>Bulanan</span>
                     <ChevronDown className="w-3.5 h-3.5" />
@@ -263,33 +263,33 @@ export default function DashboardPage() {
                       {bar.active && (
                         <>
                           {/* Floating Tooltip Card */}
-                          <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white dark:bg-[#1e232f] border border-[#e8ebf1] dark:border-[#2e3646] shadow-floating-tooltip dark:shadow-floating-tooltip-dark rounded-2xl p-2.5 z-30 whitespace-nowrap">
-                            <span className="text-[10px] text-[#6b7280] dark:text-[#9ca3af] block leading-tight">
+                          <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-surface dark:bg-pitch-card-dark border border-border dark:border-pitch-track-dark shadow-floating-tooltip dark:shadow-floating-tooltip-dark rounded-2xl p-2.5 z-30 whitespace-nowrap">
+                            <span className="text-[10px] text-ink-secondary dark:text-ink-secondary-dark block leading-tight">
                               Total Output
                             </span>
                             <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="text-xs font-bold text-[#0f1115] dark:text-white font-mono">
+                              <span className="text-xs font-bold text-pitch dark:text-white font-mono">
                                 {bar.display}
                               </span>
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ecfdf5] dark:bg-emerald-500/20 text-[#059669] dark:text-[#6ee7b7]">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-surface dark:bg-emerald-surface-dark text-emerald-text dark:text-emerald-text-dark">
                                 {bar.diff}
                               </span>
                             </div>
                           </div>
 
                           {/* Dotted Guide Line */}
-                          <div className="absolute top-0 bottom-6 left-1/2 -translate-x-1/2 w-[1px] border-l border-dashed border-[#0f1115] dark:border-white pointer-events-none z-10 opacity-70" />
+                          <div className="absolute top-0 bottom-6 left-1/2 -translate-x-1/2 w-[1px] border-l border-dashed border-pitch dark:border-white pointer-events-none z-10 opacity-70" />
                         </>
                       )}
 
                       {/* Dual-Tone Bar: Gray Track with Black Fill */}
-                      <div className="w-full max-w-[34px] h-full bg-[#f1f3f7] dark:bg-[#1a1f29] rounded-xl flex flex-col justify-end p-0.5 overflow-hidden">
+                      <div className="w-full max-w-[34px] h-full bg-canvas dark:bg-surface-subtle-dark rounded-xl flex flex-col justify-end p-0.5 overflow-hidden">
                         <div
                           style={{ height: `${bar.value}%` }}
                           className={`w-full rounded-lg transition-all duration-500 ${
                             bar.active
-                              ? 'bg-[#0f1115] dark:bg-white'
-                              : 'bg-[#0f1115] dark:bg-white/80 group-hover:bg-[#0f1115]/90'
+                              ? 'bg-pitch dark:bg-white'
+                              : 'bg-pitch dark:bg-white/80 group-hover:bg-pitch/90'
                           }`}
                         />
                       </div>
@@ -297,8 +297,8 @@ export default function DashboardPage() {
                       {/* X-Axis Month Label */}
                       <span className={`text-[11px] font-medium ${
                         bar.active
-                          ? 'text-[#0f1115] dark:text-white font-bold'
-                          : 'text-[#9ca3af] dark:text-[#6b7280]'
+                          ? 'text-pitch dark:text-white font-bold'
+                          : 'text-ink-muted dark:text-ink-secondary'
                       }`}>
                         {bar.label}
                       </span>
@@ -309,79 +309,79 @@ export default function DashboardPage() {
             </div>
 
             {/* 2.2 To Do List / Antrian Operasional (Span 1) */}
-            <div className="bg-white dark:bg-[#12151c] rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
+            <div className="bg-surface dark:bg-surface-dark rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-base font-bold tracking-tight text-[#11141a] dark:text-white">
+                  <h3 className="text-base font-bold tracking-tight text-ink dark:text-white">
                     Antrian Operasional
                   </h3>
-                  <span className="text-xs text-[#9ca3af] font-mono">Shift 2</span>
+                  <span className="text-xs text-ink-muted font-mono">Shift 2</span>
                 </div>
 
                 <div className="space-y-4">
                   {/* Task 1 */}
-                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-[#f8f9fb] dark:hover:bg-[#1a1f29] transition-colors cursor-pointer group">
+                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark transition-colors cursor-pointer group">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white group-hover:bg-white dark:group-hover:bg-[#12151c] shadow-sm transition-colors">
+                      <div className="w-10 h-10 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white group-hover:bg-surface dark:group-hover:bg-surface-dark shadow-sm transition-colors">
                         <Layers className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-[#11141a] dark:text-white">
+                        <h4 className="text-xs font-bold text-ink dark:text-white">
                           Serah Terima Bon Khazai
                         </h4>
-                        <p className="text-[11px] text-[#9ca3af] mt-0.5">
+                        <p className="text-[11px] text-ink-muted mt-0.5">
                           Bon #001 &bull; 08:00 WIB
                         </p>
                       </div>
                     </div>
-                    <span className="text-xs font-bold font-mono text-[#0f1115] dark:text-white">
+                    <span className="text-xs font-bold font-mono text-pitch dark:text-white">
                       100 Pack
                     </span>
                   </div>
 
                   {/* Task 2 */}
-                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-[#f8f9fb] dark:hover:bg-[#1a1f29] transition-colors cursor-pointer group">
+                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark transition-colors cursor-pointer group">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white group-hover:bg-white dark:group-hover:bg-[#12151c] shadow-sm transition-colors">
+                      <div className="w-10 h-10 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white group-hover:bg-surface dark:group-hover:bg-surface-dark shadow-sm transition-colors">
                         <Package className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-[#11141a] dark:text-white">
+                        <h4 className="text-xs font-bold text-ink dark:text-white">
                           Konfirmasi Fisik Kemas
                         </h4>
-                        <p className="text-[11px] text-[#9ca3af] mt-0.5">
+                        <p className="text-[11px] text-ink-muted mt-0.5">
                           WIP Handover &bull; 14:30 WIB
                         </p>
                       </div>
                     </div>
-                    <span className="text-xs font-bold font-mono text-[#0f1115] dark:text-white">
+                    <span className="text-xs font-bold font-mono text-pitch dark:text-white">
                       18 Doos
                     </span>
                   </div>
 
                   {/* Task 3 */}
-                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-[#f8f9fb] dark:hover:bg-[#1a1f29] transition-colors cursor-pointer group">
+                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark transition-colors cursor-pointer group">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white group-hover:bg-white dark:group-hover:bg-[#12151c] shadow-sm transition-colors">
+                      <div className="w-10 h-10 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white group-hover:bg-surface dark:group-hover:bg-surface-dark shadow-sm transition-colors">
                         <CheckCircle2 className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-[#11141a] dark:text-white">
+                        <h4 className="text-xs font-bold text-ink dark:text-white">
                           Pemeriksaan Gap Doos
                         </h4>
-                        <p className="text-[11px] text-[#9ca3af] mt-0.5">
+                        <p className="text-[11px] text-ink-muted mt-0.5">
                           Integritas Urutan Doos
                         </p>
                       </div>
                     </div>
-                    <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                    <span className="text-xs font-bold font-mono text-emerald-text dark:text-emerald-text-dark">
                       0 Gap
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-[#e8ebf1] dark:border-[#1e2430] flex items-center justify-between text-xs text-[#9ca3af]">
+              <div className="pt-4 border-t border-border dark:border-border-dark flex items-center justify-between text-xs text-ink-muted">
                 <span>Status API: {loading ? 'Memeriksa...' : healthData?.status === 'ok' ? `Terhubung (${pingLatency || 0}ms)` : 'Terputus'}</span>
                 <Clock className="w-3.5 h-3.5" />
               </div>
@@ -393,13 +393,13 @@ export default function DashboardPage() {
           {/* ========================================================================= */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             {/* 3.1 Transaction History Table (Span 2) */}
-            <div className="lg:col-span-2 bg-white dark:bg-[#12151c] rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200">
+            <div className="lg:col-span-2 bg-surface dark:bg-surface-dark rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-base font-bold tracking-tight text-[#11141a] dark:text-white">
+                  <h3 className="text-base font-bold tracking-tight text-ink dark:text-white">
                     Riwayat Alur Produksi Terakhir
                   </h3>
-                  <p className="text-xs text-[#6b7280] dark:text-[#9ca3af]">
+                  <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                     Catatan perpindahan status pack dan hasil kemas terkini
                   </p>
                 </div>
@@ -409,7 +409,7 @@ export default function DashboardPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="text-[11px] font-semibold text-[#6b7280] dark:text-[#9ca3af] border-b border-[#e8ebf1] dark:border-[#1e2430]">
+                    <tr className="text-[11px] font-semibold text-ink-secondary dark:text-ink-secondary-dark border-b border-border dark:border-border-dark">
                       <th className="pb-3 px-3">TrxID / No Bon</th>
                       <th className="pb-3 px-3">Tanggal</th>
                       <th className="pb-3 px-3">Kategori Modul</th>
@@ -423,25 +423,25 @@ export default function DashboardPage() {
                         key={idx}
                         className={`text-xs transition-all duration-200 ${
                           trx.isActive
-                            ? 'bg-white dark:bg-white/5 shadow-active-row dark:shadow-active-row-dark rounded-2xl'
-                            : 'hover:bg-[#f8f9fb] dark:hover:bg-[#1a1f29]'
+                            ? 'bg-surface dark:bg-white/5 shadow-active-row dark:shadow-active-row-dark rounded-2xl'
+                            : 'hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark'
                         }`}
                       >
-                        <td className="py-4 px-3 font-mono font-medium text-[#11141a] dark:text-white">
+                        <td className="py-4 px-3 font-mono font-medium text-ink dark:text-white">
                           {trx.id}
                         </td>
-                        <td className="py-4 px-3 text-[#6b7280] dark:text-[#9ca3af]">
+                        <td className="py-4 px-3 text-ink-secondary dark:text-ink-secondary-dark">
                           {trx.date}
                         </td>
-                        <td className="py-4 px-3 font-medium text-[#11141a] dark:text-white">
+                        <td className="py-4 px-3 font-medium text-ink dark:text-white">
                           {trx.category}
                         </td>
                         <td className="py-4 px-3 text-center">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold bg-[#ecfdf5] dark:bg-emerald-500/10 text-[#059669] dark:text-[#6ee7b7]">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-surface dark:bg-emerald-surface-dark text-emerald-text dark:text-emerald-text-dark">
                             {trx.status}
                           </span>
                         </td>
-                        <td className="py-4 px-3 text-right font-mono font-bold text-[#11141a] dark:text-white">
+                        <td className="py-4 px-3 text-right font-mono font-bold text-ink dark:text-white">
                           {trx.amount}
                         </td>
                       </tr>
@@ -452,55 +452,55 @@ export default function DashboardPage() {
             </div>
 
             {/* 3.2 Upcoming Handover / Penyerahan BI (Span 1) */}
-            <div className="bg-white dark:bg-[#12151c] rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
+            <div className="bg-surface dark:bg-surface-dark rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-base font-bold tracking-tight text-[#11141a] dark:text-white">
+                  <h3 className="text-base font-bold tracking-tight text-ink dark:text-white">
                     Rencana Penyerahan BI
                   </h3>
-                  <span className="text-xs text-[#9ca3af] font-mono">15 Sep 2026</span>
+                  <span className="text-xs text-ink-muted font-mono">15 Sep 2026</span>
                 </div>
-                <p className="text-xs text-[#6b7280] dark:text-[#9ca3af] mb-6">
+                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark mb-6">
                   Jadwal serah terima fisik doos ke Bank Indonesia
                 </p>
 
                 <div className="space-y-4">
                   {/* Schedule Item 1 */}
-                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-[#f8f9fb] dark:hover:bg-[#1a1f29] transition-colors cursor-pointer group">
+                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark transition-colors cursor-pointer group">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white group-hover:bg-white dark:group-hover:bg-[#12151c] shadow-sm transition-colors">
+                      <div className="w-10 h-10 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white group-hover:bg-surface dark:group-hover:bg-surface-dark shadow-sm transition-colors">
                         <Building2 className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-[#11141a] dark:text-white">
+                        <h4 className="text-xs font-bold text-ink dark:text-white">
                           Doos 0001 - 0018 (Pecahan S)
                         </h4>
-                        <p className="text-[11px] text-[#9ca3af] mt-0.5">
+                        <p className="text-[11px] text-ink-muted mt-0.5">
                           Status: Siap Serah Terima
                         </p>
                       </div>
                     </div>
-                    <span className="text-xs font-bold font-mono text-[#0f1115] dark:text-white">
+                    <span className="text-xs font-bold font-mono text-pitch dark:text-white">
                       Rp 180 Jt
                     </span>
                   </div>
 
                   {/* Schedule Item 2 */}
-                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-[#f8f9fb] dark:hover:bg-[#1a1f29] transition-colors cursor-pointer group">
+                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark transition-colors cursor-pointer group">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white group-hover:bg-white dark:group-hover:bg-[#12151c] shadow-sm transition-colors">
+                      <div className="w-10 h-10 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white group-hover:bg-surface dark:group-hover:bg-surface-dark shadow-sm transition-colors">
                         <Car className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-[#11141a] dark:text-white">
+                        <h4 className="text-xs font-bold text-ink dark:text-white">
                           Doos 0019 - 0036 (Pecahan T)
                         </h4>
-                        <p className="text-[11px] text-[#9ca3af] mt-0.5">
+                        <p className="text-[11px] text-ink-muted mt-0.5">
                           Status: Antrian Kemas
                         </p>
                       </div>
                     </div>
-                    <span className="text-xs font-bold font-mono text-[#0f1115] dark:text-white">
+                    <span className="text-xs font-bold font-mono text-pitch dark:text-white">
                       Rp 360 Jt
                     </span>
                   </div>
@@ -508,10 +508,10 @@ export default function DashboardPage() {
               </div>
 
               {/* Bottom Link */}
-              <div className="pt-4 border-t border-[#e8ebf1] dark:border-[#1e2430]">
+              <div className="pt-4 border-t border-border dark:border-border-dark">
                 <button
                   type="button"
-                  className="w-full py-2.5 rounded-2xl text-xs font-semibold text-[#0f1115] dark:text-white bg-[#f1f3f7] dark:bg-[#1a1f29] hover:bg-[#e8ebf1] dark:hover:bg-[#2e3646] transition text-center cursor-pointer"
+                  className="w-full py-2.5 rounded-2xl text-xs font-semibold text-pitch dark:text-white bg-canvas dark:bg-surface-subtle-dark hover:bg-border dark:hover:bg-pitch-track-dark transition text-center cursor-pointer"
                 >
                   Buka Modul Register Doos
                 </button>
