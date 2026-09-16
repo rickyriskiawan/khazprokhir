@@ -1,12 +1,10 @@
 import React from 'react';
-import { Search, FileText, Bell, ChevronDown, PanelLeft } from 'lucide-react';
+import { Search, FileText, Bell, ChevronDown } from 'lucide-react';
 import ThemeToggle from '../common/ThemeToggle';
 import { useAuthStore } from '../../stores/authStore';
-import { useUIStore } from '../../stores/uiStore';
 
 export default function ModernTopbar({ onSearch }) {
   const { user } = useAuthStore();
-  const { isSidebarExpanded, toggleSidebar } = useUIStore();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -21,25 +19,14 @@ export default function ModernTopbar({ onSearch }) {
 
   return (
     <header className="w-full flex items-center justify-between py-4 px-6 md:px-8 bg-transparent transition-colors duration-200">
-      {/* Left: Sidebar Toggle Button + Greeting */}
-      <div className="flex items-center gap-3.5">
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          title={isSidebarExpanded ? "Ciutkan Sidebar Menu" : "Perluas Sidebar Menu (Tampilkan Teks)"}
-          className="w-10 h-10 rounded-full bg-white dark:bg-[#12151c] border border-[#e8ebf1] dark:border-[#1e2430] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] flex items-center justify-center text-[#6b7280] hover:text-[#0f1115] dark:text-[#9ca3af] dark:hover:text-white transition-all cursor-pointer shrink-0"
-        >
-          <PanelLeft className="w-4 h-4" strokeWidth={1.75} />
-        </button>
-
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#11141a] dark:text-white">
-            {getGreeting()}, {displayName.split(' ')[0]}!
-          </h1>
-          <p className="text-xs text-[#6b7280] dark:text-[#9ca3af] mt-0.5 font-medium">
-            {roleTitle}
-          </p>
-        </div>
+      {/* Left: Greeting */}
+      <div>
+        <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#11141a] dark:text-white">
+          {getGreeting()}, {displayName.split(' ')[0]}!
+        </h1>
+        <p className="text-xs text-[#6b7280] dark:text-[#9ca3af] mt-0.5 font-medium">
+          {roleTitle}
+        </p>
       </div>
 
       {/* Center: Search Bar (Hidden on small screens) */}
