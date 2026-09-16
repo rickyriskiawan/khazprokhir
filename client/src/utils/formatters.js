@@ -82,3 +82,4 @@ export const formatDoosRange = (awal, akhir) => {
   const dAkhir = formatDoos(akhir);
   return awal === akhir ? `Doos ${dAwal}` : `Doos ${dAwal} - ${dAkhir}`;
 };
+

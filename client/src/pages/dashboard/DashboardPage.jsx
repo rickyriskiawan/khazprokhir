@@ -1,54 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { 
-  Server, 
-  Database, 
-  Cpu, 
+  CreditCard, 
+  Layers, 
+  TrendingUp, 
+  ArrowUpRight, 
   CheckCircle2, 
-  AlertCircle, 
-  RefreshCw, 
-  ArrowRight,
-  Sparkles,
-  LogOut,
-  LogIn
+  ChevronDown, 
+  Clock, 
+  AlertCircle,
+  Package,
+  Building2,
+  Car
 } from 'lucide-react';
-import ThemeToggle from '../../components/common/ThemeToggle';
+import SlimSidebar from '../../components/layout/SlimSidebar';
+import ModernTopbar from '../../components/layout/ModernTopbar';
 import api from '../../services/api';
-import { useAuthStore } from '../../stores/authStore';
-import { 
-  formatRupiah, 
-  formatBilyet, 
-  formatDoos, 
-  formatIndonesianDate, 
-  formatPackRange, 
-  formatDoosRange 
-} from '../../utils/formatters';
 
 export default function DashboardPage() {
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchQuery, setSearchQuery] = useState('');
 
+  // Live API status
   const [healthData, setHealthData] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pingLatency, setPingLatency] = useState(null);
-
-  const fetchHealth = async () => {
-    setLoading(true);
-    setError(null);
-    const start = performance.now();
-    try {
-      const res = await api.get('/health');
-      const latency = Math.round(performance.now() - start);
-      setHealthData(res.data);
-      setPingLatency(latency);
-    } catch (err) {
-      setError(err.userMessage || err.message);
-      setHealthData(null);
-      setPingLatency(null);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     let isMounted = true;
@@ -77,290 +52,474 @@ export default function DashboardPage() {
     };
   }, []);
 
+  // Mock bar chart data (12 columns) matching the reference screenshot
+  const chartData = [
+    { label: 'Jan', value: 35, display: '15.750' },
+    { label: 'Feb', value: 70, display: '31.500' },
+    { label: 'Mar', value: 48, display: '21.600' },
+    { label: 'Apr', value: 65, display: '29.250' },
+    { label: 'Mei', value: 92, display: '41.400' },
+    { label: 'Jun', value: 98, display: '44.058', active: true, diff: '+67%' },
+    { label: 'Jul', value: 68, display: '30.600' },
+    { label: 'Agt', value: 85, display: '38.250' },
+    { label: 'Sep', value: 58, display: '26.100' },
+    { label: 'Okt', value: 42, display: '18.900' },
+    { label: 'Nov', value: 72, display: '32.400' },
+    { label: 'Des', value: 88, display: '39.600' },
+  ];
+
+  // Mock transactions matching reference screenshot style
+  const transactions = [
+    {
+      id: 'SGFU654564',
+      date: '15 Sep 2026',
+      category: 'Penerimaan Khazai (Bon #001)',
+      status: 'Success',
+      amount: '45.000 Lembar',
+      isActive: true, // First row elevated highlight
+    },
+    {
+      id: 'SGFU654565',
+      date: '15 Sep 2026',
+      category: 'Sortir Pack Selesai (Pack 1-4)',
+      status: 'Success',
+      amount: '180.000 Lembar',
+      isActive: false,
+    },
+    {
+      id: 'SGFU654566',
+      date: '15 Sep 2026',
+      category: 'Pengemasan Doos (Doos 1-9)',
+      status: 'Success',
+      amount: '180.000 Lembar',
+      isActive: false,
+    },
+  ];
+
+  const filteredTransactions = transactions.filter((trx) =>
+    trx.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    trx.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    trx.status.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
-      {/* Top Navigation */}
-      <header className="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur sticky top-0 z-50 transition-colors duration-200">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="h-9 w-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-emerald-600/30">
-              KP
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">
-                  KHAZPROKHIR
-                </h1>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 font-medium">
-                  FE-01 Foundation
-                </span>
+    <div className="min-h-screen bg-[#f1f3f7] dark:bg-[#090b0e] text-[#11141a] dark:text-[#f9fafb] flex font-sans transition-colors duration-200">
+      {/* 1. Left Slim Sidebar */}
+      <SlimSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Main App Content Container */}
+      <div className="flex-1 flex flex-col min-w-0 pb-12">
+        {/* 2. Top Header Bar */}
+        <ModernTopbar onSearch={setSearchQuery} />
+
+        {/* Content Workspace */}
+        <main className="px-6 md:px-8 space-y-6 max-w-[1440px] w-full mx-auto">
+          {/* Status Alert if Backend is offline */}
+          {error && (
+            <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>Koneksi API Backend: {error} (Periksa server di port 5000)</span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Sistem Monitoring Produksi Uang Kertas &bull; Seksi Khazanah Produk Akhir
-              </p>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ROW 1: 3 Summary Stat Cards + 1 High Contrast Inverted Card                */}
+          {/* ========================================================================= */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* Stat Card 1: Saldo Kas Bon Masuk */}
+            <div className="bg-white dark:bg-[#12151c] rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-11 h-11 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white">
+                  <CreditCard className="w-5 h-5" strokeWidth={1.75} />
+                </div>
+                <div className="w-6 h-6 rounded-full bg-[#f1f3f7] dark:bg-[#1a1f29] flex items-center justify-center text-[#9ca3af] cursor-pointer">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-2xl lg:text-[28px] font-extrabold tracking-tight text-[#0f1115] dark:text-white font-mono tabular-nums">
+                  Rp 1,45 M
+                </h3>
+                <p className="text-xs text-[#6b7280] dark:text-[#9ca3af] font-medium">
+                  Saldo Penerimaan Khazai
+                </p>
+              </div>
+            </div>
+
+            {/* Stat Card 2: Jumlah Pack & Transaksi Sortir */}
+            <div className="bg-white dark:bg-[#12151c] rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-11 h-11 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white">
+                  <Layers className="w-5 h-5" strokeWidth={1.75} />
+                </div>
+                <div className="w-6 h-6 rounded-full bg-[#f1f3f7] dark:bg-[#1a1f29] flex items-center justify-center text-[#9ca3af] cursor-pointer">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-2xl lg:text-[28px] font-extrabold tracking-tight text-[#0f1115] dark:text-white font-mono tabular-nums">
+                  50 Pack
+                </h3>
+                <p className="text-xs text-[#6b7280] dark:text-[#9ca3af] font-medium">
+                  Selesai Sortir (Zero Reject)
+                </p>
+              </div>
+            </div>
+
+            {/* Stat Card 3: Realisasi Hasil Kemas (4:9) */}
+            <div className="bg-white dark:bg-[#12151c] rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-11 h-11 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white">
+                  <TrendingUp className="w-5 h-5" strokeWidth={1.75} />
+                </div>
+                <div className="w-6 h-6 rounded-full bg-[#f1f3f7] dark:bg-[#1a1f29] flex items-center justify-center text-[#9ca3af] cursor-pointer">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-2xl lg:text-[28px] font-extrabold tracking-tight text-[#0f1115] dark:text-white font-mono tabular-nums">
+                  18 Doos
+                </h3>
+                <p className="text-xs text-[#6b7280] dark:text-[#9ca3af] font-medium">
+                  Realisasi Kemas Siap Kirim
+                </p>
+              </div>
+            </div>
+
+            {/* Inverted High-Contrast Card: Formation Status */}
+            <div className="bg-[#0b0c10] dark:bg-[#1e232f] text-white rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
+              {/* Header */}
+              <div className="text-center space-y-0.5">
+                <h3 className="text-base font-bold tracking-tight text-white">
+                  Status Produksi
+                </h3>
+                <p className="text-xs text-[#9ca3af] font-medium">
+                  Sedang Berjalan (Shift 2)
+                </p>
+              </div>
+
+              {/* Progress Bar Container */}
+              <div className="my-4 space-y-2 text-center">
+                <div className="w-full h-2.5 bg-[#272a33] dark:bg-[#2e3646] rounded-full overflow-hidden p-0.5">
+                  <div className="h-full bg-white rounded-full w-[68%] transition-all duration-500" />
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-white block">
+                    Target Kemas Terpenuhi
+                  </span>
+                  <span className="text-[11px] text-[#9ca3af] block">
+                    68% Target Harian (18 / 27 Doos)
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <button
+                type="button"
+                className="w-full py-3 rounded-full bg-white hover:bg-[#f1f3f7] text-[#0b0c10] dark:text-[#0f1117] font-bold text-xs tracking-wide transition shadow-sm cursor-pointer"
+              >
+                Lihat Detail Status
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            {/* Theme Toggle Button */}
-            <ThemeToggle />
+          {/* ========================================================================= */}
+          {/* ROW 2: Production Bar Chart Widget (2/3) + To Do List Widget (1/3)        */}
+          {/* ========================================================================= */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {/* 2.1 Earning / Production Report Bar Chart (Span 2) */}
+            <div className="lg:col-span-2 bg-white dark:bg-[#12151c] rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
+              {/* Header & Filter */}
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h3 className="text-base font-bold tracking-tight text-[#11141a] dark:text-white">
+                    Laporan Output Produksi
+                  </h3>
+                  <p className="text-xs text-[#6b7280] dark:text-[#9ca3af]">
+                    Capaian volume bilyet per bulan tahun anggaran 2026
+                  </p>
+                </div>
 
-            {/* Auth State Button */}
-            {isAuthenticated && user ? (
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
-                <div className="text-right hidden sm:block">
-                  <div className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
-                    {user.nama_lengkap || user.username}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-[#e8ebf1] dark:border-[#1e2430] bg-white dark:bg-[#12151c] text-xs font-semibold text-[#6b7280] dark:text-[#9ca3af] hover:text-[#11141a] dark:hover:text-white shadow-sm transition cursor-pointer"
+                  >
+                    <span>Bulanan</span>
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Chart Visual Matrix */}
+              <div className="relative pt-12 pb-2">
+                <div className="flex items-end justify-between gap-2 md:gap-3 h-48 w-full px-2">
+                  {chartData.map((bar, idx) => (
+                    <div key={idx} className="flex-1 flex flex-col items-center gap-2.5 h-full justify-end relative group">
+                      {/* Active Column Indicator & Floating Tooltip */}
+                      {bar.active && (
+                        <>
+                          {/* Floating Tooltip Card */}
+                          <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white dark:bg-[#1e232f] border border-[#e8ebf1] dark:border-[#2e3646] shadow-floating-tooltip dark:shadow-floating-tooltip-dark rounded-2xl p-2.5 z-30 whitespace-nowrap">
+                            <span className="text-[10px] text-[#6b7280] dark:text-[#9ca3af] block leading-tight">
+                              Total Output
+                            </span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-xs font-bold text-[#0f1115] dark:text-white font-mono">
+                                {bar.display}
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ecfdf5] dark:bg-emerald-500/20 text-[#059669] dark:text-[#6ee7b7]">
+                                {bar.diff}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Dotted Guide Line */}
+                          <div className="absolute top-0 bottom-6 left-1/2 -translate-x-1/2 w-[1px] border-l border-dashed border-[#0f1115] dark:border-white pointer-events-none z-10 opacity-70" />
+                        </>
+                      )}
+
+                      {/* Dual-Tone Bar: Gray Track with Black Fill */}
+                      <div className="w-full max-w-[34px] h-full bg-[#f1f3f7] dark:bg-[#1a1f29] rounded-xl flex flex-col justify-end p-0.5 overflow-hidden">
+                        <div
+                          style={{ height: `${bar.value}%` }}
+                          className={`w-full rounded-lg transition-all duration-500 ${
+                            bar.active
+                              ? 'bg-[#0f1115] dark:bg-white'
+                              : 'bg-[#0f1115] dark:bg-white/80 group-hover:bg-[#0f1115]/90'
+                          }`}
+                        />
+                      </div>
+
+                      {/* X-Axis Month Label */}
+                      <span className={`text-[11px] font-medium ${
+                        bar.active
+                          ? 'text-[#0f1115] dark:text-white font-bold'
+                          : 'text-[#9ca3af] dark:text-[#6b7280]'
+                      }`}>
+                        {bar.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 2.2 To Do List / Antrian Operasional (Span 1) */}
+            <div className="bg-white dark:bg-[#12151c] rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-base font-bold tracking-tight text-[#11141a] dark:text-white">
+                    Antrian Operasional
+                  </h3>
+                  <span className="text-xs text-[#9ca3af] font-mono">Shift 2</span>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Task 1 */}
+                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-[#f8f9fb] dark:hover:bg-[#1a1f29] transition-colors cursor-pointer group">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white group-hover:bg-white dark:group-hover:bg-[#12151c] shadow-sm transition-colors">
+                        <Layers className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-[#11141a] dark:text-white">
+                          Serah Terima Bon Khazai
+                        </h4>
+                        <p className="text-[11px] text-[#9ca3af] mt-0.5">
+                          Bon #001 &bull; 08:00 WIB
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold font-mono text-[#0f1115] dark:text-white">
+                      100 Pack
+                    </span>
                   </div>
-                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono leading-tight">
-                    {user.role}
+
+                  {/* Task 2 */}
+                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-[#f8f9fb] dark:hover:bg-[#1a1f29] transition-colors cursor-pointer group">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white group-hover:bg-white dark:group-hover:bg-[#12151c] shadow-sm transition-colors">
+                        <Package className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-[#11141a] dark:text-white">
+                          Konfirmasi Fisik Kemas
+                        </h4>
+                        <p className="text-[11px] text-[#9ca3af] mt-0.5">
+                          WIP Handover &bull; 14:30 WIB
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold font-mono text-[#0f1115] dark:text-white">
+                      18 Doos
+                    </span>
+                  </div>
+
+                  {/* Task 3 */}
+                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-[#f8f9fb] dark:hover:bg-[#1a1f29] transition-colors cursor-pointer group">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white group-hover:bg-white dark:group-hover:bg-[#12151c] shadow-sm transition-colors">
+                        <CheckCircle2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-[#11141a] dark:text-white">
+                          Pemeriksaan Gap Doos
+                        </h4>
+                        <p className="text-[11px] text-[#9ca3af] mt-0.5">
+                          Integritas Urutan Doos
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                      0 Gap
+                    </span>
                   </div>
                 </div>
+              </div>
+
+              {/* Bottom Info */}
+              <div className="pt-4 border-t border-[#e8ebf1] dark:border-[#1e2430] flex items-center justify-between text-xs text-[#9ca3af]">
+                <span>Status API: {healthData?.status === 'ok' ? `Terhubung (${pingLatency || 0}ms)` : 'Memeriksa...'}</span>
+                <Clock className="w-3.5 h-3.5" />
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* ROW 3: Transaction History (2/3) + Upcoming Handover to BI (1/3)           */}
+          {/* ========================================================================= */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {/* 3.1 Transaction History Table (Span 2) */}
+            <div className="lg:col-span-2 bg-white dark:bg-[#12151c] rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-base font-bold tracking-tight text-[#11141a] dark:text-white">
+                    Riwayat Alur Produksi Terakhir
+                  </h3>
+                  <p className="text-xs text-[#6b7280] dark:text-[#9ca3af]">
+                    Catatan perpindahan status pack dan hasil kemas terkini
+                  </p>
+                </div>
+              </div>
+
+              {/* Clean Table Layout */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="text-[11px] font-semibold text-[#6b7280] dark:text-[#9ca3af] border-b border-[#e8ebf1] dark:border-[#1e2430]">
+                      <th className="pb-3 px-3">TrxID / No Bon</th>
+                      <th className="pb-3 px-3">Tanggal</th>
+                      <th className="pb-3 px-3">Kategori Modul</th>
+                      <th className="pb-3 px-3 text-center">Status</th>
+                      <th className="pb-3 px-3 text-right">Volume</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-transparent">
+                    {filteredTransactions.map((trx, idx) => (
+                      <tr
+                        key={idx}
+                        className={`text-xs transition-all duration-200 ${
+                          trx.isActive
+                            ? 'bg-white dark:bg-white/5 shadow-active-row dark:shadow-active-row-dark rounded-2xl'
+                            : 'hover:bg-[#f8f9fb] dark:hover:bg-[#1a1f29]'
+                        }`}
+                      >
+                        <td className="py-4 px-3 font-mono font-medium text-[#11141a] dark:text-white">
+                          {trx.id}
+                        </td>
+                        <td className="py-4 px-3 text-[#6b7280] dark:text-[#9ca3af]">
+                          {trx.date}
+                        </td>
+                        <td className="py-4 px-3 font-medium text-[#11141a] dark:text-white">
+                          {trx.category}
+                        </td>
+                        <td className="py-4 px-3 text-center">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold bg-[#ecfdf5] dark:bg-emerald-500/10 text-[#059669] dark:text-[#6ee7b7]">
+                            {trx.status}
+                          </span>
+                        </td>
+                        <td className="py-4 px-3 text-right font-mono font-bold text-[#11141a] dark:text-white">
+                          {trx.amount}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* 3.2 Upcoming Handover / Penyerahan BI (Span 1) */}
+            <div className="bg-white dark:bg-[#12151c] rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-base font-bold tracking-tight text-[#11141a] dark:text-white">
+                    Rencana Penyerahan BI
+                  </h3>
+                  <span className="text-xs text-[#9ca3af] font-mono">15 Sep 2026</span>
+                </div>
+                <p className="text-xs text-[#6b7280] dark:text-[#9ca3af] mb-6">
+                  Jadwal serah terima fisik doos ke Bank Indonesia
+                </p>
+
+                <div className="space-y-4">
+                  {/* Schedule Item 1 */}
+                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-[#f8f9fb] dark:hover:bg-[#1a1f29] transition-colors cursor-pointer group">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white group-hover:bg-white dark:group-hover:bg-[#12151c] shadow-sm transition-colors">
+                        <Building2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-[#11141a] dark:text-white">
+                          Doos 0001 - 0018 (Pecahan S)
+                        </h4>
+                        <p className="text-[11px] text-[#9ca3af] mt-0.5">
+                          Status: Siap Serah Terima
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold font-mono text-[#0f1115] dark:text-white">
+                      Rp 180 Jt
+                    </span>
+                  </div>
+
+                  {/* Schedule Item 2 */}
+                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-[#f8f9fb] dark:hover:bg-[#1a1f29] transition-colors cursor-pointer group">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#f8f9fb] dark:bg-[#1a1f29] flex items-center justify-center text-[#0f1115] dark:text-white group-hover:bg-white dark:group-hover:bg-[#12151c] shadow-sm transition-colors">
+                        <Car className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-[#11141a] dark:text-white">
+                          Doos 0019 - 0036 (Pecahan T)
+                        </h4>
+                        <p className="text-[11px] text-[#9ca3af] mt-0.5">
+                          Status: Antrian Kemas
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold font-mono text-[#0f1115] dark:text-white">
+                      Rp 360 Jt
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Link */}
+              <div className="pt-4 border-t border-[#e8ebf1] dark:border-[#1e2430]">
                 <button
-                  onClick={logout}
-                  title="Keluar / Logout"
-                  className="p-2 rounded-xl text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  type="button"
+                  className="w-full py-2.5 rounded-2xl text-xs font-semibold text-[#0f1115] dark:text-white bg-[#f1f3f7] dark:bg-[#1a1f29] hover:bg-[#e8ebf1] dark:hover:bg-[#2e3646] transition text-center cursor-pointer"
                 >
-                  <LogOut className="w-4 h-4" />
+                  Buka Modul Register Doos
                 </button>
               </div>
-            ) : (
-              <Link
-                to="/login"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Masuk</span>
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8 space-y-8">
-        {/* Banner Hero */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-br from-white via-slate-50 to-emerald-50/40 dark:from-slate-900 dark:via-slate-950 dark:to-emerald-950/20 p-6 md:p-8 relative overflow-hidden shadow-sm transition-colors duration-200">
-          <div className="relative z-10 max-w-2xl space-y-3">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100/70 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-400 text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>Arsitektur Frontend Siap (Dual Theme Minimalis)</span>
-            </div>
-
-            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Fondasi Aplikasi & Client HTTP Terkonfigurasi
-            </h2>
-
-            <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-              Langkah <strong>FE-01</strong> berhasil mengonfigurasi React Router deklaratif, Axios client terpusat dengan auto Bearer token injection, Zustand store untuk autentikasi dan tema, serta sistem desain Dual Theme minimalis & elegan.
-            </p>
-
-            <div className="pt-2 flex flex-wrap gap-2.5">
-              <button
-                onClick={fetchHealth}
-                disabled={loading}
-                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
-                Uji Koneksi API
-              </button>
-              <Link
-                to="/login"
-                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all flex items-center gap-1.5"
-              >
-                <span>Halaman Login (FE-02 Preview)</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
             </div>
           </div>
-        </div>
-
-        {/* Section 1: Live Backend Connectivity */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono">
-              Status Koneksi Backend API (Axios Interceptors)
-            </h3>
-            {pingLatency !== null && (
-              <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400">
-                Latency: {pingLatency} ms
-              </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Service Status Card */}
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2 shadow-sm transition-colors duration-200">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500 dark:text-slate-400">API Service</span>
-                <Server className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                {loading ? (
-                  <span className="text-slate-400 text-xs">Memeriksa...</span>
-                ) : healthData?.status === 'ok' ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span>Terhubung (200 OK)</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-                    <span className="text-rose-600 dark:text-rose-400 text-xs truncate max-w-[180px]" title={error || 'Gagal Terhubung'}>
-                      {error || 'Gagal Terhubung'}
-                    </span>
-                  </>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-400 font-mono truncate">
-                {import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}
-              </p>
-            </div>
-
-            {/* Database Status Card */}
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2 shadow-sm transition-colors duration-200">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500 dark:text-slate-400">Database PostgreSQL</span>
-                <Database className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                {loading ? (
-                  <span className="text-slate-400 text-xs">Memeriksa...</span>
-                ) : healthData?.database === 'connected' ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span>Connected</span>
-                  </>
-                ) : (
-                  <span className="text-xs text-amber-600">Disconnected</span>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-400 font-mono">
-                Prisma ORM &bull; PostgreSQL 16
-              </p>
-            </div>
-
-            {/* Environment Status Card */}
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2 shadow-sm transition-colors duration-200">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500 dark:text-slate-400">Environment</span>
-                <Cpu className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div className="text-base font-bold text-slate-900 dark:text-white capitalize">
-                {healthData?.environment || 'Development'}
-              </div>
-              <p className="text-[11px] text-slate-400 font-mono">
-                React 19 &bull; Vite &bull; TailwindCSS
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Section 2: Dual Theme Design System Preview */}
-        <section className="space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono">
-            Preview Sistem Desain: Muted Status Badges (Minimalis & Elegan)
-          </h3>
-
-          <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4 shadow-sm transition-colors duration-200">
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              Coba klik tombol <strong>Theme Toggle (☀️ / 🌙)</strong> di kanan atas untuk melihat bagaimana badge berikut beradaptasi secara elegan antara Light dan Dark mode:
-            </p>
-
-            <div className="flex flex-wrap gap-2.5 items-center">
-              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-                READY &bull; Siap Kirim
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20">
-                SIAP_KEMAS &bull; Antrian WIP
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20">
-                RECEIVED &bull; Diterima Khazai
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20">
-                PACKED &bull; Dikemas Doos
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-cyan-50 text-cyan-700 border border-cyan-200 dark:bg-cyan-500/10 dark:text-cyan-400 dark:border-cyan-500/20">
-                SHIPPED &bull; Terkirim BI
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20">
-                GAP &bull; Celah Nomor Terdeteksi
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
-                PENDING &bull; Menunggu
-              </span>
-            </div>
-          </div>
-        </section>
-
-        {/* Section 3: Formatting Utilities Demonstration */}
-        <section className="space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono">
-            Preview Utilitas Format (Tabular Figures Standard Banknote)
-          </h3>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors duration-200">
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">
-                Format Rupiah (IDR)
-              </span>
-              <span className="text-sm font-bold font-mono text-slate-900 dark:text-white block">
-                {formatRupiah(4500000000)}
-              </span>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors duration-200">
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">
-                Volume Bilyet Uang Kertas
-              </span>
-              <span className="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400 block">
-                {formatBilyet(180000)}
-              </span>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors duration-200">
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">
-                Format Nomor Doos 4-Digit
-              </span>
-              <span className="text-sm font-bold font-mono text-slate-900 dark:text-white block">
-                Doos {formatDoos(1)}
-              </span>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors duration-200">
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">
-                Rentang Nomor Doos
-              </span>
-              <span className="text-sm font-bold font-mono text-slate-900 dark:text-white block">
-                {formatDoosRange(1, 18)}
-              </span>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors duration-200">
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">
-                Rentang Nomor Pack
-              </span>
-              <span className="text-sm font-bold font-mono text-slate-900 dark:text-white block">
-                {formatPackRange(1, 4)}
-              </span>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors duration-200">
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">
-                Tanggal Resmi Indonesia
-              </span>
-              <span className="text-sm font-bold font-mono text-slate-900 dark:text-white block">
-                {formatIndonesianDate(new Date())}
-              </span>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 py-4 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors duration-200">
-        Khazprokhir Banknote Monitoring System &bull; Versi FE-01 Foundation
-      </footer>
+        </main>
+      </div>
     </div>
   );
 }
