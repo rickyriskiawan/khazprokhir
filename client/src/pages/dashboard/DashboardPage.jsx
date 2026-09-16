@@ -22,6 +22,7 @@ export default function DashboardPage() {
 
   // Live API status
   const [healthData, setHealthData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pingLatency, setPingLatency] = useState(null);
 
@@ -380,9 +381,8 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Bottom Info */}
               <div className="pt-4 border-t border-[#e8ebf1] dark:border-[#1e2430] flex items-center justify-between text-xs text-[#9ca3af]">
-                <span>Status API: {healthData?.status === 'ok' ? `Terhubung (${pingLatency || 0}ms)` : 'Memeriksa...'}</span>
+                <span>Status API: {loading ? 'Memeriksa...' : healthData?.status === 'ok' ? `Terhubung (${pingLatency || 0}ms)` : 'Terputus'}</span>
                 <Clock className="w-3.5 h-3.5" />
               </div>
             </div>
