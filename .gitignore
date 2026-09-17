@@ -37,3 +37,9 @@ yarn-error.log*
 prompt.txt
 issue.md
 planning.md
+
+#skills
+/.agents
+/.claude
+agent
+skills-lock.json
