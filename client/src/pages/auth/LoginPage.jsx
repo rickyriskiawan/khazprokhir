@@ -257,28 +257,28 @@ export default function LoginPage() {
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
                     type="button"
-                    onClick={() => handleQuickRole('supervisor', 'password123')}
+                    onClick={() => handleQuickRole('supervisor', 'khazprokhir123')}
                     className="flex items-center justify-center rounded-lg border border-border bg-surface-subtle py-1.5 px-2 text-[11px] font-medium text-ink hover:bg-border/50 dark:border-border-dark dark:bg-surface-subtle-dark dark:text-ink-dark dark:hover:bg-border-dark/50 transition-colors"
                   >
                     Supervisor
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleQuickRole('operator1', 'password123')}
+                    onClick={() => handleQuickRole('operator', 'khazprokhir123')}
                     className="flex items-center justify-center rounded-lg border border-border bg-surface-subtle py-1.5 px-2 text-[11px] font-medium text-ink hover:bg-border/50 dark:border-border-dark dark:bg-surface-subtle-dark dark:text-ink-dark dark:hover:bg-border-dark/50 transition-colors"
                   >
                     Operator
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleQuickRole('auditor', 'password123')}
+                    onClick={() => handleQuickRole('auditor', 'khazprokhir123')}
                     className="flex items-center justify-center rounded-lg border border-border bg-surface-subtle py-1.5 px-2 text-[11px] font-medium text-ink hover:bg-border/50 dark:border-border-dark dark:bg-surface-subtle-dark dark:text-ink-dark dark:hover:bg-border-dark/50 transition-colors"
                   >
                     Auditor
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleQuickRole('management', 'password123')}
+                    onClick={() => handleQuickRole('manajemen', 'khazprokhir123')}
                     className="flex items-center justify-center rounded-lg border border-border bg-surface-subtle py-1.5 px-2 text-[11px] font-medium text-ink hover:bg-border/50 dark:border-border-dark dark:bg-surface-subtle-dark dark:text-ink-dark dark:hover:bg-border-dark/50 transition-colors"
                   >
                     Management

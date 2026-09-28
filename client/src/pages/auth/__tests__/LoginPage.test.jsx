@@ -83,7 +83,7 @@ describe('LoginPage component', () => {
     const passwordInput = screen.getByLabelText(/^password$/i)
 
     expect(usernameInput).toHaveValue('supervisor')
-    expect(passwordInput).toHaveValue('password123')
+    expect(passwordInput).toHaveValue('khazprokhir123')
   })
 
   it('submits login request and redirects on success', async () => {
