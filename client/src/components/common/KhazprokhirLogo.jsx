@@ -124,3 +124,5 @@ export function KhazprokhirLogo({
     </svg>
   )
 }
+
+export default KhazprokhirLogo

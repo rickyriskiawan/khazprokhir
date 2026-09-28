@@ -1,9 +1,11 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import DashboardLayout from '../layouts/DashboardLayout'
 import DashboardPage from '../pages/dashboard/DashboardPage'
 import LoginPage from '../pages/auth/LoginPage'
 import { UnauthorizedPage } from '../pages/common/UnauthorizedPage'
 import NotFoundPage from '../pages/common/NotFoundPage'
+import ModulePlaceholderPage from '../pages/common/ModulePlaceholderPage'
 import { ProtectedRoute } from '../components/common/ProtectedRoute'
 
 export default function AppRoutes() {
@@ -15,8 +17,97 @@ export default function AppRoutes() {
 
       {/* Protected Routes (Strict Gatekeeper & RBAC Guard) */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
+        {/* All operational routes wrapped in DashboardLayout App Shell */}
+        <Route element={<DashboardLayout />}>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+
+          {/* Modul Operasional Fisik (Supervisor & Operator) */}
+          <Route element={<ProtectedRoute allowedRoles={['SUPERVISOR', 'OPERATOR']} />}>
+            <Route
+              path="/bon-masuk"
+              element={
+                <ModulePlaceholderPage
+                  moduleName="Modul 1: Penerimaan Bon Masuk Khazai & Batch"
+                  moduleCode="FE-05"
+                  description="Pencatatan penerimaan fisik dari Khazai, verifikasi segel, dan registrasi 100 pack per batch."
+                />
+              }
+            />
+            <Route
+              path="/sortir"
+              element={
+                <ModulePlaceholderPage
+                  moduleName="Modul 2: Proses Sortir & Penataan Pack"
+                  moduleCode="FE-06 s/d FE-07"
+                  description="Pemeriksaan fisik lembar bilyet kelipatan 4 pack, kalkulasi Zero Reject, dan pencatatan 2 petugas sortir."
+                />
+              }
+            />
+            <Route
+              path="/kemas"
+              element={
+                <ModulePlaceholderPage
+                  moduleName="Modul 3: Pengemasan Doos / Hasil Kemas"
+                  moduleCode="FE-08 s/d FE-09"
+                  description="Rasio 4 Pack = 9 Doos, penomoran urut doos, status SIAP_KEMAS & konfirmasi fisik READY antar-shift."
+                />
+              }
+            />
+          </Route>
+
+          {/* Modul Monitoring Doos (Semua Peran, Auditor & Management read-only) */}
+          <Route
+            path="/monitoring-doos"
+            element={
+              <ModulePlaceholderPage
+                moduleName="Modul 4: Monitoring Doos & Deteksi Celah Register"
+                moduleCode="FE-10 s/d FE-11"
+                description="Buku register doos per denominasi & tahun anggaran serta deteksi otomatis loncatan nomor doos (GAP)."
+              />
+            }
+          />
+
+          {/* Perencanaan & Master Data */}
+          <Route element={<ProtectedRoute allowedRoles={['SUPERVISOR', 'MANAGEMENT', 'AUDITOR']} />}>
+            <Route
+              path="/target-produksi"
+              element={
+                <ModulePlaceholderPage
+                  moduleName="Perencanaan: Target Produksi Tahunan & Bulanan"
+                  moduleCode="FE-12"
+                  description="Pencatatan target TA berjalan, pembagian bulanan, dan evaluasi persediaan HCTS."
+                />
+              }
+            />
+          </Route>
+
+          <Route element={<ProtectedRoute allowedRoles={['SUPERVISOR']} />}>
+            <Route
+              path="/master-data"
+              element={
+                <ModulePlaceholderPage
+                  moduleName="Master Data: Denominasi, Emisi, Shift & Akun"
+                  moduleCode="FE-12"
+                  description="Konfigurasi data master referensi, kode huruf pecahan, dan manajemen akun pengguna."
+                />
+              }
+            />
+          </Route>
+
+          <Route element={<ProtectedRoute allowedRoles={['SUPERVISOR', 'AUDITOR']} />}>
+            <Route
+              path="/audit-trail"
+              element={
+                <ModulePlaceholderPage
+                  moduleName="Audit Trail Log Aktivitas"
+                  moduleCode="FE-13"
+                  description="Pencatatan forensik mutasi data, login pengguna, dan riwayat pembatalan/koreksi transaksi."
+                />
+              }
+            />
+          </Route>
+        </Route>
       </Route>
 
       {/* 404 Catch All */}

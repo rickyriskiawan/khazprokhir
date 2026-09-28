@@ -80,5 +80,76 @@ describe('AppRoutes router configuration', () => {
 
     expect(screen.getByText(/Halaman Tidak Ditemukan/i)).toBeInTheDocument()
   })
+
+  it('allows OPERATOR to access /bon-masuk, but redirects AUDITOR to /unauthorized', () => {
+    // 1. As Operator
+    useAuthStore.setState({
+      token: 'mock-token',
+      user: { id: 1, username: 'op1', role: 'OPERATOR' },
+      isAuthenticated: true,
+      isLoading: false,
+    })
+
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/bon-masuk']}>
+        <AppRoutes />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByText(/Penerimaan Bon Masuk Khazai/i)).toBeInTheDocument()
+    unmount()
+
+    // 2. As Auditor
+    useAuthStore.setState({
+      token: 'mock-token',
+      user: { id: 2, username: 'audit1', role: 'AUDITOR' },
+      isAuthenticated: true,
+      isLoading: false,
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/bon-masuk']}>
+        <AppRoutes />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByText(/Otoritas Tidak Mencukupi/i)).toBeInTheDocument()
+  })
+
+  it('allows AUDITOR and MANAGEMENT to access /monitoring-doos', () => {
+    useAuthStore.setState({
+      token: 'mock-token',
+      user: { id: 3, username: 'mgmt1', role: 'MANAGEMENT' },
+      isAuthenticated: true,
+      isLoading: false,
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/monitoring-doos']}>
+        <AppRoutes />
+      </MemoryRouter>
+    )
+
+    expect(screen.getAllByText(/Monitoring Doos/i).length).toBeGreaterThan(0)
+  })
+
+  it('allows SUPERVISOR to access /master-data, but redirects OPERATOR to /unauthorized', () => {
+    // As Operator
+    useAuthStore.setState({
+      token: 'mock-token',
+      user: { id: 1, username: 'op1', role: 'OPERATOR' },
+      isAuthenticated: true,
+      isLoading: false,
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/master-data']}>
+        <AppRoutes />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByText(/Otoritas Tidak Mencukupi/i)).toBeInTheDocument()
+  })
 })
+
 
