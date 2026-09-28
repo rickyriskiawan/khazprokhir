@@ -43,7 +43,7 @@ describe('LoginPage component', () => {
 
     // Brand elements
     expect(screen.getAllByText(/KHAZPROKHIR/i).length).toBeGreaterThanOrEqual(1)
-    expect(screen.getByText(/Seksi Khazanah Produk Akhir/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/Peruri/i).length).toBeGreaterThanOrEqual(1)
 
     // Form inputs
     expect(screen.getByLabelText(/username/i)).toBeInTheDocument()

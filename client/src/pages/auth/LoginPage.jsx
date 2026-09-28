@@ -7,10 +7,6 @@ import {
   Lock,
   AlertCircle,
   Loader2,
-  Layers,
-  FileCheck2,
-  Truck,
-  Shield,
 } from 'lucide-react'
 import { KhazprokhirLogo } from '@/components/common/KhazprokhirLogo'
 import ThemeToggle from '@/components/common/ThemeToggle'
@@ -94,80 +90,37 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row bg-canvas dark:bg-canvas-dark text-ink dark:text-ink-dark transition-colors duration-200">
-      {/* LEFT PANEL: 50% Desktop Official Branding & Security Showcase */}
-      <div className="relative flex flex-col justify-between overflow-hidden bg-slate-950 p-8 text-white lg:w-1/2 lg:p-12 xl:p-16">
+      {/* LEFT PANEL: 50% Desktop Clean Minimalist Hero (Opsi B: Centered Logo + Text "Peruri") */}
+      <div className="hidden lg:flex relative flex-col justify-between overflow-hidden bg-slate-950 p-12 xl:p-16 text-white lg:w-1/2">
         {/* Subtle Ambient Radial Glows */}
-        <div className="pointer-events-none absolute -left-20 -top-20 h-96 w-96 rounded-full bg-blue-600/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -right-20 h-96 w-96 rounded-full bg-purple-600/15 blur-3xl" />
+        <div className="pointer-events-none absolute -left-24 -top-24 h-[500px] w-[500px] rounded-full bg-blue-600/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -right-24 h-[500px] w-[500px] rounded-full bg-purple-600/15 blur-3xl" />
 
-        {/* Top Branding */}
+        {/* Top Header Label */}
         <div className="relative z-10">
-          <div className="flex items-center space-x-3 mb-2">
-            <KhazprokhirLogo size="md" />
-          </div>
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-700/60 bg-slate-900/60 px-3 py-1 text-[11px] font-semibold text-emerald tracking-wide">
-            <Shield className="h-3 w-3 text-emerald" />
-            Seksi Khazanah Produk Akhir (Khazprokhir)
-          </div>
+          <span className="text-xs font-semibold tracking-widest uppercase text-slate-400">
+            Peruri
+          </span>
         </div>
 
-        {/* Middle Narrative & Value Pillars */}
-        <div className="relative z-10 my-10 max-w-lg space-y-6">
-          <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl lg:text-4xl leading-snug">
-            Sistem Terpadu Monitoring & Pengendalian Alur Produksi Uang Kertas Rupiah
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-            Platform pengawasan terintegrasi mulai dari penerimaan bahan setengah jadi Khazai, sortir kelipatan 4 pack, pengemasan 9 doos standar Bank Indonesia, hingga manajemen buku register fisik bebas celah (Zero Gap).
+        {/* Center: Prominent Centered Hero Logo & Subtext "Peruri" */}
+        <div className="relative z-10 my-auto flex flex-col items-center justify-center text-center px-4 space-y-6">
+          <div className="w-full max-w-[440px] flex justify-center drop-shadow-md">
+            <KhazprokhirLogo size="hero" themeVariant="dark" />
+          </div>
+          <p className="text-base font-medium tracking-wide text-slate-300">
+            Peruri
           </p>
-
-          {/* 3 Pillars */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-start gap-3 rounded-xl border border-slate-800/80 bg-slate-900/40 p-3.5 backdrop-blur-sm">
-              <div className="rounded-lg bg-emerald/10 p-2 text-emerald">
-                <Layers className="h-4 w-4" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-slate-200">Zero Reject Accounting</h4>
-                <p className="text-[11px] text-slate-400 leading-normal">
-                  Rasio presisi 4 Pack (180.000 bilyet) = 9 Doos kemasan tanpa sisa lembar lepas.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 rounded-xl border border-slate-800/80 bg-slate-900/40 p-3.5 backdrop-blur-sm">
-              <div className="rounded-lg bg-blue-500/10 p-2 text-blue-400">
-                <FileCheck2 className="h-4 w-4" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-slate-200">Continuous Register Integrity</h4>
-                <p className="text-[11px] text-slate-400 leading-normal">
-                  Pelacakan buku register digital dan deteksi dini loncatan nomor doos per pecahan.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 rounded-xl border border-slate-800/80 bg-slate-900/40 p-3.5 backdrop-blur-sm">
-              <div className="rounded-lg bg-purple-500/10 p-2 text-purple-400">
-                <Truck className="h-4 w-4" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-slate-200">Secure Bank Indonesia Handover</h4>
-                <p className="text-[11px] text-slate-400 leading-normal">
-                  Dokumen serah terima pengiriman resmi BI lengkap dengan nominal terbilang presisi.
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* Bottom Institutional Footer */}
-        <div className="relative z-10 border-t border-slate-800/60 pt-4 text-[11px] text-slate-400 flex items-center justify-between">
-          <span>Divisi Percetakan Uang Kertas — Perum Peruri</span>
+        {/* Bottom Institutional Reference */}
+        <div className="relative z-10 border-t border-slate-800/60 pt-4 text-xs text-slate-400 flex items-center justify-between">
+          <span>Peruri</span>
           <span className="font-mono text-slate-400">TA 2026</span>
         </div>
       </div>
 
-      {/* RIGHT PANEL: 50% Desktop Clean Login Form */}
+      {/* RIGHT PANEL: Form Login (Form-First on Mobile, Clean on Desktop) */}
       <div className="flex flex-1 flex-col justify-between p-6 sm:p-10 lg:p-12 xl:p-16">
         {/* Top Bar: Server Status & Theme Toggle */}
         <div className="flex items-center justify-between">
@@ -199,6 +152,14 @@ export default function LoginPage() {
 
         {/* Middle: Login Form Card */}
         <div className="mx-auto my-8 w-full max-w-sm">
+          {/* Mobile/Tablet Header Logo (< lg): Form-First with compact branding */}
+          <div className="flex flex-col items-center mb-6 lg:hidden">
+            <KhazprokhirLogo size="lg" className="mb-2" />
+            <span className="text-xs font-semibold tracking-wider text-ink-secondary dark:text-ink-secondary-dark">
+              Peruri
+            </span>
+          </div>
+
           <Card className="border-border/80 shadow-soft-card dark:border-border-dark dark:shadow-soft-card-dark">
             <CardContent className="p-6 sm:p-8 space-y-6">
               {/* Header */}

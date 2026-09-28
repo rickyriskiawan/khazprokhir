@@ -6,16 +6,29 @@ export function KhazprokhirLogo({
   size = 'md',
   iconOnly = false,
   showText = true,
+  themeVariant = 'auto', // 'auto' | 'light' | 'dark'
 }) {
-  // Dimension presets (aspect ratio of viewBox 200 300 1550 480 is ~ 3.23:1 for full logo)
-  // Icon viewBox: 220 340 360 400
+  // Dimension presets (aspect ratio of viewBox 220 320 1520 440 is ~ 3.45:1 for full logo)
   const sizeClasses = {
     sm: iconOnly ? 'w-7 h-7' : 'h-7 w-auto',
     md: iconOnly ? 'w-9 h-9' : 'h-9 w-auto',
     lg: iconOnly ? 'w-12 h-12' : 'h-12 w-auto',
     xl: iconOnly ? 'w-16 h-16' : 'h-16 w-auto',
-    hero: iconOnly ? 'w-24 h-24' : 'h-20 w-auto',
+    hero: iconOnly ? 'w-24 h-24 sm:w-28 sm:h-28' : 'w-full max-w-[420px] h-auto',
   }
+
+  // Theme-adaptive or explicit color variants for divider and brand text
+  const textColorClass = {
+    auto: 'text-pitch dark:text-white',
+    dark: 'text-white',
+    light: 'text-slate-900',
+  }[themeVariant] || 'text-pitch dark:text-white'
+
+  const dividerColorClass = {
+    auto: 'text-slate-400 dark:text-slate-600',
+    dark: 'text-slate-500',
+    light: 'text-slate-300',
+  }[themeVariant] || 'text-slate-400 dark:text-slate-600'
 
   const d1 = "M 386.92 367.49 L 367.08 378.94 L 334.56 397.72 L 302.03 416.49 C 294.81 420.66 291.20 427.97 291.20 435.27 C 291.20 442.57 294.81 449.88 302.03 454.05 L 334.56 435.27 L 367.08 416.49 L 367.08 416.49 L 432.13 378.94 L 412.30 367.49 C 408.37 365.22 403.99 364.09 399.61 364.09 C 395.23 364.09 390.85 365.22 386.92 367.49 Z"
   const d2 = "M 451.97 405.04 L 432.14 416.49 L 432.13 416.49 L 399.61 435.27 L 367.08 454.05 L 347.25 465.50 C 339.40 470.04 329.72 470.04 321.87 465.50 L 302.03 454.05 C 294.81 449.88 291.20 442.57 291.20 435.27 C 291.20 427.97 294.81 420.66 302.03 416.49 L 269.51 435.27 L 249.68 446.72 C 241.82 451.25 236.98 459.64 236.98 468.70 L 236.98 627.18 C 236.98 636.24 241.82 644.62 249.68 649.15 L 269.51 660.61 L 269.51 510.38 C 269.51 497.72 279.90 488.66 291.23 488.66 C 294.84 488.66 298.54 489.59 302.03 491.60 L 302.03 664.73 C 302.03 673.80 306.87 682.18 314.72 686.71 L 334.56 698.16 L 334.56 527.09 C 334.56 516.75 340.07 507.20 349.02 502.03 L 367.08 491.60 L 399.61 472.83 L 432.13 454.05 L 464.66 435.27 L 497.18 416.49 L 477.35 405.04 C 473.42 402.77 469.04 401.64 464.66 401.64 C 460.28 401.64 455.90 402.77 451.97 405.04 Z"
@@ -86,7 +99,7 @@ export function KhazprokhirLogo({
         y2="739"
         stroke="currentColor"
         strokeWidth="3.5"
-        className="text-slate-400 dark:text-slate-600"
+        className={dividerColorClass}
       />
 
       {/* Brand Text */}
@@ -99,7 +112,7 @@ export function KhazprokhirLogo({
           fontWeight="300"
           letterSpacing="0.08em"
           fill="currentColor"
-          className="text-pitch dark:text-white"
+          className={textColorClass}
         >
           KHAZPROKHIR
         </text>
@@ -107,4 +120,3 @@ export function KhazprokhirLogo({
     </svg>
   )
 }
-

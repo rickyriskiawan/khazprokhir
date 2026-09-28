@@ -15,5 +15,18 @@ describe('KhazprokhirLogo component', () => {
     expect(container.querySelector('svg')).toBeInTheDocument()
     expect(screen.queryByText('KHAZPROKHIR')).not.toBeInTheDocument()
   })
+
+  it('applies dark theme variant styling correctly', () => {
+    render(<KhazprokhirLogo themeVariant="dark" />)
+    const brandText = screen.getByText('KHAZPROKHIR')
+    expect(brandText).toHaveClass('text-white')
+  })
+
+  it('renders hero size preset without error', () => {
+    const { container } = render(<KhazprokhirLogo size="hero" />)
+    const svg = container.querySelector('svg')
+    expect(svg).toBeInTheDocument()
+    expect(svg).toHaveClass('max-w-[420px]')
+  })
 })
 
