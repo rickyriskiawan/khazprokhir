@@ -73,9 +73,9 @@ async function main() {
   // 2. Seeding Master Shift
   console.log('\n⏰ Seeding Master Shift Kerja...');
   const shiftData = [
-    { nama: 'Shift 1', jam_mulai: '06:00', jam_selesai: '14:00' },
-    { nama: 'Shift 2', jam_mulai: '14:00', jam_selesai: '22:00' },
-    { nama: 'Shift 3', jam_mulai: '22:00', jam_selesai: '06:00' },
+    { nama: 'Shift 1', jam_mulai: '07:30', jam_selesai: '16:00', is_active: true },
+    { nama: 'Shift 2', jam_mulai: '15:30', jam_selesai: '23:30', is_active: true },
+    { nama: 'Shift 3', jam_mulai: '23:00', jam_selesai: '07:00', is_active: false },
   ];
 
   for (const shift of shiftData) {
@@ -89,7 +89,7 @@ async function main() {
           nama: shift.nama,
           jam_mulai: shift.jam_mulai,
           jam_selesai: shift.jam_selesai,
-          is_active: true,
+          is_active: shift.is_active !== undefined ? shift.is_active : true,
         },
       });
       console.log(`  ✓ Created Shift: ${shift.nama} (${shift.jam_mulai} - ${shift.jam_selesai})`);

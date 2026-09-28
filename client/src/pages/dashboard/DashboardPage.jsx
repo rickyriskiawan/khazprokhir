@@ -12,13 +12,10 @@ import {
   Building2,
   Car
 } from 'lucide-react';
-import SlimSidebar from '../../components/layout/SlimSidebar';
-import ModernTopbar from '../../components/layout/ModernTopbar';
 import api from '../../services/api';
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery] = useState('');
 
   // Live API status
   const [healthData, setHealthData] = useState(null);
@@ -104,17 +101,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="min-h-screen bg-canvas dark:bg-canvas-dark text-ink dark:text-ink-dark flex font-sans transition-colors duration-200">
-      {/* 1. Left Slim Sidebar */}
-      <SlimSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-
-      {/* Main App Content Container */}
-      <div className="flex-1 flex flex-col min-w-0 pb-12">
-        {/* 2. Top Header Bar */}
-        <ModernTopbar onSearch={setSearchQuery} />
-
-        {/* Content Workspace */}
-        <main className="px-6 md:px-8 space-y-6 max-w-[1440px] w-full mx-auto">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1440px] w-full mx-auto pb-12">
           {/* Status Alert if Backend is offline */}
           {error && (
             <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs flex items-center justify-between shadow-sm">
@@ -516,10 +503,8 @@ export default function DashboardPage() {
                   Buka Modul Register Doos
                 </button>
               </div>
-            </div>
           </div>
-        </main>
+        </div>
       </div>
-    </div>
   );
 }
