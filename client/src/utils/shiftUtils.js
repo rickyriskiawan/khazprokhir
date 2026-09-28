@@ -151,3 +151,4 @@ export function getShiftBadgeStyle(shiftName, isHandover = false) {
 
   return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800';
 }
+

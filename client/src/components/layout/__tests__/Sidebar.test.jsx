@@ -102,3 +102,4 @@ describe('Sidebar component', () => {
     expect(screen.getByText('Target Produksi')).toBeInTheDocument();
   });
 });
+

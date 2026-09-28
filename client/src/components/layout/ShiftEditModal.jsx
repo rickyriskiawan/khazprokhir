@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Clock, CheckCircle2, AlertCircle, X, Save } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -33,7 +34,7 @@ export default function ShiftEditModal({ isOpen, onClose }) {
     );
   }
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === 'undefined') return null;
 
   const handleChange = (id, field, value) => {
     setFormData((prev) =>
@@ -62,7 +63,7 @@ export default function ShiftEditModal({ isOpen, onClose }) {
     }
   };
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -203,6 +204,7 @@ export default function ShiftEditModal({ isOpen, onClose }) {
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

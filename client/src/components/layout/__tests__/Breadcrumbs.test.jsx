@@ -36,3 +36,4 @@ describe('Breadcrumbs component', () => {
     expect(screen.getByText('Custom Test Path')).toBeInTheDocument();
   });
 });
+

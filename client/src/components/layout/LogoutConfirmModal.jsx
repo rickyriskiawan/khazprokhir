@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { LogOut, AlertTriangle, X } from 'lucide-react';
 import { Button } from '../ui/button';
 
@@ -19,9 +20,9 @@ export default function LogoutConfirmModal({ isOpen, onClose, onConfirm, isLoadi
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -84,6 +85,7 @@ export default function LogoutConfirmModal({ isOpen, onClose, onConfirm, isLoadi
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
