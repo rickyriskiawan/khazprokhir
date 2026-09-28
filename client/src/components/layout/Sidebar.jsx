@@ -120,24 +120,15 @@ export default function Sidebar({ onItemClick, isMobile = false }) {
       )}
 
       {/* 1. Header: Logo & Branding */}
-      <div className={`px-4 mb-4 flex items-center ${effectiveExpanded ? 'justify-between' : 'justify-center'}`}>
+      <div className={`px-4 mb-4 flex items-center ${effectiveExpanded ? 'justify-start' : 'justify-center'}`}>
         <div
-          className="flex items-center gap-3 overflow-hidden cursor-pointer group"
+          className="flex items-center overflow-hidden cursor-pointer group"
           onClick={!isMobile ? toggleSidebar : undefined}
+          title={effectiveExpanded ? 'Khazprokhir' : 'Perluas sidebar'}
         >
           <div className="shrink-0 group-hover:scale-105 transition-transform duration-200">
-            <KhazprokhirLogo size="sm" />
+            <KhazprokhirLogo size="md" iconOnly={!effectiveExpanded} />
           </div>
-          {effectiveExpanded && (
-            <div className="flex flex-col min-w-0">
-              <span className="text-xs font-black tracking-tight text-ink dark:text-white truncate uppercase font-mono">
-                KHAZPROKHIR
-              </span>
-              <span className="text-[10px] text-ink-secondary dark:text-ink-secondary-dark truncate font-medium">
-                Monitoring Produksi
-              </span>
-            </div>
-          )}
         </div>
       </div>
 

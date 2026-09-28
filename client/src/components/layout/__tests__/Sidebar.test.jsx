@@ -101,5 +101,36 @@ describe('Sidebar component', () => {
     expect(screen.queryByText('Master Data')).not.toBeInTheDocument();
     expect(screen.getByText('Target Produksi')).toBeInTheDocument();
   });
+
+  it('renders vector logo with text on expanded and icon-only on collapsed', () => {
+    useAuthStore.setState({
+      user: { username: 'spv', role: 'SUPERVISOR', full_name: 'Supervisor Test' },
+      isAuthenticated: true,
+    });
+
+    // 1. Expanded mode
+    useUIStore.setState({ isSidebarExpanded: true });
+    const { rerender } = render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <Sidebar />
+      </MemoryRouter>
+    );
+
+    // Shows KHAZPROKHIR SVG text
+    expect(screen.getByText('KHAZPROKHIR')).toBeInTheDocument();
+    // Does not render separate HTML subtitle
+    expect(screen.queryByText('Monitoring Produksi')).not.toBeInTheDocument();
+
+    // 2. Collapsed mode
+    useUIStore.setState({ isSidebarExpanded: false });
+    rerender(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <Sidebar />
+      </MemoryRouter>
+    );
+
+    // In collapsed mode, iconOnly is passed, so KHAZPROKHIR text is not rendered
+    expect(screen.queryByText('KHAZPROKHIR')).not.toBeInTheDocument();
+  });
 });
 

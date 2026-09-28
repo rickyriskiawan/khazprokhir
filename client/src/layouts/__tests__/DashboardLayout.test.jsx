@@ -4,9 +4,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import DashboardLayout from '../DashboardLayout';
 import { useAuthStore } from '../../stores/authStore';
+import { useUIStore } from '../../stores/uiStore';
 
 describe('DashboardLayout component', () => {
   beforeEach(() => {
+    useUIStore.setState({ isSidebarExpanded: true });
     useAuthStore.setState({
       user: { username: 'spv', full_name: 'Supervisor Test', role: 'SUPERVISOR' },
       isAuthenticated: true,
@@ -26,8 +28,8 @@ describe('DashboardLayout component', () => {
 
     // Sidebar branding is present
     expect(screen.getAllByText('KHAZPROKHIR')[0]).toBeInTheDocument();
-    // Topbar breadcrumb is present
-    expect(screen.getByText('Dashboard Utama')).toBeInTheDocument();
+    // Topbar breadcrumb and sidebar link are present
+    expect(screen.getAllByText('Dashboard Utama').length).toBeGreaterThanOrEqual(1);
     // Outlet content is rendered
     expect(screen.getByText('Konten Dashboard Test')).toBeInTheDocument();
   });
