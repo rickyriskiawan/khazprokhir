@@ -28,5 +28,21 @@ describe('KhazprokhirLogo component', () => {
     expect(svg).toBeInTheDocument()
     expect(svg).toHaveClass('max-w-[420px]')
   })
+
+  it('generates unique linearGradient IDs across multiple instances to prevent hidden element collision', () => {
+    const { container } = render(
+      <div>
+        <KhazprokhirLogo />
+        <KhazprokhirLogo />
+      </div>
+    )
+    const svgs = container.querySelectorAll('svg')
+    expect(svgs.length).toBe(2)
+
+    const linearGradients = container.querySelectorAll('linearGradient')
+    const ids = Array.from(linearGradients).map((el) => el.id)
+    const uniqueIds = new Set(ids)
+    expect(uniqueIds.size).toBe(ids.length)
+  })
 })
 

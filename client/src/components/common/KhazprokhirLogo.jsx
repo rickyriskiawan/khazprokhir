@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useId } from 'react'
 import { cn } from '@/lib/utils'
 
 export function KhazprokhirLogo({
@@ -8,6 +8,10 @@ export function KhazprokhirLogo({
   showText = true,
   themeVariant = 'auto', // 'auto' | 'light' | 'dark'
 }) {
+  const reactId = useId()
+  const safeId = reactId.replace(/[^a-zA-Z0-9_-]/g, '')
+  const blueGradId = `khazBlueGrad_${safeId}`
+  const purpleGradId = `khazPurpleGrad_${safeId}`
   // Dimension presets (aspect ratio of viewBox 220 320 1520 440 is ~ 3.45:1 for full logo)
   const sizeClasses = {
     sm: iconOnly ? 'w-7 h-7' : 'h-7 w-auto',
@@ -44,21 +48,21 @@ export function KhazprokhirLogo({
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          <linearGradient id="khazLogoBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={blueGradId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#0a194f" />
             <stop offset="50%" stopColor="#0066b3" />
             <stop offset="100%" stopColor="#00b4d8" />
           </linearGradient>
-          <linearGradient id="khazLogoPurpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={purpleGradId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#4a00e0" />
             <stop offset="50%" stopColor="#8e2de2" />
             <stop offset="100%" stopColor="#d946ef" />
           </linearGradient>
         </defs>
-        <path d={d1} fill="url(#khazLogoBlueGrad)" />
-        <path d={d2} fill="url(#khazLogoBlueGrad)" />
-        <path d={d3} fill="url(#khazLogoPurpleGrad)" />
-        <path d={d4} fill="url(#khazLogoPurpleGrad)" fillRule="evenodd" />
+        <path d={d1} fill={`url(#${blueGradId})`} />
+        <path d={d2} fill={`url(#${blueGradId})`} />
+        <path d={d3} fill={`url(#${purpleGradId})`} />
+        <path d={d4} fill={`url(#${purpleGradId})`} fillRule="evenodd" />
       </svg>
     )
   }
@@ -71,12 +75,12 @@ export function KhazprokhirLogo({
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        <linearGradient id="khazFullBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={blueGradId} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#0a194f" />
           <stop offset="50%" stopColor="#0066b3" />
           <stop offset="100%" stopColor="#00b4d8" />
         </linearGradient>
-        <linearGradient id="khazFullPurpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={purpleGradId} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#4a00e0" />
           <stop offset="50%" stopColor="#8e2de2" />
           <stop offset="100%" stopColor="#d946ef" />
@@ -85,10 +89,10 @@ export function KhazprokhirLogo({
 
       {/* Hexagon icon */}
       <g>
-        <path d={d1} fill="url(#khazFullBlueGrad)" />
-        <path d={d2} fill="url(#khazFullBlueGrad)" />
-        <path d={d3} fill="url(#khazFullPurpleGrad)" />
-        <path d={d4} fill="url(#khazFullPurpleGrad)" fillRule="evenodd" />
+        <path d={d1} fill={`url(#${blueGradId})`} />
+        <path d={d2} fill={`url(#${blueGradId})`} />
+        <path d={d3} fill={`url(#${purpleGradId})`} />
+        <path d={d4} fill={`url(#${purpleGradId})`} fillRule="evenodd" />
       </g>
 
       {/* Thin divider line */}
