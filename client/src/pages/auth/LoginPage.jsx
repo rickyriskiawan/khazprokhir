@@ -109,14 +109,14 @@ export default function LoginPage() {
             <KhazprokhirLogo size="hero" themeVariant="dark" />
           </div>
           <p className="text-base font-medium tracking-wide text-slate-300">
-            Peruri
+            Khazanah Produk Akhir
           </p>
         </div>
 
         {/* Bottom Institutional Reference */}
         <div className="relative z-10 border-t border-slate-800/60 pt-4 text-xs text-slate-400 flex items-center justify-between">
-          <span>Peruri</span>
-          <span className="font-mono text-slate-400">TA 2026</span>
+          <span></span>
+          <span className="font-mono text-slate-400">2026</span>
         </div>
       </div>
 
@@ -165,11 +165,8 @@ export default function LoginPage() {
               {/* Header */}
               <div className="space-y-1.5 text-center">
                 <h2 className="text-xl font-bold tracking-tight text-pitch dark:text-white">
-                  Masuk ke Sistem
+                  Login
                 </h2>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
-                  Gunakan akun dinas Anda untuk mengakses ruang kerja produksi
-                </p>
               </div>
 
               {/* Error Banner */}
