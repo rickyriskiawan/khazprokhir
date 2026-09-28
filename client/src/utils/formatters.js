@@ -15,6 +15,36 @@ export const formatRupiah = (amount) => {
 };
 
 /**
+ * Format large number into smart compact Indonesian Rupiah format.
+ * Example: 1450000000 -> "Rp 1,45 Miliar" (or "Rp 1,45 M" with shortSuffix)
+ */
+export const formatCompactRupiah = (amount, shortSuffix = false) => {
+  if (amount === null || amount === undefined || isNaN(Number(amount))) {
+    return 'Rp 0';
+  }
+  const num = Math.abs(Number(amount));
+  const sign = Number(amount) < 0 ? '-' : '';
+
+  if (num >= 1e12) {
+    const val = (num / 1e12).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+    return `${sign}Rp ${val} ${shortSuffix ? 'T' : 'Triliun'}`;
+  }
+  if (num >= 1e9) {
+    const val = (num / 1e9).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+    return `${sign}Rp ${val} ${shortSuffix ? 'M' : 'Miliar'}`;
+  }
+  if (num >= 1e6) {
+    const val = (num / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+    return `${sign}Rp ${val} ${shortSuffix ? 'Jt' : 'Juta'}`;
+  }
+  if (num >= 1e3) {
+    const val = (num / 1e3).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+    return `${sign}Rp ${val} ${shortSuffix ? 'Rb' : 'Ribu'}`;
+  }
+  return formatRupiah(amount);
+};
+
+/**
  * Format sheets / bilyet volume with thousands separator.
  * Example: 45000 -> "45.000 Lembar"
  */

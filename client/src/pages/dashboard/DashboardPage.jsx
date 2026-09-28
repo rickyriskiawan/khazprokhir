@@ -1,510 +1,224 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  CreditCard, 
-  Layers, 
-  TrendingUp, 
-  ArrowUpRight, 
-  CheckCircle2, 
-  ChevronDown, 
-  Clock, 
-  AlertCircle,
-  Package,
-  Building2,
-  Car
-} from 'lucide-react';
-import api from '../../services/api';
+import React, { useState, useEffect, useCallback } from 'react';
+import { AlertCircle, Coins, CheckCircle2 } from 'lucide-react';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import ProductionKPICards from '@/components/dashboard/ProductionKPICards';
+import ShiftPerformanceWidget from '@/components/dashboard/ShiftPerformanceWidget';
+import QuickActionsBar from '@/components/dashboard/QuickActionsBar';
+import { fetchDashboardOverview } from '@/services/dashboardService';
+import { formatRupiah, formatDoos } from '@/utils/formatters';
 
 export default function DashboardPage() {
-  const [searchQuery] = useState('');
-
-  // Live API status
-  const [healthData, setHealthData] = useState(null);
+  const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [pingLatency, setPingLatency] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [errorBanner, setErrorBanner] = useState(null);
+
+  const loadData = useCallback(async (isManualRefresh = false) => {
+    if (isManualRefresh) setIsRefreshing(true);
+    try {
+      const data = await fetchDashboardOverview();
+      setOverview(data);
+      if (data.errors && data.errors.length > 0) {
+        setErrorBanner(`Beberapa data modul gagal dimuat: ${data.errors.map((e) => e.module).join(', ')}`);
+      } else {
+        setErrorBanner(null);
+      }
+    } catch (err) {
+      setErrorBanner(err.userMessage || err.message || 'Gagal memuat data dashboard.');
+    } finally {
+      setLoading(false);
+      if (isManualRefresh) setIsRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
-    const start = performance.now();
-    api
-      .get('/health')
-      .then((res) => {
-        if (isMounted) {
-          setHealthData(res.data);
-          setPingLatency(Math.round(performance.now() - start));
-          setError(null);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err.userMessage || err.message);
-          setHealthData(null);
-          setPingLatency(null);
-          setLoading(false);
-        }
-      });
+    loadData();
+
+    // Auto-refresh interval 60 detik (Sesuai Q1 Opsi A)
+    const interval = setInterval(() => {
+      if (isMounted) {
+        loadData();
+      }
+    }, 60000);
 
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
-  }, []);
+  }, [loadData]);
 
-  // Mock bar chart data (12 columns) matching the reference screenshot
-  const chartData = [
-    { label: 'Jan', value: 35, display: '15.750' },
-    { label: 'Feb', value: 70, display: '31.500' },
-    { label: 'Mar', value: 48, display: '21.600' },
-    { label: 'Apr', value: 65, display: '29.250' },
-    { label: 'Mei', value: 92, display: '41.400' },
-    { label: 'Jun', value: 98, display: '44.058', active: true, diff: '+67%' },
-    { label: 'Jul', value: 68, display: '30.600' },
-    { label: 'Agt', value: 85, display: '38.250' },
-    { label: 'Sep', value: 58, display: '26.100' },
-    { label: 'Okt', value: 42, display: '18.900' },
-    { label: 'Nov', value: 72, display: '32.400' },
-    { label: 'Des', value: 88, display: '39.600' },
-  ];
+  const handleManualRefresh = () => {
+    loadData(true);
+  };
 
-  // Mock transactions matching reference screenshot style
-  const transactions = [
-    {
-      id: 'SGFU654564',
-      date: '15 Sep 2026',
-      category: 'Penerimaan Khazai (Bon #001)',
-      status: 'Success',
-      amount: '45.000 Lembar',
-      isActive: true, // First row elevated highlight
-    },
-    {
-      id: 'SGFU654565',
-      date: '15 Sep 2026',
-      category: 'Sortir Pack Selesai (Pack 1-4)',
-      status: 'Success',
-      amount: '180.000 Lembar',
-      isActive: false,
-    },
-    {
-      id: 'SGFU654566',
-      date: '15 Sep 2026',
-      category: 'Pengemasan Doos (Doos 1-9)',
-      status: 'Success',
-      amount: '180.000 Lembar',
-      isActive: false,
-    },
-  ];
-
-  const filteredTransactions = transactions.filter((trx) =>
-    trx.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    trx.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    trx.status.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Extract Denomination Table breakdown
+  const denomRows = overview?.doosMonitoring?.rincian_denominasi || overview?.kemas?.rincian_denominasi || [];
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1440px] w-full mx-auto pb-12">
-          {/* Status Alert if Backend is offline */}
-          {error && (
-            <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs flex items-center justify-between shadow-sm">
-              <div className="flex items-center gap-2.5">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>Koneksi API Backend: {error} (Periksa server di port 5000)</span>
-              </div>
-            </div>
-          )}
+      {/* 1. Error Banner if server disconnects or modules fail */}
+      {errorBanner && (
+        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs flex items-center justify-between shadow-sm animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{errorBanner}</span>
+          </div>
+        </div>
+      )}
 
-          {/* ========================================================================= */}
-          {/* ROW 1: 3 Summary Stat Cards + 1 High Contrast Inverted Card                */}
-          {/* ========================================================================= */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* Stat Card 1: Saldo Kas Bon Masuk */}
-            <div className="bg-surface dark:bg-surface-dark rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-11 h-11 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white">
-                  <CreditCard className="w-5 h-5" strokeWidth={1.75} />
-                </div>
-                <div className="w-6 h-6 rounded-full bg-canvas dark:bg-surface-subtle-dark flex items-center justify-center text-ink-muted cursor-pointer">
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-2xl lg:text-[28px] font-extrabold tracking-tight text-pitch dark:text-white font-mono tabular-nums">
-                  Rp 1,45 M
-                </h3>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark font-medium">
-                  Saldo Penerimaan Khazai
-                </p>
-              </div>
-            </div>
+      {/* 2. Command Center Header Bar */}
+      <DashboardHeader
+        health={overview?.health}
+        lastUpdated={overview?.lastUpdated}
+        onRefresh={handleManualRefresh}
+        isRefreshing={isRefreshing}
+      />
 
-            {/* Stat Card 2: Jumlah Pack & Transaksi Sortir */}
-            <div className="bg-surface dark:bg-surface-dark rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-11 h-11 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white">
-                  <Layers className="w-5 h-5" strokeWidth={1.75} />
-                </div>
-                <div className="w-6 h-6 rounded-full bg-canvas dark:bg-surface-subtle-dark flex items-center justify-center text-ink-muted cursor-pointer">
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-2xl lg:text-[28px] font-extrabold tracking-tight text-pitch dark:text-white font-mono tabular-nums">
-                  50 Pack
-                </h3>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark font-medium">
-                  Selesai Sortir (Zero Reject)
-                </p>
-              </div>
-            </div>
+      {/* 3. Four Core Production KPI Summary Cards */}
+      <ProductionKPICards overview={overview} loading={loading} />
 
-            {/* Stat Card 3: Realisasi Hasil Kemas (4:9) */}
-            <div className="bg-surface dark:bg-surface-dark rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-11 h-11 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white">
-                  <TrendingUp className="w-5 h-5" strokeWidth={1.75} />
-                </div>
-                <div className="w-6 h-6 rounded-full bg-canvas dark:bg-surface-subtle-dark flex items-center justify-center text-ink-muted cursor-pointer">
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-2xl lg:text-[28px] font-extrabold tracking-tight text-pitch dark:text-white font-mono tabular-nums">
-                  18 Doos
-                </h3>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark font-medium">
-                  Realisasi Kemas Siap Kirim
-                </p>
-              </div>
-            </div>
+      {/* 4. Shift Performance Widget (2/3) + Quick Actions Bar (1/3) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
+        <div className="lg:col-span-2">
+          <ShiftPerformanceWidget
+            shiftStats={overview?.shiftStats}
+            loading={loading}
+          />
+        </div>
+        <div className="lg:col-span-1">
+          <QuickActionsBar />
+        </div>
+      </div>
 
-            {/* Inverted High-Contrast Card: Formation Status */}
-            <div className="bg-pitch-card dark:bg-pitch-card-dark text-white rounded-3xl p-6 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
-              {/* Header */}
-              <div className="text-center space-y-0.5">
-                <h3 className="text-base font-bold tracking-tight text-white">
-                  Status Produksi
-                </h3>
-                <p className="text-xs text-ink-muted font-medium">
-                  Sedang Berjalan (Shift 2)
-                </p>
-              </div>
-
-              {/* Progress Bar Container */}
-              <div className="my-4 space-y-2 text-center">
-                <div className="w-full h-2.5 bg-pitch-track dark:bg-pitch-track-dark rounded-full overflow-hidden p-0.5">
-                  <div className="h-full bg-white rounded-full w-[68%] transition-all duration-500" />
-                </div>
-                <div>
-                  <span className="text-xs font-semibold text-white block">
-                    Target Kemas Terpenuhi
-                  </span>
-                  <span className="text-[11px] text-ink-muted block">
-                    68% Target Harian (18 / 27 Doos)
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <button
-                type="button"
-                className="w-full py-3 rounded-full bg-white hover:bg-canvas text-pitch-card dark:text-pitch font-bold text-xs tracking-wide transition shadow-sm cursor-pointer"
-              >
-                Lihat Detail Status
-              </button>
+      {/* 5. Rekapitulasi Rincian Pecahan Uang Kertas & Alur Modul */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* 5.1 Tabel Rekapitulasi Pecahan (Span 2) */}
+        <div className="lg:col-span-2 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="text-base font-bold tracking-tight text-ink dark:text-white flex items-center gap-2">
+                <Coins className="w-5 h-5 text-amber-500" />
+                <span>Rincian Persediaan per Pecahan Uang Kertas</span>
+              </h3>
+              <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark mt-0.5">
+                Akumulasi hasil sortir dan pengemasan doos emisi TE 2022
+              </p>
             </div>
           </div>
 
-          {/* ========================================================================= */}
-          {/* ROW 2: Production Bar Chart Widget (2/3) + To Do List Widget (1/3)        */}
-          {/* ========================================================================= */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {/* 2.1 Earning / Production Report Bar Chart (Span 2) */}
-            <div className="lg:col-span-2 bg-surface dark:bg-surface-dark rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
-              {/* Header & Filter */}
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h3 className="text-base font-bold tracking-tight text-ink dark:text-white">
-                    Laporan Output Produksi
-                  </h3>
-                  <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
-                    Capaian volume bilyet per bulan tahun anggaran 2026
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark text-xs font-semibold text-ink-secondary dark:text-ink-secondary-dark hover:text-ink dark:hover:text-white shadow-sm transition cursor-pointer"
-                  >
-                    <span>Bulanan</span>
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Chart Visual Matrix */}
-              <div className="relative pt-12 pb-2">
-                <div className="flex items-end justify-between gap-2 md:gap-3 h-48 w-full px-2">
-                  {chartData.map((bar, idx) => (
-                    <div key={idx} className="flex-1 flex flex-col items-center gap-2.5 h-full justify-end relative group">
-                      {/* Active Column Indicator & Floating Tooltip */}
-                      {bar.active && (
-                        <>
-                          {/* Floating Tooltip Card */}
-                          <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-surface dark:bg-pitch-card-dark border border-border dark:border-pitch-track-dark shadow-floating-tooltip dark:shadow-floating-tooltip-dark rounded-2xl p-2.5 z-30 whitespace-nowrap">
-                            <span className="text-[10px] text-ink-secondary dark:text-ink-secondary-dark block leading-tight">
-                              Total Output
-                            </span>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="text-xs font-bold text-pitch dark:text-white font-mono">
-                                {bar.display}
-                              </span>
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-surface dark:bg-emerald-surface-dark text-emerald-text dark:text-emerald-text-dark">
-                                {bar.diff}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Dotted Guide Line */}
-                          <div className="absolute top-0 bottom-6 left-1/2 -translate-x-1/2 w-[1px] border-l border-dashed border-pitch dark:border-white pointer-events-none z-10 opacity-70" />
-                        </>
-                      )}
-
-                      {/* Dual-Tone Bar: Gray Track with Black Fill */}
-                      <div className="w-full max-w-[34px] h-full bg-canvas dark:bg-surface-subtle-dark rounded-xl flex flex-col justify-end p-0.5 overflow-hidden">
-                        <div
-                          style={{ height: `${bar.value}%` }}
-                          className={`w-full rounded-lg transition-all duration-500 ${
-                            bar.active
-                              ? 'bg-pitch dark:bg-white'
-                              : 'bg-pitch dark:bg-white/80 group-hover:bg-pitch/90'
-                          }`}
-                        />
-                      </div>
-
-                      {/* X-Axis Month Label */}
-                      <span className={`text-[11px] font-medium ${
-                        bar.active
-                          ? 'text-pitch dark:text-white font-bold'
-                          : 'text-ink-muted dark:text-ink-secondary'
-                      }`}>
-                        {bar.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* 2.2 To Do List / Antrian Operasional (Span 1) */}
-            <div className="bg-surface dark:bg-surface-dark rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-base font-bold tracking-tight text-ink dark:text-white">
-                    Antrian Operasional
-                  </h3>
-                  <span className="text-xs text-ink-muted font-mono">Shift 2</span>
-                </div>
-
-                <div className="space-y-4">
-                  {/* Task 1 */}
-                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark transition-colors cursor-pointer group">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white group-hover:bg-surface dark:group-hover:bg-surface-dark shadow-sm transition-colors">
-                        <Layers className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-ink dark:text-white">
-                          Serah Terima Bon Khazai
-                        </h4>
-                        <p className="text-[11px] text-ink-muted mt-0.5">
-                          Bon #001 &bull; 08:00 WIB
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold font-mono text-pitch dark:text-white">
-                      100 Pack
-                    </span>
-                  </div>
-
-                  {/* Task 2 */}
-                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark transition-colors cursor-pointer group">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white group-hover:bg-surface dark:group-hover:bg-surface-dark shadow-sm transition-colors">
-                        <Package className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-ink dark:text-white">
-                          Konfirmasi Fisik Kemas
-                        </h4>
-                        <p className="text-[11px] text-ink-muted mt-0.5">
-                          WIP Handover &bull; 14:30 WIB
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold font-mono text-pitch dark:text-white">
-                      18 Doos
-                    </span>
-                  </div>
-
-                  {/* Task 3 */}
-                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark transition-colors cursor-pointer group">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white group-hover:bg-surface dark:group-hover:bg-surface-dark shadow-sm transition-colors">
-                        <CheckCircle2 className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-ink dark:text-white">
-                          Pemeriksaan Gap Doos
-                        </h4>
-                        <p className="text-[11px] text-ink-muted mt-0.5">
-                          Integritas Urutan Doos
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold font-mono text-emerald-text dark:text-emerald-text-dark">
-                      0 Gap
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-border dark:border-border-dark flex items-center justify-between text-xs text-ink-muted">
-                <span>Status API: {loading ? 'Memeriksa...' : healthData?.status === 'ok' ? `Terhubung (${pingLatency || 0}ms)` : 'Terputus'}</span>
-                <Clock className="w-3.5 h-3.5" />
-              </div>
-            </div>
-          </div>
-
-          {/* ========================================================================= */}
-          {/* ROW 3: Transaction History (2/3) + Upcoming Handover to BI (1/3)           */}
-          {/* ========================================================================= */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {/* 3.1 Transaction History Table (Span 2) */}
-            <div className="lg:col-span-2 bg-surface dark:bg-surface-dark rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-base font-bold tracking-tight text-ink dark:text-white">
-                    Riwayat Alur Produksi Terakhir
-                  </h3>
-                  <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
-                    Catatan perpindahan status pack dan hasil kemas terkini
-                  </p>
-                </div>
-              </div>
-
-              {/* Clean Table Layout */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="text-[11px] font-semibold text-ink-secondary dark:text-ink-secondary-dark border-b border-border dark:border-border-dark">
-                      <th className="pb-3 px-3">TrxID / No Bon</th>
-                      <th className="pb-3 px-3">Tanggal</th>
-                      <th className="pb-3 px-3">Kategori Modul</th>
-                      <th className="pb-3 px-3 text-center">Status</th>
-                      <th className="pb-3 px-3 text-right">Volume</th>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="text-[11px] font-semibold text-ink-secondary dark:text-ink-secondary-dark border-b border-border dark:border-border-dark">
+                  <th className="pb-3 px-3">Pecahan / Emisi</th>
+                  <th className="pb-3 px-3 text-right">Nilai Nominal</th>
+                  <th className="pb-3 px-3 text-center">Rentang Doos</th>
+                  <th className="pb-3 px-3 text-right">Total Pack</th>
+                  <th className="pb-3 px-3 text-right">Total Doos</th>
+                  <th className="pb-3 px-3 text-right">Akumulasi Nilai</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40 dark:divide-border-dark/40">
+                {denomRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-xs text-ink-muted">
+                      {loading ? 'Memuat rincian pecahan...' : 'Belum ada data produksi tercatat untuk hari ini.'}
+                    </td>
+                  </tr>
+                ) : (
+                  denomRows.map((denom, idx) => (
+                    <tr
+                      key={denom.denominasi_id || denom.nama || idx}
+                      className="text-xs hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark transition-colors"
+                    >
+                      <td className="py-3.5 px-3 font-bold text-ink dark:text-white flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-mono flex items-center justify-center text-xs border border-emerald-200 dark:border-emerald-500/20">
+                          {denom.nama || denom.denominasi}
+                        </span>
+                        <span>TE 2022</span>
+                      </td>
+                      <td className="py-3.5 px-3 text-right font-mono font-medium text-ink-secondary dark:text-ink-secondary-dark tabular-nums">
+                        {formatRupiah(denom.nilai)}
+                      </td>
+                      <td className="py-3.5 px-3 text-center font-mono text-xs tabular-nums text-ink-secondary dark:text-ink-secondary-dark">
+                        {denom.min_no_doos > 0
+                          ? `${formatDoos(denom.min_no_doos)} - ${formatDoos(denom.max_no_doos)}`
+                          : '-'}
+                      </td>
+                      <td className="py-3.5 px-3 text-right font-mono tabular-nums text-ink dark:text-white">
+                        {denom.total_pack || 0} Pack
+                      </td>
+                      <td className="py-3.5 px-3 text-right font-mono font-bold tabular-nums text-ink dark:text-white">
+                        {denom.total_doos || 0} Doos
+                      </td>
+                      <td className="py-3.5 px-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                        {denom.total_nominal_rupiah || formatRupiah(Number(denom.total_bilyet || 0) * (denom.nilai || 0))}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-transparent">
-                    {filteredTransactions.map((trx, idx) => (
-                      <tr
-                        key={idx}
-                        className={`text-xs transition-all duration-200 ${
-                          trx.isActive
-                            ? 'bg-surface dark:bg-white/5 shadow-active-row dark:shadow-active-row-dark rounded-2xl'
-                            : 'hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark'
-                        }`}
-                      >
-                        <td className="py-4 px-3 font-mono font-medium text-ink dark:text-white">
-                          {trx.id}
-                        </td>
-                        <td className="py-4 px-3 text-ink-secondary dark:text-ink-secondary-dark">
-                          {trx.date}
-                        </td>
-                        <td className="py-4 px-3 font-medium text-ink dark:text-white">
-                          {trx.category}
-                        </td>
-                        <td className="py-4 px-3 text-center">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-surface dark:bg-emerald-surface-dark text-emerald-text dark:text-emerald-text-dark">
-                            {trx.status}
-                          </span>
-                        </td>
-                        <td className="py-4 px-3 text-right font-mono font-bold text-ink dark:text-white">
-                          {trx.amount}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* 5.2 Status Integritas Alur Produksi (Span 1) */}
+        <div className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold tracking-tight text-ink dark:text-white">
+                Integritas Alur Produksi
+              </h3>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                Tervalidasi
+              </span>
+            </div>
+            <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark mb-5">
+              Pemeriksaan runtutan 4 modul proses Khazprokhir
+            </p>
+
+            <div className="space-y-3.5">
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-canvas dark:bg-surface-subtle-dark border border-border/60 dark:border-border-dark/60">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <div className="text-xs">
+                  <span className="font-bold text-ink dark:text-white block">Modul 1: Penerimaan Bon</span>
+                  <span className="text-ink-muted text-[11px]">Segel unik & nomor pack terverifikasi</span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-canvas dark:bg-surface-subtle-dark border border-border/60 dark:border-border-dark/60">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <div className="text-xs">
+                  <span className="font-bold text-ink dark:text-white block">Modul 2: Sortir Zero Reject</span>
+                  <span className="text-ink-muted text-[11px]">Penataan susunan 100-pack per batch</span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-canvas dark:bg-surface-subtle-dark border border-border/60 dark:border-border-dark/60">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <div className="text-xs">
+                  <span className="font-bold text-ink dark:text-white block">Modul 3: Kemas Rasio 4:9</span>
+                  <span className="text-ink-muted text-[11px]">4 pack = 9 doos (45.000 bilyet/doos)</span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-canvas dark:bg-surface-subtle-dark border border-border/60 dark:border-border-dark/60">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <div className="text-xs">
+                  <span className="font-bold text-ink dark:text-white block">Modul 4: Register & Gap Detector</span>
+                  <span className="text-ink-muted text-[11px]">Urutan nomor doos kontinu tanpa celah</span>
+                </div>
               </div>
             </div>
+          </div>
 
-            {/* 3.2 Upcoming Handover / Penyerahan BI (Span 1) */}
-            <div className="bg-surface dark:bg-surface-dark rounded-3xl p-6 md:p-8 shadow-soft-card dark:shadow-soft-card-dark transition-all duration-200 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-base font-bold tracking-tight text-ink dark:text-white">
-                    Rencana Penyerahan BI
-                  </h3>
-                  <span className="text-xs text-ink-muted font-mono">15 Sep 2026</span>
-                </div>
-                <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark mb-6">
-                  Jadwal serah terima fisik doos ke Bank Indonesia
-                </p>
-
-                <div className="space-y-4">
-                  {/* Schedule Item 1 */}
-                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark transition-colors cursor-pointer group">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white group-hover:bg-surface dark:group-hover:bg-surface-dark shadow-sm transition-colors">
-                        <Building2 className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-ink dark:text-white">
-                          Doos 0001 - 0018 (Pecahan S)
-                        </h4>
-                        <p className="text-[11px] text-ink-muted mt-0.5">
-                          Status: Siap Serah Terima
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold font-mono text-pitch dark:text-white">
-                      Rp 180 Jt
-                    </span>
-                  </div>
-
-                  {/* Schedule Item 2 */}
-                  <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark transition-colors cursor-pointer group">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-surface-subtle dark:bg-surface-subtle-dark flex items-center justify-center text-pitch dark:text-white group-hover:bg-surface dark:group-hover:bg-surface-dark shadow-sm transition-colors">
-                        <Car className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-ink dark:text-white">
-                          Doos 0019 - 0036 (Pecahan T)
-                        </h4>
-                        <p className="text-[11px] text-ink-muted mt-0.5">
-                          Status: Antrian Kemas
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold font-mono text-pitch dark:text-white">
-                      Rp 360 Jt
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom Link */}
-              <div className="pt-4 border-t border-border dark:border-border-dark">
-                <button
-                  type="button"
-                  className="w-full py-2.5 rounded-2xl text-xs font-semibold text-pitch dark:text-white bg-canvas dark:bg-surface-subtle-dark hover:bg-border dark:hover:bg-pitch-track-dark transition text-center cursor-pointer"
-                >
-                  Buka Modul Register Doos
-                </button>
-              </div>
+          <div className="pt-4 border-t border-border dark:border-border-dark mt-4 text-[11px] text-ink-muted dark:text-ink-secondary-dark flex items-center justify-between">
+            <span>Standar Operasional Khazprokhir</span>
+            <span className="font-mono">TE 2022</span>
           </div>
         </div>
       </div>
+    </div>
   );
 }
