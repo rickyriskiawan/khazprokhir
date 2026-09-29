@@ -1,68 +1,33 @@
-import React, { useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { LogOut, AlertTriangle, X } from 'lucide-react';
+import React from 'react';
+import { LogOut, AlertTriangle } from 'lucide-react';
 import { Button } from '../ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../ui/dialog';
 
 export default function LogoutConfirmModal({ isOpen, onClose, onConfirm, isLoading = false }) {
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen || typeof document === 'undefined') return null;
-
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="logout-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-200"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="relative w-full max-w-md bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-xl shadow-2xl p-6 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        {/* Close Button */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-ink-muted hover:text-ink dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          aria-label="Tutup dialog"
-        >
-          <X className="w-4 h-4" />
-        </button>
-
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md p-6">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 flex items-center justify-center shrink-0 text-rose-600 dark:text-rose-400">
-            <AlertTriangle className="w-6 h-6" />
+            <AlertTriangle className="w-6 h-6" strokeWidth={1.75} />
           </div>
 
-          <div className="flex-1">
-            <h3
-              id="logout-dialog-title"
-              className="text-base font-semibold text-ink dark:text-white tracking-tight"
-            >
-              Konfirmasi Keluar Sistem
-            </h3>
-            <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark mt-1.5 leading-relaxed">
+          <DialogHeader className="flex-1">
+            <DialogTitle>Konfirmasi Keluar Sistem</DialogTitle>
+            <DialogDescription>
               Apakah Anda yakin ingin mengakhiri sesi kerja operasional Khazprokhir? Sesi aktif Anda akan dibersihkan dan Anda perlu masuk kembali.
-            </p>
-          </div>
+            </DialogDescription>
+          </DialogHeader>
         </div>
 
-        {/* Modal Actions */}
-        <div className="flex items-center justify-end gap-2.5 mt-6 pt-4 border-t border-border dark:border-border-dark">
+        <DialogFooter className="mt-4 pt-4 border-t border-border dark:border-border-dark flex items-center justify-end gap-2.5">
           <Button
             type="button"
             variant="secondary"
@@ -80,12 +45,11 @@ export default function LogoutConfirmModal({ isOpen, onClose, onConfirm, isLoadi
             disabled={isLoading}
             className="gap-1.5"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4" strokeWidth={1.75} />
             <span>{isLoading ? 'Mengakhiri Sesi...' : 'Konfirmasi Keluar'}</span>
           </Button>
-        </div>
-      </div>
-    </div>,
-    document.body
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
