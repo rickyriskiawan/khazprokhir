@@ -113,6 +113,16 @@ export function getCurrentShiftInfo(currentTime = new Date(), shifts = DEFAULT_S
 }
 
 /**
+ * Convenience helper untuk mengambil objek shift aktif langsung.
+ * @param {Array} [shifts]
+ * @param {Date|string} [currentTime]
+ * @returns {Object|null}
+ */
+export function getCurrentShift(shifts = DEFAULT_SHIFTS, currentTime = new Date()) {
+  return getCurrentShiftInfo(currentTime, shifts)?.activeShift || null;
+}
+
+/**
  * Format live clock dengan zona waktu WIB (HH:mm:ss WIB).
  * @param {Date} date
  * @returns {string}
