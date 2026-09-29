@@ -267,8 +267,12 @@ export async function getAllBonMasuk(req, res) {
       tahun_anggaran,
       no_segel,
       tanggal_masuk,
+      startDate,
+      endDate,
       batch_id,
       shift_id,
+      denominasi_id,
+      search,
       page = 1,
       limit = 20,
     } = req.query;
@@ -279,22 +283,41 @@ export async function getAllBonMasuk(req, res) {
 
     const where = {};
 
-    if (no_segel) {
+    if (search) {
+      where.OR = [
+        { no_segel: { contains: search, mode: 'insensitive' } },
+        { batch: { nomor_batch: { contains: search, mode: 'insensitive' } } },
+      ];
+    } else if (no_segel) {
       where.no_segel = { contains: no_segel, mode: 'insensitive' };
     }
-    if (tanggal_masuk) {
+
+    if (startDate && endDate) {
+      where.tanggal_masuk = {
+        gte: new Date(`${startDate}T00:00:00.000Z`),
+        lte: new Date(`${endDate}T23:59:59.999Z`),
+      };
+    } else if (tanggal_masuk) {
       where.tanggal_masuk = new Date(`${tanggal_masuk}T00:00:00.000Z`);
     }
+
     if (batch_id) {
       where.batch_id = parseInt(batch_id, 10);
     }
     if (shift_id) {
       where.shift_id = parseInt(shift_id, 10);
     }
-    if (tahun_anggaran) {
-      where.batch = {
-        tahun_anggaran: parseInt(tahun_anggaran, 10),
-      };
+
+    if (tahun_anggaran || denominasi_id) {
+      where.batch = where.batch || {};
+      if (tahun_anggaran) {
+        where.batch.tahun_anggaran = parseInt(tahun_anggaran, 10);
+      }
+      if (denominasi_id) {
+        where.batch.emisi = {
+          denominasi_id: parseInt(denominasi_id, 10),
+        };
+      }
     }
 
     const [total, data] = await Promise.all([
@@ -559,3 +582,331 @@ export async function getTodaySummary(req, res) {
     });
   }
 }
+
+/**
+ * Memperbarui / mengedit bon masuk
+ * Mengizinkan perubahan metadata maupun alokasi rentang pack jika pack belum diproses ke tahap SORTED/PACKED/SHIPPED
+ * PUT /api/bon-masuk/:id
+ */
+export async function updateBonMasuk(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return errorResponse(res, { status: 400, message: 'ID Bon Masuk tidak valid.' });
+    }
+
+    const {
+      tahun_anggaran,
+      no_segel,
+      tanggal_masuk,
+      jam_masuk,
+      nomor_batch,
+      seri,
+      kepala,
+      emisi_id,
+      pack_dari,
+      pack_sampai,
+      jenis_mesin_sortir,
+      kategori_penerimaan,
+      shift_id,
+      catatan,
+    } = req.body;
+
+    const existingBon = await prisma.bonMasuk.findUnique({
+      where: { id },
+      include: {
+        batch: {
+          include: {
+            emisi: {
+              include: { denominasi: true },
+            },
+          },
+        },
+        packs: true,
+      },
+    });
+
+    if (!existingBon) {
+      return errorResponse(res, { status: 404, message: 'Bon masuk tidak ditemukan.' });
+    }
+
+    // 1. Cek apakah ada pack yang sudah disortir, dikemas, atau dikirim
+    const alreadyProcessed = existingBon.packs.some((p) =>
+      ['SORTED', 'PACKED', 'SHIPPED'].includes(p.status)
+    );
+
+    if (alreadyProcessed) {
+      return errorResponse(res, {
+        status: 400,
+        error: 'CannotEditProcessedBon',
+        message:
+          'Bon masuk tidak dapat disunting karena beberapa pack telah diproses ke tahap sortir atau kemas.',
+      });
+    }
+
+    // 2. Cek keunikan no_segel jika diubah
+    if (no_segel && no_segel !== existingBon.no_segel) {
+      const segelConflict = await prisma.bonMasuk.findUnique({
+        where: { no_segel },
+      });
+      if (segelConflict) {
+        return errorResponse(res, {
+          status: 409,
+          error: 'Conflict',
+          message: `Nomor segel "${no_segel}" sudah pernah dicatat dalam sistem.`,
+        });
+      }
+    }
+
+    // 3. Verifikasi shift jika diubah
+    if (shift_id && shift_id !== existingBon.shift_id) {
+      const shift = await prisma.shift.findUnique({
+        where: { id: shift_id },
+      });
+      if (!shift) {
+        return errorResponse(res, {
+          status: 404,
+          error: 'NotFound',
+          message: `Shift dengan ID ${shift_id} tidak ditemukan.`,
+        });
+      }
+    }
+
+    // 4. Tentukan target batch
+    let targetBatchId = existingBon.batch_id;
+    const targetNomorBatch = nomor_batch || existingBon.batch.nomor_batch;
+    const targetTahun = tahun_anggaran || existingBon.batch.tahun_anggaran;
+
+    const isBatchChanged =
+      targetNomorBatch !== existingBon.batch.nomor_batch ||
+      targetTahun !== existingBon.batch.tahun_anggaran;
+
+    if (isBatchChanged) {
+      let targetBatch = await prisma.batch.findUnique({
+        where: {
+          nomor_batch_tahun_anggaran: {
+            nomor_batch: targetNomorBatch,
+            tahun_anggaran: targetTahun,
+          },
+        },
+      });
+
+      if (!targetBatch) {
+        if (!seri || !kepala || !emisi_id) {
+          return errorResponse(res, {
+            status: 400,
+            error: 'BadRequest',
+            message:
+              'Batch tujuan belum terdaftar. Metadata batch (seri, kepala, dan emisi_id) wajib diisi untuk registrasi batch baru.',
+          });
+        }
+        const emisi = await prisma.emisi.findUnique({ where: { id: emisi_id } });
+        if (!emisi) {
+          return errorResponse(res, { status: 404, message: `Emisi dengan ID ${emisi_id} tidak ditemukan.` });
+        }
+      } else {
+        targetBatchId = targetBatch.id;
+      }
+    }
+
+    // 5. Tentukan rentang pack
+    const targetPackDari = pack_dari !== undefined ? pack_dari : existingBon.pack_dari;
+    const targetPackSampai = pack_sampai !== undefined ? pack_sampai : existingBon.pack_sampai;
+
+    if (targetPackDari > targetPackSampai) {
+      return errorResponse(res, {
+        status: 400,
+        error: 'BadRequest',
+        message: 'Nomor pack awal (pack_dari) tidak boleh lebih besar dari nomor pack akhir (pack_sampai).',
+      });
+    }
+
+    // 6. Validasi overlap jika rentang pack atau batch berubah
+    const isPackRangeChanged =
+      isBatchChanged ||
+      targetPackDari !== existingBon.pack_dari ||
+      targetPackSampai !== existingBon.pack_sampai;
+
+    if (isPackRangeChanged && targetBatchId) {
+      const conflictingPacks = await prisma.packDetail.findMany({
+        where: {
+          batch_id: targetBatchId,
+          nomor_pack: {
+            gte: targetPackDari,
+            lte: targetPackSampai,
+          },
+          status: {
+            not: 'PENDING',
+          },
+          bon_masuk_id: {
+            not: existingBon.id,
+          },
+        },
+        select: {
+          nomor_pack: true,
+        },
+      });
+
+      if (conflictingPacks.length > 0) {
+        const packList = conflictingPacks.map((p) => `#${p.nomor_pack}`).join(', ');
+        return errorResponse(res, {
+          status: 400,
+          error: 'PackOverlapError',
+          message: `Gagal memperbarui bon masuk: Pack ${packList} pada batch tujuan sudah pernah diterima pada bon lain.`,
+        });
+      }
+    }
+
+    // 7. Hitung volume bilyet baru
+    const totalPack = targetPackSampai - targetPackDari + 1;
+    const jumlah_bilyet = packToBilyet(totalPack, true);
+
+    // 8. Eksekusi transaksi atomik
+    const updatedBonMasuk = await prisma.$transaction(async (tx) => {
+      let finalBatchId = targetBatchId;
+
+      // Jika batch baru belum ada, buat batch dan 100 pack
+      if (isBatchChanged) {
+        let existingTarget = await tx.batch.findUnique({
+          where: {
+            nomor_batch_tahun_anggaran: {
+              nomor_batch: targetNomorBatch,
+              tahun_anggaran: targetTahun,
+            },
+          },
+        });
+
+        if (!existingTarget) {
+          const newBatch = await tx.batch.create({
+            data: {
+              nomor_batch: targetNomorBatch,
+              tahun_anggaran: targetTahun,
+              seri,
+              kepala,
+              emisi_id,
+              jumlah_pack: 100,
+              status: 'in_progress',
+            },
+          });
+          finalBatchId = newBatch.id;
+
+          const packDetailsData = Array.from({ length: 100 }, (_, i) => ({
+            batch_id: newBatch.id,
+            nomor_pack: i + 1,
+            jumlah_brood: 45,
+            jumlah_bilyet: 45000n,
+            status: 'PENDING',
+          }));
+
+          await tx.packDetail.createMany({
+            data: packDetailsData,
+          });
+        } else {
+          finalBatchId = existingTarget.id;
+          if (existingTarget.status === 'pending') {
+            await tx.batch.update({
+              where: { id: existingTarget.id },
+              data: { status: 'in_progress' },
+            });
+          }
+        }
+      }
+
+      // Revert pack lama milik bon ini jika rentang atau batch berubah
+      if (isPackRangeChanged) {
+        await tx.packDetail.updateMany({
+          where: { bon_masuk_id: existingBon.id },
+          data: {
+            status: 'PENDING',
+            bon_masuk_id: null,
+          },
+        });
+
+        // Alokasikan pack baru
+        await tx.packDetail.updateMany({
+          where: {
+            batch_id: finalBatchId,
+            nomor_pack: {
+              gte: targetPackDari,
+              lte: targetPackSampai,
+            },
+          },
+          data: {
+            status: 'RECEIVED',
+            bon_masuk_id: existingBon.id,
+          },
+        });
+      }
+
+      // Update record bon_masuk
+      const updated = await tx.bonMasuk.update({
+        where: { id: existingBon.id },
+        data: {
+          no_segel: no_segel || existingBon.no_segel,
+          batch_id: finalBatchId,
+          tanggal_masuk: tanggal_masuk || existingBon.tanggal_masuk,
+          jam_masuk: jam_masuk || existingBon.jam_masuk,
+          pack_dari: targetPackDari,
+          pack_sampai: targetPackSampai,
+          jumlah_bilyet,
+          jenis_mesin_sortir: jenis_mesin_sortir !== undefined ? (jenis_mesin_sortir || null) : existingBon.jenis_mesin_sortir,
+          kategori_penerimaan: kategori_penerimaan || existingBon.kategori_penerimaan,
+          shift_id: shift_id || existingBon.shift_id,
+          catatan: catatan !== undefined ? (catatan || null) : existingBon.catatan,
+        },
+        include: {
+          batch: {
+            include: {
+              emisi: {
+                include: { denominasi: true },
+              },
+            },
+          },
+          shift: true,
+          operator: {
+            select: USER_SAFE_SELECT,
+          },
+        },
+      });
+
+      return updated;
+    });
+
+    // 9. Catat Audit Log
+    await createAuditLog({
+      userId: req.user?.id,
+      action: 'UPDATE',
+      module: 'bon_masuk',
+      tableName: 'bon_masuk',
+      recordId: updatedBonMasuk.id,
+      oldValue: {
+        no_segel: existingBon.no_segel,
+        batch_id: existingBon.batch_id,
+        pack_dari: existingBon.pack_dari,
+        pack_sampai: existingBon.pack_sampai,
+        jumlah_bilyet: existingBon.jumlah_bilyet.toString(),
+      },
+      newValue: {
+        no_segel: updatedBonMasuk.no_segel,
+        batch_id: updatedBonMasuk.batch_id,
+        pack_dari: updatedBonMasuk.pack_dari,
+        pack_sampai: updatedBonMasuk.pack_sampai,
+        jumlah_bilyet: updatedBonMasuk.jumlah_bilyet.toString(),
+      },
+      ipAddress: req.ip,
+    });
+
+    return successResponse(res, {
+      status: 200,
+      message: `Bon masuk dengan nomor segel "${updatedBonMasuk.no_segel}" berhasil diperbarui.`,
+      data: updatedBonMasuk,
+    });
+  } catch (err) {
+    return errorResponse(res, {
+      status: 500,
+      message: 'Gagal memperbarui bon masuk.',
+      error: err.message,
+    });
+  }
+}
+

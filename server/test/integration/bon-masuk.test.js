@@ -7,6 +7,7 @@ let server;
 let baseUrl;
 let operatorToken;
 let supervisorToken;
+let auditorToken;
 
 async function cleanupTestData() {
   try {
@@ -92,6 +93,15 @@ describe('Integration Test: Modul 1 - Penerimaan Barang Masuk Khazai (Step 5)', 
     });
     const spvData = await spvLogin.json();
     supervisorToken = spvData.data.token;
+
+    // Login sebagai auditor
+    const audLogin = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'auditor', password: 'khazprokhir123' }),
+    });
+    const audData = await audLogin.json();
+    auditorToken = audData.data.token;
   });
 
   after(async () => {
@@ -365,21 +375,120 @@ describe('Integration Test: Modul 1 - Penerimaan Barang Masuk Khazai (Step 5)', 
   });
 
   // ===========================================================================
-  // 3. PEMBATALAN BON MASUK & REVERT STATUS PACK
+  // 3. PEMBARUAN / FULL EDIT BON MASUK (PUT /api/bon-masuk/:id)
   // ===========================================================================
-  it('DELETE /api/bon-masuk/:id - Menolak role OPERATOR (403 Forbidden)', async () => {
+  it('PUT /api/bon-masuk/:id - Menolak jika rentang pack tidak valid (pack_dari > pack_sampai)', async () => {
+    const res = await fetch(`${baseUrl}/api/bon-masuk/${testBon1Id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${operatorToken}`,
+      },
+      body: JSON.stringify({ pack_dari: 70, pack_sampai: 50 }),
+    });
+
+    assert.equal(res.status, 400);
+    const body = await res.json();
+    assert.equal(body.success, false);
+  });
+
+  it('PUT /api/bon-masuk/:id - Berhasil mengedit bon masuk (metadata & perluasan pack 1-50 ke 1-60)', async () => {
+    const res = await fetch(`${baseUrl}/api/bon-masuk/${testBon1Id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${operatorToken}`,
+      },
+      body: JSON.stringify({
+        pack_dari: 1,
+        pack_sampai: 60,
+        catatan: 'Catatan diperbarui oleh operator',
+      }),
+    });
+
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.success, true);
+    assert.equal(body.data.pack_sampai, 60);
+    assert.equal(body.data.catatan, 'Catatan diperbarui oleh operator');
+    assert.equal(body.data.jumlah_bilyet, '2700000'); // 60 * 45.000
+
+    // Verifikasi pack 1 s/d 60 berstatus RECEIVED
+    const receivedCount = await prisma.packDetail.count({
+      where: {
+        batch_id: testBatch1Id,
+        nomor_pack: { gte: 1, lte: 60 },
+        status: 'RECEIVED',
+        bon_masuk_id: testBon1Id,
+      },
+    });
+    assert.equal(receivedCount, 60);
+  });
+
+  it('PUT /api/bon-masuk/:id - Menolak jika nomor pack bertabrakan dengan bon masuk lain', async () => {
+    // Coba edit bon 1 agar mencakup pack yang sudah ada di bon lain jika ada overlap
+    // Daftarkan bon lain dulu di batch 1: pack 71-80
+    const resOverlapCreate = await fetch(`${baseUrl}/api/bon-masuk`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${operatorToken}`,
+      },
+      body: JSON.stringify({
+        tahun_anggaran: 2026,
+        no_segel: 'SGL-TEST-OVERLAP-1',
+        tanggal_masuk: '2026-09-15',
+        jam_masuk: '11:00',
+        nomor_batch: 'TEST-BATCH-001',
+        pack_dari: 71,
+        pack_sampai: 80,
+        shift_id: 1,
+      }),
+    });
+    assert.equal(resOverlapCreate.status, 201);
+    const overlapData = await resOverlapCreate.json();
+    const overlapBonId = overlapData.data.id;
+
+    // Sekarang edit bon 1 agar pack_sampai = 75 (bertabrakan dengan 71-80)
+    const resEditConflict = await fetch(`${baseUrl}/api/bon-masuk/${testBon1Id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${operatorToken}`,
+      },
+      body: JSON.stringify({
+        pack_sampai: 75,
+      }),
+    });
+
+    assert.equal(resEditConflict.status, 400);
+    const conflictBody = await resEditConflict.json();
+    assert.equal(conflictBody.error, 'PackOverlapError');
+
+    // Hapus overlap bon
+    await prisma.packDetail.updateMany({
+      where: { bon_masuk_id: overlapBonId },
+      data: { status: 'PENDING', bon_masuk_id: null },
+    });
+    await prisma.bonMasuk.delete({ where: { id: overlapBonId } });
+  });
+
+  // ===========================================================================
+  // 4. PEMBATALAN BON MASUK & REVERT STATUS PACK
+  // ===========================================================================
+  it('DELETE /api/bon-masuk/:id - Menolak role AUDITOR (403 Forbidden)', async () => {
     const res = await fetch(`${baseUrl}/api/bon-masuk/${testBon1Id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${operatorToken}` },
+      headers: { Authorization: `Bearer ${auditorToken}` },
     });
 
     assert.equal(res.status, 403);
   });
 
-  it('DELETE /api/bon-masuk/:id - Mengizinkan SUPERVISOR membatalkan bon & mengembalikan status pack ke PENDING', async () => {
+  it('DELETE /api/bon-masuk/:id - Mengizinkan OPERATOR membatalkan bon & mengembalikan status pack ke PENDING', async () => {
     const res = await fetch(`${baseUrl}/api/bon-masuk/${testBon1Id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${supervisorToken}` },
+      headers: { Authorization: `Bearer ${operatorToken}` },
     });
 
     assert.equal(res.status, 200);
@@ -390,26 +499,27 @@ describe('Integration Test: Modul 1 - Penerimaan Barang Masuk Khazai (Step 5)', 
     const deletedBon = await prisma.bonMasuk.findUnique({ where: { id: testBon1Id } });
     assert.equal(deletedBon, null);
 
-    // Verifikasi pack 1-50 telah kembali menjadi PENDING
+    // Verifikasi pack 1-60 telah kembali menjadi PENDING
     const revertedCount = await prisma.packDetail.count({
-      where: { batch_id: testBatch1Id, nomor_pack: { gte: 1, lte: 50 }, status: 'PENDING' },
+      where: { batch_id: testBatch1Id, nomor_pack: { gte: 1, lte: 60 }, status: 'PENDING' },
     });
-    assert.equal(revertedCount, 50);
+    assert.equal(revertedCount, 60);
   });
 
   // ===========================================================================
-  // 4. VERIFIKASI AUDIT LOG
+  // 5. VERIFIKASI AUDIT LOG
   // ===========================================================================
   it('AuditLog - Memastikan aktivitas bon masuk tercatat ke tabel audit_log', async () => {
     const logs = await prisma.auditLog.findMany({
       where: { module: 'bon_masuk' },
       orderBy: { id: 'desc' },
-      take: 5,
+      take: 10,
     });
 
     assert.ok(logs.length > 0, 'Audit log untuk modul bon_masuk harus tercatat');
     const actions = logs.map((l) => l.action);
     assert.ok(actions.includes('CREATE'));
+    assert.ok(actions.includes('UPDATE'));
     assert.ok(actions.includes('DELETE'));
   });
 });

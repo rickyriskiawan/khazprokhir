@@ -46,13 +46,13 @@ export const formatCompactRupiah = (amount, shortSuffix = false) => {
 
 /**
  * Format sheets / bilyet volume with thousands separator.
- * Example: 45000 -> "45.000 Lembar"
+ * Example: 45000 -> "45.000 Bilyet"
  */
-export const formatBilyet = (sheets) => {
+export const formatBilyet = (sheets, suffix = 'Bilyet') => {
   if (sheets === null || sheets === undefined || isNaN(Number(sheets))) {
-    return '0 Lembar';
+    return `0 ${suffix}`;
   }
-  return `${new Intl.NumberFormat('id-ID').format(Number(sheets))} Lembar`;
+  return `${new Intl.NumberFormat('id-ID').format(Number(sheets))} ${suffix}`;
 };
 
 /**

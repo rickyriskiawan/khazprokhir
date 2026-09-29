@@ -87,3 +87,66 @@ export const createBonMasukSchema = z
     message: 'Nomor pack awal (pack_dari) tidak boleh lebih besar dari nomor pack akhir (pack_sampai)',
     path: ['pack_dari'],
   });
+
+// ==========================================
+// 3. Validasi Pembaruan Bon Masuk Khazai
+// ==========================================
+export const updateBonMasukSchema = z
+  .object({
+    tahun_anggaran: z
+      .number()
+      .int()
+      .min(2000, 'Tahun anggaran minimal 2000')
+      .max(2100, 'Tahun anggaran maksimal 2100')
+      .optional(),
+    no_segel: z
+      .string()
+      .trim()
+      .min(1, 'Nomor segel wajib diisi (contoh: "SGL-20260915-001")')
+      .max(50, 'Nomor segel maksimal 50 karakter')
+      .optional(),
+    tanggal_masuk: dateStringSchema.optional(),
+    jam_masuk: timeStringSchema.optional(),
+    nomor_batch: z
+      .string()
+      .trim()
+      .min(1, 'Nomor batch / order minimal 1 karakter')
+      .max(50, 'Nomor batch maksimal 50 karakter')
+      .optional(),
+    seri: z.string().trim().max(20).optional(),
+    kepala: z.string().trim().max(10).optional(),
+    emisi_id: z.number().int().positive().optional(),
+    pack_dari: z
+      .number()
+      .int()
+      .min(1, 'Nomor pack awal minimal 1')
+      .max(100, 'Nomor pack awal maksimal 100')
+      .optional(),
+    pack_sampai: z
+      .number()
+      .int()
+      .min(1, 'Nomor pack akhir minimal 1')
+      .max(100, 'Nomor pack akhir maksimal 100')
+      .optional(),
+    jenis_mesin_sortir: z.string().trim().nullable().optional(),
+    kategori_penerimaan: z
+      .enum(['MASINAL', 'PARSIAL'], {
+        errorMap: () => ({ message: 'Kategori penerimaan harus salah satu dari: MASINAL, PARSIAL' }),
+      })
+      .optional(),
+    shift_id: z.number().int().positive('Shift kerja wajib dipilih (ID bulat positif)').optional(),
+    catatan: z.string().trim().nullable().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.pack_dari !== undefined && data.pack_sampai !== undefined) {
+        return data.pack_dari <= data.pack_sampai;
+      }
+      return true;
+    },
+    {
+      message: 'Nomor pack awal (pack_dari) tidak boleh lebih besar dari nomor pack akhir (pack_sampai)',
+      path: ['pack_dari'],
+    }
+  );
+
