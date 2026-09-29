@@ -25,6 +25,7 @@ import BonMasukDetailModal from '@/components/bon-masuk/BonMasukDetailModal';
 import BonMasukDeleteDialog from '@/components/bon-masuk/BonMasukDeleteDialog';
 import {
   getBonMasukList,
+  getBonMasukById,
   getTodayBonMasukSummary,
   getBatches,
   getMasterDenominasi,
@@ -161,8 +162,17 @@ export default function BonMasukPage() {
     setIsFormOpen(true);
   };
 
-  const handleOpenEdit = (bon) => {
-    setEditingBon(bon);
+  const handleOpenEdit = async (bon) => {
+    if (!bon.packs) {
+      try {
+        const fullBon = await getBonMasukById(bon.id);
+        setEditingBon(fullBon.data || fullBon);
+      } catch {
+        setEditingBon(bon);
+      }
+    } else {
+      setEditingBon(bon);
+    }
     setIsFormOpen(true);
   };
 
@@ -206,12 +216,12 @@ export default function BonMasukPage() {
           <CardContent className="p-4 flex items-center justify-between">
             <div className="space-y-1">
               <span className="text-xs font-medium text-ink-muted">Total Bon Masuk Hari Ini</span>
-              <div className="text-2xl font-bold font-mono tabular-nums text-ink dark:text-white">
+              <div className="text-2xl font-bold font-mono tabular-nums text-ink dark:text-ink-dark">
                 {isLoading ? <Skeleton className="h-7 w-16" /> : todaySummary?.total_bon ?? 0}
                 <span className="text-sm font-normal text-ink-muted ml-1.5 font-sans">Dokumen</span>
               </div>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-emerald/10 dark:bg-emerald/20 flex items-center justify-center text-emerald dark:text-emerald-light">
+            <div className="h-10 w-10 rounded-xl bg-emerald/10 dark:bg-emerald/20 flex items-center justify-center text-emerald dark:text-emerald-400">
               <FileText className="h-5 w-5" strokeWidth={1.75} />
             </div>
           </CardContent>
@@ -221,7 +231,7 @@ export default function BonMasukPage() {
           <CardContent className="p-4 flex items-center justify-between">
             <div className="space-y-1">
               <span className="text-xs font-medium text-ink-muted">Total Pack Diterima Hari Ini</span>
-              <div className="text-2xl font-bold font-mono tabular-nums text-ink dark:text-white">
+              <div className="text-2xl font-bold font-mono tabular-nums text-ink dark:text-ink-dark">
                 {isLoading ? <Skeleton className="h-7 w-20" /> : todaySummary?.total_pack ?? 0}
                 <span className="text-sm font-normal text-ink-muted ml-1.5 font-sans">Pack</span>
               </div>
@@ -236,7 +246,7 @@ export default function BonMasukPage() {
           <CardContent className="p-4 flex items-center justify-between">
             <div className="space-y-1">
               <span className="text-xs font-medium text-ink-muted">Total Bilyet Diterima Hari Ini</span>
-              <div className="text-2xl font-bold font-mono tabular-nums text-emerald dark:text-emerald-light">
+              <div className="text-2xl font-bold font-mono tabular-nums text-emerald dark:text-emerald-400">
                 {isLoading ? (
                   <Skeleton className="h-7 w-28" />
                 ) : (
@@ -402,7 +412,8 @@ export default function BonMasukPage() {
                 </TableRow>
               ) : (
                 bonList.map((bon) => {
-                  const totalPacksInBon = bon.pack_sampai - bon.pack_dari + 1;
+                  const hasItems = bon.items && bon.items.length > 0;
+                  const totalPacksInBon = bon.total_pack || (bon.pack_sampai ? bon.pack_sampai - bon.pack_dari + 1 : 0);
                   const batch = bon.batch || {};
                   const emisi = batch.emisi || {};
                   const denom = emisi.denominasi || {};
@@ -416,34 +427,76 @@ export default function BonMasukPage() {
                       </TableCell>
 
                       <TableCell>
-                        <div className="font-mono font-semibold text-xs text-ink dark:text-white">
+                        <div className="font-mono tabular-nums font-semibold text-xs text-ink dark:text-ink-dark">
                           {bon.no_segel}
                         </div>
-                        <Badge
-                          variant={bon.kategori_penerimaan === 'MASINAL' ? 'emerald' : 'amber'}
-                          className="text-[10px] py-0 px-1.5 mt-0.5"
-                        >
-                          {bon.kategori_penerimaan}
-                        </Badge>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <Badge variant="outline" className="text-[10px] py-0 px-1 font-mono tabular-nums">
+                            TA {bon.tahun_anggaran || 2026}
+                          </Badge>
+                          <Badge
+                            variant={bon.kategori_penerimaan === 'MASINAL' ? 'emerald' : 'amber'}
+                            className="text-[10px] py-0 px-1"
+                          >
+                            {bon.kategori_penerimaan}
+                          </Badge>
+                        </div>
                       </TableCell>
 
                       <TableCell className="text-xs">
-                        <div className="font-medium text-ink dark:text-white">{batch.nomor_batch || '-'}</div>
-                        <div className="text-ink-muted font-mono">
-                          Seri {batch.seri || '-'} ({batch.kepala || '-'}) TA {batch.tahun_anggaran || '-'}
-                        </div>
+                        {hasItems ? (
+                          <div className="space-y-1">
+                            {bon.items.map((it, idx) => (
+                              <div key={it.id || idx} className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-mono tabular-nums font-semibold text-ink dark:text-ink-dark">
+                                  {it.batch?.nomor_batch || `B#${it.batch_id}`}
+                                </span>
+                                <span className="text-[11px] text-ink-muted font-mono tabular-nums">
+                                  ({it.batch?.seri}{it.batch?.kepala})
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="font-mono tabular-nums font-medium text-ink dark:text-ink-dark">{batch.nomor_batch || '-'}</div>
+                            <div className="text-ink-muted font-mono tabular-nums text-[11px]">
+                              Seri {batch.seri || '-'} ({batch.kepala || '-'})
+                            </div>
+                          </div>
+                        )}
                       </TableCell>
 
-                      <TableCell className="text-xs font-semibold text-emerald dark:text-emerald-light">
-                        {denom.nama || 'Uang Kertas'}
+                      <TableCell className="text-xs font-semibold text-emerald dark:text-emerald-400">
+                        {hasItems ? (
+                          <div className="space-y-1">
+                            {bon.items.map((it, idx) => (
+                              <div key={it.id || idx}>
+                                {it.batch?.emisi?.denominasi?.nama || 'Uang Kertas'}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          denom.nama || 'Uang Kertas'
+                        )}
                       </TableCell>
 
                       <TableCell className="font-mono text-xs tabular-nums text-ink dark:text-ink-dark">
-                        Pack {bon.pack_dari} - {bon.pack_sampai}
+                        {hasItems ? (
+                          <div className="space-y-1">
+                            {bon.items.map((it, idx) => (
+                              <div key={it.id || idx} className="truncate max-w-[160px]" title={it.nomor_pack_list}>
+                                Pack {it.nomor_pack_list}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          `Pack ${bon.pack_dari} - ${bon.pack_sampai}`
+                        )}
                       </TableCell>
 
                       <TableCell className="text-xs">
-                        <div className="font-mono font-semibold tabular-nums text-ink dark:text-white">
+                        <div className="font-mono font-semibold tabular-nums text-ink dark:text-ink-dark">
                           {totalPacksInBon} Pack
                         </div>
                         <div className="text-ink-muted font-mono tabular-nums text-[11px]">
@@ -464,7 +517,7 @@ export default function BonMasukPage() {
                             onClick={() => handleOpenDetail(bon)}
                             title="Lihat Detail Bon"
                           >
-                            <Eye className="h-4 w-4 text-ink-muted hover:text-ink dark:hover:text-white" strokeWidth={1.75} />
+                            <Eye className="h-4 w-4 text-ink-muted hover:text-ink dark:hover:text-ink-dark" strokeWidth={1.75} />
                           </Button>
                           {canModify && (
                             <>

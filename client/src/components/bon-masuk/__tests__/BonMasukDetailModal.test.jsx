@@ -36,7 +36,7 @@ const mockBonMasuk = {
 };
 
 describe('BonMasukDetailModal', () => {
-  it('renders official transfer metadata correctly', () => {
+  it('renders official transfer metadata and legacy fallback correctly', () => {
     render(
       <BonMasukDetailModal open={true} onOpenChange={vi.fn()} bonMasuk={mockBonMasuk} />
     );
@@ -48,18 +48,34 @@ describe('BonMasukDetailModal', () => {
     expect(screen.getByText(/Rp 50\.000/)).toBeInTheDocument();
     expect(screen.getByText(/Budi Santoso/)).toBeInTheDocument();
     expect(screen.getByText(/09:30 WIB/)).toBeInTheDocument();
-    expect(screen.getByText('Segel utuh dan rapi')).toBeInTheDocument();
+    expect(screen.getByText(/Segel utuh dan rapi/)).toBeInTheDocument();
+    expect(screen.getByText(/Rentang: Pack 1 s\/d 40/)).toBeInTheDocument();
   });
 
-  it('renders mini progress bar for batch occupancy (40 / 100 Pack)', () => {
+  it('renders multi-batch items with progress bar and pack list', () => {
+    const multiBatchBon = {
+      ...mockBonMasuk,
+      total_pack: 40,
+      items: [
+        {
+          id: 101,
+          batch_id: 1,
+          nomor_pack_list: '1-10, 13, 16, 20-40',
+          total_pack: 33,
+          jumlah_bilyet: 1485000n,
+          batch: mockBonMasuk.batch,
+        },
+      ],
+    };
+
     render(
-      <BonMasukDetailModal open={true} onOpenChange={vi.fn()} bonMasuk={mockBonMasuk} />
+      <BonMasukDetailModal open={true} onOpenChange={vi.fn()} bonMasuk={multiBatchBon} />
     );
 
-    expect(screen.getByText('40 / 100 Pack (40%)')).toBeInTheDocument();
-    expect(screen.getByText(/Pack 1/)).toBeInTheDocument();
-    expect(screen.getByText(/Pack 40/)).toBeInTheDocument();
-    expect(screen.getByText(/1\.800\.000 Bilyet/)).toBeInTheDocument();
+    expect(screen.getByText(/1-10, 13, 16, 20-40/)).toBeInTheDocument();
+    expect(screen.getByText('33 / 100 Pack (33%)')).toBeInTheDocument();
+    expect(screen.getByText('33 Pack')).toBeInTheDocument();
+    expect(screen.getByText(/1\.485\.000 Bilyet/)).toBeInTheDocument();
   });
 
   it('triggers onOpenChange when Tutup button is clicked', () => {

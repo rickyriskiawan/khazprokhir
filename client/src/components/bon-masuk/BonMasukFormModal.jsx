@@ -17,11 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { createBonMasuk, updateBonMasuk } from '@/services/bonMasukService';
-import { formatBilyet } from '@/utils/formatters';
-import { Calculator, AlertCircle, Loader2 } from 'lucide-react';
+import { formatBilyet, formatRupiah } from '@/utils/formatters';
+import { parsePackRange } from '@/utils/packParser';
+import BatchCombobox from './BatchCombobox';
+import { Calculator, AlertCircle, Loader2, Plus, Trash2, Lock, Sparkles } from 'lucide-react';
 
 export default function BonMasukFormModal({
   open,
@@ -34,39 +36,35 @@ export default function BonMasukFormModal({
 }) {
   const isEdit = Boolean(initialData);
 
-  // Mode batch: 'existing' vs 'new'
-  const [batchMode, setBatchMode] = useState('existing');
-
-  // Form states
-  const [selectedBatchId, setSelectedBatchId] = useState('');
-  const [newNomorBatch, setNewNomorBatch] = useState('');
-  const [newSeri, setNewSeri] = useState('');
-  const [newKepala, setNewKepala] = useState('');
-  const [newTahunAnggaran, setNewTahunAnggaran] = useState(new Date().getFullYear());
-  const [newEmisiId, setNewEmisiId] = useState('');
-
+  // Header states
   const [noSegel, setNoSegel] = useState('');
+  const [noBon, setNoBon] = useState('');
+  const [tahunAnggaran, setTahunAnggaran] = useState(new Date().getFullYear());
   const [tanggalMasuk, setTanggalMasuk] = useState(new Date().toISOString().split('T')[0]);
   const [jamMasuk, setJamMasuk] = useState(() => {
     const now = new Date();
     return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   });
   const [shiftId, setShiftId] = useState('');
-  const [packDari, setPackDari] = useState(1);
-  const [packSampai, setPackSampai] = useState(100);
   const [kategoriPenerimaan, setKategoriPenerimaan] = useState('MASINAL');
   const [jenisMesinSortir, setJenisMesinSortir] = useState('');
+  const [petugasKhazai, setPetugasKhazai] = useState('');
+  const [petugasKhazprokhir, setPetugasKhazprokhir] = useState('');
   const [catatan, setCatatan] = useState('');
+
+  // Dynamic Batch Items Repeater
+  // Item structure: { id, batchId, selectedBatch, packListInput, isNewBatch, newNomorBatch, newSeri, newKepala, newEmisiId, isLocked }
+  const [batchItems, setBatchItems] = useState([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  // Sync initialData when opening in Edit mode
+  // Sync initialData when opening in Edit mode or reset on Create mode
   useEffect(() => {
     if (initialData) {
-      setBatchMode('existing');
-      setSelectedBatchId(initialData.batch_id ? String(initialData.batch_id) : '');
       setNoSegel(initialData.no_segel || '');
+      setNoBon(initialData.no_bon || '');
+      setTahunAnggaran(initialData.tahun_anggaran || new Date().getFullYear());
       setTanggalMasuk(
         initialData.tanggal_masuk
           ? String(initialData.tanggal_masuk).split('T')[0]
@@ -74,47 +72,136 @@ export default function BonMasukFormModal({
       );
       setJamMasuk(initialData.jam_masuk || '08:00');
       setShiftId(initialData.shift_id ? String(initialData.shift_id) : '');
-      setPackDari(initialData.pack_dari !== undefined ? initialData.pack_dari : 1);
-      setPackSampai(initialData.pack_sampai !== undefined ? initialData.pack_sampai : 100);
       setKategoriPenerimaan(initialData.kategori_penerimaan || 'MASINAL');
       setJenisMesinSortir(initialData.jenis_mesin_sortir || '');
+      setPetugasKhazai(initialData.petugas_khazai || '');
+      setPetugasKhazprokhir(initialData.petugas_khazprokhir || '');
       setCatatan(initialData.catatan || '');
       setErrorMsg(null);
+
+      // Detect which batches are locked due to SORTED/PACKED/SHIPPED packs
+      const processedBatchIds = new Set(
+        (initialData.packs || [])
+          .filter((p) => ['SORTED', 'PACKED', 'SHIPPED'].includes(p.status))
+          .map((p) => p.batch_id)
+      );
+
+      if (initialData.items && initialData.items.length > 0) {
+        setBatchItems(
+          initialData.items.map((it, idx) => ({
+            id: `item-${idx}-${Date.now()}`,
+            batchId: it.batch_id,
+            selectedBatch: it.batch || batches.find((b) => b.id === it.batch_id) || null,
+            packListInput: it.nomor_pack_list || '',
+            isNewBatch: false,
+            newNomorBatch: '',
+            newSeri: '',
+            newKepala: '0',
+            newEmisiId: '',
+            isLocked: processedBatchIds.has(it.batch_id),
+          }))
+        );
+      } else if (initialData.batch_id) {
+        // Fallback legacy single-batch
+        const legacyBatch = initialData.batch || batches.find((b) => b.id === initialData.batch_id) || null;
+        setBatchItems([
+          {
+            id: `item-0-${Date.now()}`,
+            batchId: initialData.batch_id,
+            selectedBatch: legacyBatch,
+            packListInput: `${initialData.pack_dari || 1}-${initialData.pack_sampai || 100}`,
+            isNewBatch: false,
+            newNomorBatch: '',
+            newSeri: '',
+            newKepala: '0',
+            newEmisiId: '',
+            isLocked: processedBatchIds.has(initialData.batch_id),
+          },
+        ]);
+      } else {
+        setBatchItems([]);
+      }
     } else {
       // Reset form on Create
-      setBatchMode('existing');
-      setSelectedBatchId(batches.length > 0 ? String(batches[0].id) : '');
-      setNewNomorBatch('');
-      setNewSeri('');
-      setNewKepala('0');
-      setNewTahunAnggaran(new Date().getFullYear());
-      setNewEmisiId(emisiList.length > 0 ? String(emisiList[0].id) : '');
       setNoSegel('');
+      setNoBon('');
+      setTahunAnggaran(new Date().getFullYear());
       setTanggalMasuk(new Date().toISOString().split('T')[0]);
       const now = new Date();
       setJamMasuk(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
       setShiftId(shifts.length > 0 ? String(shifts[0].id) : '1');
-      setPackDari(1);
-      setPackSampai(100);
       setKategoriPenerimaan('MASINAL');
       setJenisMesinSortir('');
+      setPetugasKhazai('');
+      setPetugasKhazprokhir('');
       setCatatan('');
       setErrorMsg(null);
+
+      // Default with 1 initial empty batch row
+      const firstBatch = batches.length > 0 ? batches[0] : null;
+      setBatchItems([
+        {
+          id: `item-0-${Date.now()}`,
+          batchId: firstBatch ? firstBatch.id : null,
+          selectedBatch: firstBatch,
+          packListInput: '1-100',
+          isNewBatch: false,
+          newNomorBatch: '',
+          newSeri: '',
+          newKepala: '0',
+          newEmisiId: emisiList.length > 0 ? String(emisiList[0].id) : '',
+          isLocked: false,
+        },
+      ]);
     }
   }, [initialData, open, batches, shifts, emisiList]);
 
-  // Live Calculations (Total Pack & Total Bilyet)
-  const packDariNum = parseInt(packDari, 10);
-  const packSampaiNum = parseInt(packSampai, 10);
-  const isValidRange =
-    !isNaN(packDariNum) &&
-    !isNaN(packSampaiNum) &&
-    packDariNum >= 1 &&
-    packSampaiNum <= 100 &&
-    packDariNum <= packSampaiNum;
+  // Handler: Tambah Baris Batch
+  const handleAddBatchItem = () => {
+    setBatchItems((prev) => [
+      ...prev,
+      {
+        id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        batchId: null,
+        selectedBatch: null,
+        packListInput: '1-100',
+        isNewBatch: false,
+        newNomorBatch: '',
+        newSeri: '',
+        newKepala: '0',
+        newEmisiId: emisiList.length > 0 ? String(emisiList[0].id) : '',
+        isLocked: false,
+      },
+    ]);
+  };
 
-  const totalPack = isValidRange ? packSampaiNum - packDariNum + 1 : 0;
-  const totalBilyet = totalPack * 45000;
+  // Handler: Hapus Baris Batch
+  const handleRemoveBatchItem = (id) => {
+    setBatchItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  // Handler: Update field di baris item
+  const updateBatchItem = (id, fields) => {
+    setBatchItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...fields } : item))
+    );
+  };
+
+  // Kalkulasi instan per baris item
+  const parsedItems = batchItems.map((item) => {
+    const parsed = parsePackRange(item.packListInput);
+    return {
+      ...item,
+      parsed,
+    };
+  });
+
+  // Akumulasi Global seluruh batch dalam segel
+  const allValid = parsedItems.length > 0 && parsedItems.every((item) => item.parsed.isValid);
+  const globalTotalPack = allValid
+    ? parsedItems.reduce((acc, item) => acc + item.parsed.totalPack, 0)
+    : 0;
+  const globalTotalBilyet = globalTotalPack * 45000;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -125,48 +212,76 @@ export default function BonMasukFormModal({
       return;
     }
 
-    if (!isValidRange) {
-      setErrorMsg('Rentang pack tidak valid. Nomor pack awal harus 1-100 dan tidak boleh lebih besar dari pack akhir.');
-      return;
-    }
-
     if (!shiftId) {
       setErrorMsg('Shift kerja wajib dipilih.');
       return;
     }
 
-    let payload = {
+    if (batchItems.length === 0) {
+      setErrorMsg('Minimal satu batch harus dimasukkan ke dalam dokumen segel.');
+      return;
+    }
+
+    // Validasi duplikasi batch dalam formulir
+    const seenBatchKeys = new Set();
+    for (let i = 0; i < batchItems.length; i++) {
+      const item = batchItems[i];
+      let key = '';
+      if (item.isNewBatch) {
+        if (!item.newNomorBatch.trim() || !item.newSeri.trim() || !item.newKepala.trim() || !item.newEmisiId) {
+          setErrorMsg(`Data registrasi batch baru pada baris #${i + 1} belum lengkap.`);
+          return;
+        }
+        key = `new_${item.newNomorBatch.trim().toLowerCase()}`;
+      } else {
+        if (!item.batchId && !item.selectedBatch) {
+          setErrorMsg(`Silakan pilih batch terdaftar pada baris #${i + 1}.`);
+          return;
+        }
+        key = `id_${item.batchId || item.selectedBatch.id}`;
+      }
+
+      if (seenBatchKeys.has(key)) {
+        setErrorMsg(`Batch pada baris #${i + 1} duplikat. Satu nomor batch hanya boleh muncul satu kali dalam segel yang sama.`);
+        return;
+      }
+      seenBatchKeys.add(key);
+
+      const parsed = parsePackRange(item.packListInput);
+      if (!parsed.isValid) {
+        setErrorMsg(`Baris #${i + 1}: ${parsed.error}`);
+        return;
+      }
+    }
+
+    const payload = {
       no_segel: noSegel.trim(),
+      no_bon: noBon.trim() ? noBon.trim() : null,
+      tahun_anggaran: parseInt(tahunAnggaran, 10),
       tanggal_masuk: tanggalMasuk,
       jam_masuk: jamMasuk,
       shift_id: parseInt(shiftId, 10),
-      pack_dari: packDariNum,
-      pack_sampai: packSampaiNum,
       kategori_penerimaan: kategoriPenerimaan,
       jenis_mesin_sortir: jenisMesinSortir.trim() ? jenisMesinSortir.trim() : null,
+      petugas_khazai: petugasKhazai.trim() ? petugasKhazai.trim() : null,
+      petugas_khazprokhir: petugasKhazprokhir.trim() ? petugasKhazprokhir.trim() : null,
       catatan: catatan.trim() ? catatan.trim() : null,
+      items: batchItems.map((item) => {
+        if (item.isNewBatch) {
+          return {
+            nomor_batch: item.newNomorBatch.trim(),
+            seri: item.newSeri.trim().toUpperCase(),
+            kepala: item.newKepala.trim(),
+            emisi_id: parseInt(item.newEmisiId, 10),
+            nomor_pack_list: item.packListInput.trim(),
+          };
+        }
+        return {
+          batch_id: item.batchId || item.selectedBatch.id,
+          nomor_pack_list: item.packListInput.trim(),
+        };
+      }),
     };
-
-    if (batchMode === 'existing') {
-      const selectedBatch = batches.find((b) => String(b.id) === String(selectedBatchId));
-      if (!selectedBatch) {
-        setErrorMsg('Silakan pilih salah satu batch terdaftar.');
-        return;
-      }
-      payload.nomor_batch = selectedBatch.nomor_batch;
-      payload.tahun_anggaran = selectedBatch.tahun_anggaran;
-    } else {
-      // Registrasi batch baru
-      if (!newNomorBatch.trim() || !newSeri.trim() || !newKepala.trim() || !newEmisiId) {
-        setErrorMsg('Semua data registrasi batch baru (Nomor, Seri, Kepala, Emisi) wajib diisi.');
-        return;
-      }
-      payload.nomor_batch = newNomorBatch.trim();
-      payload.seri = newSeri.trim();
-      payload.kepala = newKepala.trim();
-      payload.tahun_anggaran = parseInt(newTahunAnggaran, 10);
-      payload.emisi_id = parseInt(newEmisiId, 10);
-    }
 
     setIsSubmitting(true);
     try {
@@ -188,15 +303,15 @@ export default function BonMasukFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? 'Edit Data Bon Masuk Khazai' : 'Input Penerimaan Bon Masuk Khazai'}
           </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? 'Koreksi nomor segel, metadata serah terima, atau penyesuaian alokasi rentang nomor pack.'
-              : 'Pencatatan penerimaan fisik uang kertas dari Khazanah Awal (Khazai) dan alokasi pack batch.'}
+              ? 'Penyuntingan data segel fisik dan alokasi batch (Batch yang sudah disortir terkunci secara aman).'
+              : 'Pencatatan serah terima fisik uang kertas dari Khazai ke Khazprokhir dalam satu nomor segel.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -208,263 +323,440 @@ export default function BonMasukFormModal({
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Bagian 1: Pengelolaan Batch */}
-          {!isEdit && (
-            <div className="space-y-2 rounded-xl border border-border p-3 dark:border-border-dark bg-surface-subtle/50 dark:bg-surface-subtle-dark/50">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-ink-secondary dark:text-ink-secondary-dark">
-                Identitas Batch Uang Kertas
-              </Label>
-              <Tabs value={batchMode} onValueChange={setBatchMode} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="existing">Pilih Batch Terdaftar</TabsTrigger>
-                  <TabsTrigger value="new">Registrasi Batch Baru</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="existing" className="pt-2">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="batch-select">Batch Produksi</Label>
-                    <Select value={selectedBatchId} onValueChange={setSelectedBatchId}>
-                      <SelectTrigger id="batch-select">
-                        <SelectValue placeholder="Pilih batch yang tersedia" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {batches.map((b) => (
-                          <SelectItem key={b.id} value={String(b.id)}>
-                            {b.nomor_batch} ({b.seri} - {b.kepala}) — {b.emisi?.denominasi?.nama || 'Emisi'}{' '}
-                            TA {b.tahun_anggaran}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="new" className="pt-2 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="new-nomor-batch">Nomor Batch / Order</Label>
-                      <Input
-                        id="new-nomor-batch"
-                        placeholder="Contoh: ORD-2026-001"
-                        value={newNomorBatch}
-                        onChange={(e) => setNewNomorBatch(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="new-tahun">Tahun Anggaran</Label>
-                      <Input
-                        id="new-tahun"
-                        type="number"
-                        value={newTahunAnggaran}
-                        onChange={(e) => setNewTahunAnggaran(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="new-seri">Seri</Label>
-                      <Input
-                        id="new-seri"
-                        placeholder="AA-BA"
-                        value={newSeri}
-                        onChange={(e) => setNewSeri(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="new-kepala">Kepala</Label>
-                      <Input
-                        id="new-kepala"
-                        placeholder="0"
-                        value={newKepala}
-                        onChange={(e) => setNewKepala(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="new-emisi">Pecahan / Emisi</Label>
-                      <Select value={newEmisiId} onValueChange={setNewEmisiId}>
-                        <SelectTrigger id="new-emisi">
-                          <SelectValue placeholder="Pilih Pecahan" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {emisiList.map((em) => (
-                            <SelectItem key={em.id} value={String(em.id)}>
-                              {em.denominasi?.nama} ({em.kode_emisi})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
-          )}
-
-          {/* Bagian 2: Metadata Bon & Segel Fisik */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="no-segel">
-                Nomor Segel Fisik <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="no-segel"
-                placeholder="Contoh: SGL-20260915-001"
-                value={noSegel}
-                onChange={(e) => setNoSegel(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="shift-select">
-                Shift Kerja <span className="text-red-500">*</span>
-              </Label>
-              <Select value={shiftId} onValueChange={setShiftId}>
-                <SelectTrigger id="shift-select">
-                  <SelectValue placeholder="Pilih Shift" />
-                </SelectTrigger>
-                <SelectContent>
-                  {shifts.map((s) => (
-                    <SelectItem key={s.id} value={String(s.id)}>
-                      {s.nama_shift} ({s.jam_mulai} - {s.jam_selesai})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="tanggal-masuk">Tanggal Masuk</Label>
-              <Input
-                id="tanggal-masuk"
-                type="date"
-                value={tanggalMasuk}
-                onChange={(e) => setTanggalMasuk(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="jam-masuk">Jam Masuk (24-Jam)</Label>
-              <Input
-                id="jam-masuk"
-                type="time"
-                value={jamMasuk}
-                onChange={(e) => setJamMasuk(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          {/* Bagian 3: Rentang Pack & Live Calculation Widget */}
-          <div className="rounded-xl border border-border p-3.5 dark:border-border-dark space-y-3 bg-surface dark:bg-surface-dark">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Header Dokumen Bon Masuk */}
+          <div className="rounded-xl border border-border p-3.5 dark:border-border-dark bg-surface-subtle/50 dark:bg-surface-subtle-dark/50 space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-ink-secondary dark:text-ink-secondary-dark">
-                Alokasi Rentang Pack (1 s/d 100)
-              </Label>
-              <span className="text-xs text-ink-muted">1 Pack = 45.000 Bilyet</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-ink-secondary dark:text-ink-secondary-dark">
+                Identitas Dokumen & Wadah Bersegel
+              </span>
+              <Badge variant="outline" className="font-mono text-[11px]">
+                TA {tahunAnggaran}
+              </Badge>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
-                <Label htmlFor="pack-dari">Pack Dari (Awal)</Label>
+                <Label htmlFor="noSegel" className="text-xs font-medium">
+                  Nomor Segel Fisik <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="pack-dari"
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={packDari}
-                  onChange={(e) => setPackDari(e.target.value)}
-                  className="font-mono tabular-nums"
+                  id="noSegel"
+                  type="text"
+                  placeholder="Contoh: SGL-2026-001"
+                  value={noSegel}
+                  onChange={(e) => setNoSegel(e.target.value)}
+                  className="font-mono text-xs uppercase"
                   required
                 />
               </div>
+
               <div className="space-y-1">
-                <Label htmlFor="pack-sampai">Pack Sampai (Akhir)</Label>
+                <Label htmlFor="noBon" className="text-xs font-medium">
+                  Nomor Referensi Bon (Opsional)
+                </Label>
                 <Input
-                  id="pack-sampai"
+                  id="noBon"
+                  type="text"
+                  placeholder="Contoh: BON-09-001"
+                  value={noBon}
+                  onChange={(e) => setNoBon(e.target.value)}
+                  className="font-mono text-xs uppercase"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="tahunAnggaran" className="text-xs font-medium">
+                  Tahun Anggaran Segel
+                </Label>
+                <Input
+                  id="tahunAnggaran"
                   type="number"
-                  min="1"
-                  max="100"
-                  value={packSampai}
-                  onChange={(e) => setPackSampai(e.target.value)}
-                  className="font-mono tabular-nums"
+                  value={tahunAnggaran}
+                  onChange={(e) => setTahunAnggaran(e.target.value)}
+                  className="font-mono text-xs tabular-nums"
                   required
                 />
               </div>
             </div>
 
-            {/* LIVE CALCULATION WIDGET (Strict: Total Pack & Total Bilyet) */}
-            <div className="rounded-xl bg-surface-subtle p-3 dark:bg-surface-subtle-dark border border-border/60 dark:border-border-dark/60">
-              <div className="flex items-center gap-1.5 text-xs font-medium text-ink-muted mb-2">
-                <Calculator className="h-3.5 w-3.5 text-emerald" strokeWidth={1.75} />
-                <span>Kalkulasi Real-Time Penerimaan</span>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="tanggalMasuk" className="text-xs font-medium">
+                  Tanggal Masuk
+                </Label>
+                <Input
+                  id="tanggalMasuk"
+                  type="date"
+                  value={tanggalMasuk}
+                  onChange={(e) => setTanggalMasuk(e.target.value)}
+                  className="text-xs"
+                  required
+                />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-xs text-ink-secondary dark:text-ink-secondary-dark">Total Pack</div>
-                  <div
-                    data-testid="live-total-pack"
-                    className="text-lg font-bold font-mono tabular-nums text-ink dark:text-white"
-                  >
-                    {isValidRange ? `${totalPack} Pack` : '-'}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-ink-secondary dark:text-ink-secondary-dark">Total Bilyet</div>
-                  <div
-                    data-testid="live-total-bilyet"
-                    className="text-lg font-bold font-mono tabular-nums text-emerald dark:text-emerald-light"
-                  >
-                    {isValidRange ? formatBilyet(totalBilyet) : '-'}
-                  </div>
-                </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="jamMasuk" className="text-xs font-medium">
+                  Jam Masuk
+                </Label>
+                <Input
+                  id="jamMasuk"
+                  type="time"
+                  value={jamMasuk}
+                  onChange={(e) => setJamMasuk(e.target.value)}
+                  className="text-xs font-mono"
+                  required
+                />
               </div>
-              {!isValidRange && (
-                <p className="mt-2 text-xs text-red-500">
-                  Rentang tidak valid: Pack Dari harus ≤ Pack Sampai (rentang 1–100).
+
+              <div className="space-y-1">
+                <Label htmlFor="shiftId" className="text-xs font-medium">
+                  Shift Kerja
+                </Label>
+                <Select value={shiftId} onValueChange={setShiftId}>
+                  <SelectTrigger id="shiftId" className="text-xs">
+                    <SelectValue placeholder="Pilih Shift" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {shifts.map((s) => (
+                      <SelectItem key={s.id} value={String(s.id)}>
+                        {s.nama_shift || `Shift ${s.id}`} ({s.jam_mulai} - {s.jam_selesai})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="kategoriPenerimaan" className="text-xs font-medium">
+                  Kategori
+                </Label>
+                <Select value={kategoriPenerimaan} onValueChange={setKategoriPenerimaan}>
+                  <SelectTrigger id="kategoriPenerimaan" className="text-xs">
+                    <SelectValue placeholder="Kategori" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MASINAL">MASINAL</SelectItem>
+                    <SelectItem value="PARSIAL">PARSIAL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="jenisMesinSortir" className="text-xs font-medium">
+                  Mesin Khazai
+                </Label>
+                <Input
+                  id="jenisMesinSortir"
+                  type="text"
+                  placeholder="Contoh: BPS M7"
+                  value={jenisMesinSortir}
+                  onChange={(e) => setJenisMesinSortir(e.target.value)}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="petugasKhazai" className="text-xs font-medium">
+                  Petugas Khazai
+                </Label>
+                <Input
+                  id="petugasKhazai"
+                  type="text"
+                  placeholder="Nama petugas Khazai"
+                  value={petugasKhazai}
+                  onChange={(e) => setPetugasKhazai(e.target.value)}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="petugasKhazprokhir" className="text-xs font-medium">
+                  Petugas Penerima
+                </Label>
+                <Input
+                  id="petugasKhazprokhir"
+                  type="text"
+                  placeholder="Nama penerima Khazprokhir"
+                  value={petugasKhazprokhir}
+                  onChange={(e) => setPetugasKhazprokhir(e.target.value)}
+                  className="text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Bagian Dynamic Batch Repeater */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-xs font-semibold uppercase tracking-wider text-ink-secondary dark:text-ink-secondary-dark">
+                  Daftar Batch & Alokasi Pack dalam Segel Ini
+                </Label>
+                <p className="text-[11px] text-ink-muted">
+                  Wadah bersegel dapat memuat lebih dari satu batch. Tuliskan nomor pack acak dengan tanda koma (contoh: <code className="font-mono">1-10, 13, 16, 20, 22</code>).
                 </p>
-              )}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddBatchItem}
+                className="text-xs gap-1 cursor-pointer text-emerald hover:text-emerald border-emerald/30 hover:bg-emerald/10"
+              >
+                <Plus className="h-3.5 w-3.5" strokeWidth={1.75} />
+                Tambah Batch
+              </Button>
+            </div>
+
+            <div className="space-y-2.5">
+              {parsedItems.map((item, index) => {
+                return (
+                  <div
+                    key={item.id}
+                    className={`rounded-xl border p-3 transition-colors ${
+                      item.isLocked
+                        ? 'border-amber-500/40 bg-amber-500/5 dark:bg-amber-500/10'
+                        : 'border-border dark:border-border-dark bg-surface dark:bg-surface-dark'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-border/50 dark:border-border-dark/50">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold font-mono tabular-nums text-ink dark:text-ink-dark">
+                          Batch #{index + 1}
+                        </span>
+                        {item.isLocked && (
+                          <Badge variant="amber" className="text-[10px] gap-1 py-0 px-1.5">
+                            <Lock className="h-2.5 w-2.5" strokeWidth={1.75} />
+                            Terkunci (Sudah Masuk Sortir)
+                          </Badge>
+                        )}
+                        {item.isNewBatch && (
+                          <Badge variant="emerald" className="text-[10px] gap-1 py-0 px-1.5">
+                            <Sparkles className="h-2.5 w-2.5" strokeWidth={1.75} />
+                            Batch Baru
+                          </Badge>
+                        )}
+                      </div>
+
+                      {!item.isLocked && batchItems.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveBatchItem(item.id)}
+                          className="h-6 w-6 text-ink-muted hover:text-destructive cursor-pointer"
+                          title="Hapus Batch Ini dari Segel"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Mode Batch: Existing vs New */}
+                    {!item.isNewBatch ? (
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+                        {/* Pencarian Batch Terdaftar via Smart Combobox */}
+                        <div className="md:col-span-5 space-y-1">
+                          <Label className="text-xs font-medium">Pilih / Cari Batch</Label>
+                          <BatchCombobox
+                            batches={batches}
+                            selectedBatch={item.selectedBatch}
+                            disabled={item.isLocked}
+                            onSelectBatch={(batch) => {
+                              updateBatchItem(item.id, {
+                                batchId: batch ? batch.id : null,
+                                selectedBatch: batch,
+                              });
+                            }}
+                            onRequestNewBatch={(parsedQuery) => {
+                              updateBatchItem(item.id, {
+                                isNewBatch: true,
+                                newSeri: parsedQuery.seri || '',
+                                newKepala: parsedQuery.kepala || '0',
+                                newNomorBatch: parsedQuery.raw || '',
+                                newEmisiId: emisiList.length > 0 ? String(emisiList[0].id) : '',
+                              });
+                            }}
+                          />
+                        </div>
+
+                        {/* Input Pack Acak */}
+                        <div className="md:col-span-4 space-y-1">
+                          <Label className="text-xs font-medium">
+                            Nomor Pack <span className="text-[10px] text-ink-muted font-normal">(1-100)</span>
+                          </Label>
+                          <Input
+                            type="text"
+                            placeholder="Contoh: 1-10, 13, 16, 20, 22"
+                            value={item.packListInput}
+                            disabled={item.isLocked}
+                            onChange={(e) => updateBatchItem(item.id, { packListInput: e.target.value })}
+                            className={`font-mono text-xs tabular-nums ${
+                              !item.parsed.isValid ? 'border-destructive focus-visible:ring-destructive' : ''
+                            }`}
+                          />
+                          {!item.parsed.isValid && (
+                            <p className="text-[10px] text-destructive">{item.parsed.error}</p>
+                          )}
+                        </div>
+
+                        {/* Live Calculator Baris */}
+                        <div className="md:col-span-3 rounded-lg bg-surface-subtle dark:bg-surface-subtle-dark p-2 border border-border/50 dark:border-border-dark/50 text-right">
+                          <div className="text-[10px] text-ink-muted flex items-center justify-end gap-1">
+                            <Calculator className="h-3 w-3 text-emerald" strokeWidth={1.75} />
+                            <span>Subtotal Batch</span>
+                          </div>
+                          <div className="text-xs font-bold font-mono tabular-nums text-ink dark:text-ink-dark mt-0.5">
+                            {item.parsed.totalPack} Pack
+                          </div>
+                          <div className="text-[11px] font-mono tabular-nums text-emerald dark:text-emerald-400">
+                            {formatBilyet(item.parsed.jumlahBilyet)}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Form Registrasi Batch Baru Inline */
+                      <div className="space-y-3 rounded-lg border border-emerald/30 bg-emerald/5 dark:bg-emerald/10 p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-emerald dark:text-emerald-400">
+                            Registrasi Batch Baru
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => updateBatchItem(item.id, { isNewBatch: false })}
+                            className="text-[11px] h-6 px-2 text-ink-secondary hover:text-ink"
+                          >
+                            Batal (Pilih Batch Terdaftar)
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Nomor Batch / Order</Label>
+                            <Input
+                              type="text"
+                              placeholder="Contoh: ORD-101"
+                              value={item.newNomorBatch}
+                              onChange={(e) => updateBatchItem(item.id, { newNomorBatch: e.target.value })}
+                              className="font-mono text-xs uppercase"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label className="text-xs">Seri</Label>
+                            <Input
+                              type="text"
+                              placeholder="AA-BA"
+                              value={item.newSeri}
+                              onChange={(e) => updateBatchItem(item.id, { newSeri: e.target.value.toUpperCase() })}
+                              className="font-mono text-xs uppercase"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label className="text-xs">Kepala</Label>
+                            <Input
+                              type="text"
+                              placeholder="0"
+                              value={item.newKepala}
+                              onChange={(e) => updateBatchItem(item.id, { newKepala: e.target.value })}
+                              className="font-mono text-xs"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label className="text-xs">Pecahan / Emisi</Label>
+                            <Select
+                              value={item.newEmisiId}
+                              onValueChange={(val) => updateBatchItem(item.id, { newEmisiId: val })}
+                            >
+                              <SelectTrigger className="text-xs">
+                                <SelectValue placeholder="Pilih Pecahan" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {emisiList.map((e) => (
+                                  <SelectItem key={e.id} value={String(e.id)}>
+                                    {e.denominasi?.nama} ({formatRupiah(e.denominasi?.nilai)})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center pt-1 border-t border-emerald/20">
+                          <div className="sm:col-span-8 space-y-1">
+                            <Label className="text-xs font-medium">Nomor Pack (1-100)</Label>
+                            <Input
+                              type="text"
+                              placeholder="1-10, 13, 16, 20, 22"
+                              value={item.packListInput}
+                              onChange={(e) => updateBatchItem(item.id, { packListInput: e.target.value })}
+                              className="font-mono text-xs tabular-nums"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-4 rounded-lg bg-surface dark:bg-surface-dark p-2 text-right border border-border dark:border-border-dark">
+                            <div className="text-[10px] text-ink-muted">Subtotal Batch</div>
+                            <div className="text-xs font-bold font-mono tabular-nums text-ink dark:text-ink-dark">
+                              {item.parsed.totalPack} Pack
+                            </div>
+                            <div className="text-[11px] font-mono tabular-nums text-emerald dark:text-emerald-400">
+                              {formatBilyet(item.parsed.jumlahBilyet)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Bagian 4: Kategori & Mesin */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="kategori-penerimaan">Kategori Penerimaan</Label>
-              <Select value={kategoriPenerimaan} onValueChange={setKategoriPenerimaan}>
-                <SelectTrigger id="kategori-penerimaan">
-                  <SelectValue placeholder="Pilih Kategori" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MASINAL">MASINAL</SelectItem>
-                  <SelectItem value="PARSIAL">PARSIAL</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* Widget Akumulasi Global Seluruh Batch dalam Segel */}
+          <div className="rounded-xl border border-emerald/40 bg-emerald/5 dark:bg-emerald/10 p-3.5 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="text-xs font-medium text-ink-secondary dark:text-ink-secondary-dark flex items-center gap-1.5">
+                <Calculator className="h-4 w-4 text-emerald" strokeWidth={1.75} />
+                <span>Akumulasi Global Isi Wadah Segel</span>
+              </div>
+              <div className="text-[11px] text-ink-muted">
+                Memuat <strong className="font-mono tabular-nums text-ink dark:text-ink-dark">{batchItems.length}</strong> Batch produksi
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="mesin-sortir">Jenis Mesin Sortir (Opsional)</Label>
-              <Input
-                id="mesin-sortir"
-                placeholder="Contoh: BPS-01 atau CUTTER"
-                value={jenisMesinSortir}
-                onChange={(e) => setJenisMesinSortir(e.target.value)}
-              />
+
+            <div className="text-right">
+              <div data-testid="live-total-pack" className="text-sm font-bold font-mono tabular-nums text-ink dark:text-ink-dark">
+                {globalTotalPack} Pack
+              </div>
+              <div data-testid="live-total-bilyet" className="text-sm font-bold font-mono tabular-nums text-emerald dark:text-emerald-400">
+                {formatBilyet(globalTotalBilyet)}
+              </div>
             </div>
           </div>
 
+          {/* Catatan Tambahan */}
           <div className="space-y-1">
-            <Label htmlFor="catatan">Catatan / Keterangan Khusus</Label>
+            <Label htmlFor="catatan" className="text-xs font-medium">
+              Catatan / Keterangan (Opsional)
+            </Label>
             <Input
               id="catatan"
-              placeholder="Catatan kondisi serah terima uang kertas..."
+              type="text"
+              placeholder="Catatan kondisi serah terima, nomor referensi tambahan, dsb."
               value={catatan}
               onChange={(e) => setCatatan(e.target.value)}
+              className="text-xs"
             />
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="pt-2">
             <Button
               type="button"
               variant="outline"
@@ -473,10 +765,14 @@ export default function BonMasukFormModal({
             >
               Batal
             </Button>
-            <Button type="submit" disabled={isSubmitting || !isValidRange} className="min-w-[140px]">
+            <Button
+              type="submit"
+              disabled={isSubmitting || !allValid}
+              className="cursor-pointer"
+            >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" strokeWidth={1.75} />
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                   Menyimpan...
                 </>
               ) : isEdit ? (
@@ -491,4 +787,3 @@ export default function BonMasukFormModal({
     </Dialog>
   );
 }
-

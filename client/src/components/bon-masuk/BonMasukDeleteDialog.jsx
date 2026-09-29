@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { deleteBonMasuk } from '@/services/bonMasukService';
 import { AlertTriangle, Loader2 } from 'lucide-react';
+import { formatBilyet } from '@/utils/formatters';
 
 export default function BonMasukDeleteDialog({ open, onOpenChange, bonMasuk, onSuccess }) {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -18,7 +19,9 @@ export default function BonMasukDeleteDialog({ open, onOpenChange, bonMasuk, onS
 
   if (!bonMasuk) return null;
 
-  const totalPack = bonMasuk.pack_sampai - bonMasuk.pack_dari + 1;
+  const items = bonMasuk.items || [];
+  const hasItems = items.length > 0;
+  const totalPack = bonMasuk.total_pack || (bonMasuk.pack_sampai ? bonMasuk.pack_sampai - bonMasuk.pack_dari + 1 : 0);
 
   const handleDelete = async () => {
     setErrorMsg(null);
@@ -40,7 +43,7 @@ export default function BonMasukDeleteDialog({ open, onOpenChange, bonMasuk, onS
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+          <div className="flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-5 w-5" strokeWidth={1.75} />
             <DialogTitle>Konfirmasi Pembatalan Bon Masuk</DialogTitle>
           </div>
@@ -60,18 +63,22 @@ export default function BonMasukDeleteDialog({ open, onOpenChange, bonMasuk, onS
         <div className="rounded-xl border border-border p-3.5 dark:border-border-dark bg-surface-subtle dark:bg-surface-subtle-dark text-sm space-y-1.5">
           <div className="flex justify-between">
             <span className="text-ink-muted">Nomor Segel:</span>
-            <span className="font-mono font-bold text-ink dark:text-white">{bonMasuk.no_segel}</span>
+            <span className="font-mono tabular-nums font-bold text-ink dark:text-ink-dark">{bonMasuk.no_segel}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-ink-muted">Batch:</span>
-            <span className="font-semibold text-ink dark:text-white">
-              {bonMasuk.batch?.nomor_batch || '-'}
+            <span className="font-mono tabular-nums font-semibold text-ink dark:text-ink-dark text-right max-w-[240px] truncate">
+              {hasItems
+                ? `${items.length} Batch (${items.map((it) => it.batch?.nomor_batch || `#${it.batch_id}`).join(', ')})`
+                : (bonMasuk.batch?.nomor_batch || '-')}
             </span>
           </div>
           <div className="flex justify-between">
             <span className="text-ink-muted">Alokasi Pack:</span>
-            <span className="font-mono tabular-nums text-ink dark:text-white">
-              Pack {bonMasuk.pack_dari} s/d {bonMasuk.pack_sampai} ({totalPack} Pack)
+            <span className="font-mono tabular-nums text-ink dark:text-ink-dark">
+              {hasItems
+                ? `${totalPack} Pack (${formatBilyet(bonMasuk.jumlah_bilyet)})`
+                : `Pack ${bonMasuk.pack_dari} s/d ${bonMasuk.pack_sampai} (${totalPack} Pack)`}
             </span>
           </div>
         </div>

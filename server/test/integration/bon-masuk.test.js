@@ -14,7 +14,15 @@ async function cleanupTestData() {
     // Cari batch pengujian
     const testBatches = await prisma.batch.findMany({
       where: {
-        nomor_batch: { in: ['TEST-BATCH-001', 'TEST-BATCH-002', 'TEST-BATCH-AUTO'] },
+        nomor_batch: {
+          in: [
+            'TEST-BATCH-001',
+            'TEST-BATCH-002',
+            'TEST-BATCH-AUTO',
+            'TEST-MULTI-A',
+            'TEST-MULTI-B',
+          ],
+        },
       },
       select: { id: true },
     });
@@ -24,7 +32,12 @@ async function cleanupTestData() {
     if (batchIds.length > 0) {
       // Hapus audit log terkait bon masuk pada batch pengujian
       const testBons = await prisma.bonMasuk.findMany({
-        where: { batch_id: { in: batchIds } },
+        where: {
+          OR: [
+            { batch_id: { in: batchIds } },
+            { items: { some: { batch_id: { in: batchIds } } } },
+          ],
+        },
         select: { id: true },
       });
       const bonIds = testBons.map((b) => b.id);
@@ -43,7 +56,12 @@ async function cleanupTestData() {
 
       // Hapus bon masuk
       await prisma.bonMasuk.deleteMany({
-        where: { batch_id: { in: batchIds } },
+        where: {
+          OR: [
+            { batch_id: { in: batchIds } },
+            { items: { some: { batch_id: { in: batchIds } } } },
+          ],
+        },
       });
 
       // Hapus batch
@@ -55,7 +73,16 @@ async function cleanupTestData() {
     // Bersihkan berdasarkan no_segel jika masih tersisa
     await prisma.bonMasuk.deleteMany({
       where: {
-        no_segel: { in: ['SGL-TEST-001', 'SGL-TEST-002', 'SGL-TEST-003', 'SGL-TEST-AUTO'] },
+        no_segel: {
+          in: [
+            'SGL-TEST-001',
+            'SGL-TEST-002',
+            'SGL-TEST-003',
+            'SGL-TEST-AUTO',
+            'SGL-TEST-MULTI',
+            'SGL-YEAR-REUSE',
+          ],
+        },
       },
     });
   } catch (err) {
@@ -521,5 +548,248 @@ describe('Integration Test: Modul 1 - Penerimaan Barang Masuk Khazai (Step 5)', 
     assert.ok(actions.includes('CREATE'));
     assert.ok(actions.includes('UPDATE'));
     assert.ok(actions.includes('DELETE'));
+  });
+
+  // ===========================================================================
+  // 6. MULTI-BATCH, SEGEL BERBASIS TAHUN ANGGARAN & SAFETY LOCKING (ADR 0005)
+  // ===========================================================================
+  describe('Penerimaan Multi-Batch per Segel, Pack Acak, & Granular Safety Locking', () => {
+    let multiBatchAId;
+    let multiBatchBId;
+    let multiBonId;
+
+    it('POST /api/bon-masuk - Berhasil menerima 1 segel fisik berisi 2 batch dengan daftar pack acak', async () => {
+      // Setup batch A & B
+      const resBatchA = await fetch(`${baseUrl}/api/batches`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${supervisorToken}` },
+        body: JSON.stringify({
+          nomor_batch: 'TEST-MULTI-A',
+          tahun_anggaran: 2026,
+          seri: 'MA-BA',
+          kepala: '0',
+          emisi_id: 1,
+        }),
+      });
+      const dataA = await resBatchA.json();
+      multiBatchAId = dataA.data.id;
+
+      const resBatchB = await fetch(`${baseUrl}/api/batches`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${supervisorToken}` },
+        body: JSON.stringify({
+          nomor_batch: 'TEST-MULTI-B',
+          tahun_anggaran: 2026,
+          seri: 'MB-BB',
+          kepala: '1',
+          emisi_id: 2,
+        }),
+      });
+      const dataB = await resBatchB.json();
+      multiBatchBId = dataB.data.id;
+
+      // Submit 1 bon masuk dengan 2 batch & non-contiguous pack syntax
+      const res = await fetch(`${baseUrl}/api/bon-masuk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${operatorToken}` },
+        body: JSON.stringify({
+          tahun_anggaran: 2026,
+          no_segel: 'SGL-TEST-MULTI',
+          tanggal_masuk: '2026-09-15',
+          jam_masuk: '08:30',
+          shift_id: 1,
+          kategori_penerimaan: 'MASINAL',
+          jenis_mesin_sortir: 'BPS M7',
+          petugas_khazai: 'Budi Santoso',
+          petugas_khazprokhir: 'Ahmad Dahlan',
+          catatan: 'Multi batch dalam 1 wadah segel',
+          items: [
+            {
+              batch_id: multiBatchAId,
+              nomor_pack_list: '1-10, 13, 16, 20, 22', // 14 pack
+            },
+            {
+              batch_id: multiBatchBId,
+              nomor_pack_list: '1-5, 8-10', // 8 pack
+            },
+          ],
+        }),
+      });
+
+      assert.equal(res.status, 201);
+      const body = await res.json();
+      assert.equal(body.success, true);
+      multiBonId = body.data.id;
+
+      // Verifikasi akumulasi total pack (14 + 8 = 22 pack)
+      assert.equal(body.data.total_pack, 22);
+      assert.equal(body.data.jumlah_bilyet, '990000'); // 22 * 45000 = 990.000 bilyet
+      assert.equal(body.data.items.length, 2);
+
+      // Verifikasi status pack di database
+      const countReceivedA = await prisma.packDetail.count({
+        where: {
+          batch_id: multiBatchAId,
+          nomor_pack: { in: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 16, 20, 22] },
+          status: 'RECEIVED',
+          bon_masuk_id: multiBonId,
+        },
+      });
+      assert.equal(countReceivedA, 14);
+
+      const countReceivedB = await prisma.packDetail.count({
+        where: {
+          batch_id: multiBatchBId,
+          nomor_pack: { in: [1, 2, 3, 4, 5, 8, 9, 10] },
+          status: 'RECEIVED',
+          bon_masuk_id: multiBonId,
+        },
+      });
+      assert.equal(countReceivedB, 8);
+    });
+
+    it('Tahun Anggaran Scoped Seal - Mengizinkan nomor segel sama pada tahun anggaran berbeda tapi menolak jika tahun sama', async () => {
+      // 1. Buat bon dengan segel SGL-YEAR-REUSE di tahun 2026
+      const res1 = await fetch(`${baseUrl}/api/bon-masuk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${operatorToken}` },
+        body: JSON.stringify({
+          tahun_anggaran: 2026,
+          no_segel: 'SGL-YEAR-REUSE',
+          tanggal_masuk: '2026-09-15',
+          jam_masuk: '08:30',
+          shift_id: 1,
+          items: [{ batch_id: multiBatchAId, nomor_pack_list: '31-35' }],
+        }),
+      });
+      assert.equal(res1.status, 201);
+      const bon1 = await res1.json();
+
+      // 2. Coba buat lagi segel SGL-YEAR-REUSE di tahun 2026 -> Harus 409 Conflict
+      const resConflict = await fetch(`${baseUrl}/api/bon-masuk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${operatorToken}` },
+        body: JSON.stringify({
+          tahun_anggaran: 2026,
+          no_segel: 'SGL-YEAR-REUSE',
+          tanggal_masuk: '2026-09-15',
+          jam_masuk: '09:00',
+          shift_id: 1,
+          items: [{ batch_id: multiBatchAId, nomor_pack_list: '36-40' }],
+        }),
+      });
+      assert.equal(resConflict.status, 409);
+
+      // 3. Buat segel SGL-YEAR-REUSE di tahun anggaran 2027 -> Harus 201 Created (Boleh digunakan lagi!)
+      const res2 = await fetch(`${baseUrl}/api/bon-masuk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${operatorToken}` },
+        body: JSON.stringify({
+          tahun_anggaran: 2027,
+          no_segel: 'SGL-YEAR-REUSE',
+          tanggal_masuk: '2027-01-10',
+          jam_masuk: '08:30',
+          shift_id: 1,
+          items: [{ batch_id: multiBatchAId, nomor_pack_list: '41-45' }],
+        }),
+      });
+      assert.equal(res2.status, 201);
+      const bon2 = await res2.json();
+
+      // Cleanup
+      await prisma.packDetail.updateMany({
+        where: { bon_masuk_id: { in: [bon1.data.id, bon2.data.id] } },
+        data: { status: 'PENDING', bon_masuk_id: null },
+      });
+      await prisma.bonMasuk.deleteMany({
+        where: { id: { in: [bon1.data.id, bon2.data.id] } },
+      });
+    });
+
+    it('Granular Safety Locking - Jika Batch A sudah SORTED, Batch A tidak boleh diubah/dihapus, tetapi Batch B tetap boleh diedit/dihapus', async () => {
+      // 1. Simulasikan pack #1 pada Batch A telah disortir
+      await prisma.packDetail.update({
+        where: {
+          batch_id_nomor_pack: {
+            batch_id: multiBatchAId,
+            nomor_pack: 1,
+          },
+        },
+        data: { status: 'SORTED' },
+      });
+
+      // 2. Coba hapus Batch A dari bon masuk (hanya kirim Batch B) -> Ditolak 400 CannotEditProcessedBatch
+      const resDeleteLockedBatch = await fetch(`${baseUrl}/api/bon-masuk/${multiBonId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${operatorToken}` },
+        body: JSON.stringify({
+          items: [
+            { batch_id: multiBatchBId, nomor_pack_list: '1-5, 8-10' },
+          ],
+        }),
+      });
+      assert.equal(resDeleteLockedBatch.status, 400);
+      const errLocked = await resDeleteLockedBatch.json();
+      assert.equal(errLocked.error, 'CannotEditProcessedBatch');
+
+      // 3. Coba hapus total bon masuk (DELETE) -> Ditolak 400 CannotCancelProcessedBon
+      const resDeleteWhole = await fetch(`${baseUrl}/api/bon-masuk/${multiBonId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${operatorToken}` },
+      });
+      assert.equal(resDeleteWhole.status, 400);
+
+      // 4. Edit Batch B (misal ganti pack 1-5, 8-10 menjadi 1-5 saja) sementara Batch A tetap -> Berhasil 200!
+      const resEditBatchB = await fetch(`${baseUrl}/api/bon-masuk/${multiBonId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${operatorToken}` },
+        body: JSON.stringify({
+          items: [
+            { batch_id: multiBatchAId, nomor_pack_list: '1-10, 13, 16, 20, 22' },
+            { batch_id: multiBatchBId, nomor_pack_list: '1-5' }, // Pack 8-10 dibatalkan
+          ],
+        }),
+      });
+      assert.equal(resEditBatchB.status, 200);
+      const editBData = await resEditBatchB.json();
+      assert.equal(editBData.data.total_pack, 19); // 14 + 5 = 19 pack
+
+      // Verifikasi pack 8,9,10 pada Batch B telah kembali ke PENDING
+      const countRevertedB = await prisma.packDetail.count({
+        where: {
+          batch_id: multiBatchBId,
+          nomor_pack: { in: [8, 9, 10] },
+          status: 'PENDING',
+          bon_masuk_id: null,
+        },
+      });
+      assert.equal(countRevertedB, 3);
+
+      // 5. Kembalikan status pack #1 Batch A ke RECEIVED, lalu batalkan seluruh bon masuk
+      await prisma.packDetail.update({
+        where: {
+          batch_id_nomor_pack: {
+            batch_id: multiBatchAId,
+            nomor_pack: 1,
+          },
+        },
+        data: { status: 'RECEIVED' },
+      });
+
+      const resDeleteFinal = await fetch(`${baseUrl}/api/bon-masuk/${multiBonId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${operatorToken}` },
+      });
+      assert.equal(resDeleteFinal.status, 200);
+
+      // Pastikan seluruh pack dari kedua batch kembali ke PENDING
+      const countAllPending = await prisma.packDetail.count({
+        where: {
+          batch_id: { in: [multiBatchAId, multiBatchBId] },
+          status: 'PENDING',
+        },
+      });
+      assert.equal(countAllPending, 200);
+    });
   });
 });

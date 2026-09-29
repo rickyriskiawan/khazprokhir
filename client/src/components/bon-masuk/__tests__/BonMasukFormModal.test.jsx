@@ -50,7 +50,7 @@ describe('BonMasukFormModal', () => {
     expect(screen.getByTestId('live-total-bilyet')).toHaveTextContent('4.500.000 Bilyet');
   });
 
-  it('reactively updates Live Calculator when pack_dari and pack_sampai change', () => {
+  it('reactively updates Live Calculator when non-contiguous pack input changes', () => {
     render(
       <BonMasukFormModal
         open={true}
@@ -61,28 +61,28 @@ describe('BonMasukFormModal', () => {
       />
     );
 
-    const packDariInput = screen.getByLabelText(/Pack Dari/i);
-    const packSampaiInput = screen.getByLabelText(/Pack Sampai/i);
+    const packInput = screen.getByPlaceholderText(/Contoh: 1-10, 13, 16, 20, 22/i);
 
-    // Ubah ke pack 1 s/d 20 (20 pack = 900.000 Bilyet)
-    fireEvent.change(packDariInput, { target: { value: '1' } });
-    fireEvent.change(packSampaiInput, { target: { value: '20' } });
+    // Ubah ke pack 1-20 (20 pack = 900.000 Bilyet)
+    fireEvent.change(packInput, { target: { value: '1-20' } });
 
     expect(screen.getByTestId('live-total-pack')).toHaveTextContent('20 Pack');
     expect(screen.getByTestId('live-total-bilyet')).toHaveTextContent('900.000 Bilyet');
 
-    // Ubah ke invalid range (pack_dari > pack_sampai)
-    fireEvent.change(packDariInput, { target: { value: '50' } });
-    fireEvent.change(packSampaiInput, { target: { value: '10' } });
+    // Ubah ke daftar acak/non-contiguous: 1-10, 13, 16, 20, 22 (14 pack = 630.000 Bilyet)
+    fireEvent.change(packInput, { target: { value: '1-10, 13, 16, 20, 22' } });
 
-    expect(screen.getByTestId('live-total-pack')).toHaveTextContent('-');
-    expect(screen.getByTestId('live-total-bilyet')).toHaveTextContent('-');
-    expect(
-      screen.getByText(/Rentang tidak valid: Pack Dari harus ≤ Pack Sampai/i)
-    ).toBeInTheDocument();
+    expect(screen.getByTestId('live-total-pack')).toHaveTextContent('14 Pack');
+    expect(screen.getByTestId('live-total-bilyet')).toHaveTextContent('630.000 Bilyet');
+
+    // Ubah ke invalid range (50-10)
+    fireEvent.change(packInput, { target: { value: '50-10' } });
+
+    expect(screen.getByTestId('live-total-pack')).toHaveTextContent('0 Pack');
+    expect(screen.getByText(/Rentang nomor pack tidak valid: 50 lebih besar dari 10/i)).toBeInTheDocument();
   });
 
-  it('submits valid payload in Create mode', async () => {
+  it('submits valid payload in Create mode with multi-batch repeater items', async () => {
     const onSuccess = vi.fn();
     const onOpenChange = vi.fn();
     bonMasukService.createBonMasuk.mockResolvedValueOnce({ id: 1 });
@@ -112,14 +112,48 @@ describe('BonMasukFormModal', () => {
 
     const calledPayload = bonMasukService.createBonMasuk.mock.calls[0][0];
     expect(calledPayload.no_segel).toBe('SGL-TEST-123');
-    expect(calledPayload.pack_dari).toBe(1);
-    expect(calledPayload.pack_sampai).toBe(100);
-    expect(calledPayload.nomor_batch).toBe('ORD-2026-001');
+    expect(calledPayload.items).toEqual([
+      {
+        batch_id: 1,
+        nomor_pack_list: '1-100',
+      },
+    ]);
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(onSuccess).toHaveBeenCalled();
   });
 
-  it('pre-fills data and calls updateBonMasuk in Edit mode', async () => {
+  it('supports adding and removing batch items in the repeater', () => {
+    render(
+      <BonMasukFormModal
+        open={true}
+        onOpenChange={vi.fn()}
+        batches={mockBatches}
+        shifts={mockShifts}
+        emisiList={mockEmisi}
+      />
+    );
+
+    expect(screen.getByText('Batch #1')).toBeInTheDocument();
+    expect(screen.queryByText('Batch #2')).not.toBeInTheDocument();
+    expect(screen.getByTestId('live-total-pack')).toHaveTextContent('100 Pack');
+
+    // Klik Tambah Batch
+    const addBtn = screen.getByRole('button', { name: /Tambah Batch/i });
+    fireEvent.click(addBtn);
+
+    expect(screen.getByText('Batch #2')).toBeInTheDocument();
+    expect(screen.getByTestId('live-total-pack')).toHaveTextContent('200 Pack');
+
+    // Hapus baris kedua
+    const removeBtns = screen.getAllByTitle('Hapus Batch Ini dari Segel');
+    expect(removeBtns).toHaveLength(2);
+    fireEvent.click(removeBtns[1]);
+
+    expect(screen.queryByText('Batch #2')).not.toBeInTheDocument();
+    expect(screen.getByTestId('live-total-pack')).toHaveTextContent('100 Pack');
+  });
+
+  it('pre-fills data and calls updateBonMasuk in Edit mode with granular safety locking', async () => {
     const onSuccess = vi.fn();
     const onOpenChange = vi.fn();
     bonMasukService.updateBonMasuk.mockResolvedValueOnce({ id: 99 });
@@ -127,12 +161,22 @@ describe('BonMasukFormModal', () => {
     const initialData = {
       id: 99,
       no_segel: 'SGL-EXISTING-99',
-      batch_id: 1,
-      pack_dari: 1,
-      pack_sampai: 50,
       shift_id: 1,
       kategori_penerimaan: 'PARSIAL',
       catatan: 'Catatan awal',
+      items: [
+        {
+          id: 1,
+          batch_id: 1,
+          nomor_pack_list: '1-50',
+          total_pack: 50,
+          jumlah_bilyet: 2250000n,
+          batch: mockBatches[0],
+        },
+      ],
+      packs: [
+        { id: 1, batch_id: 1, nomor_pack: 1, status: 'RECEIVED' },
+      ],
     };
 
     render(
@@ -151,9 +195,9 @@ describe('BonMasukFormModal', () => {
     expect(screen.getByTestId('live-total-pack')).toHaveTextContent('50 Pack');
     expect(screen.getByTestId('live-total-bilyet')).toHaveTextContent('2.250.000 Bilyet');
 
-    // Ubah pack sampai ke 60
-    const packSampaiInput = screen.getByLabelText(/Pack Sampai/i);
-    fireEvent.change(packSampaiInput, { target: { value: '60' } });
+    // Ubah pack input ke 1-60
+    const packInput = screen.getByPlaceholderText(/Contoh: 1-10, 13, 16, 20, 22/i);
+    fireEvent.change(packInput, { target: { value: '1-60' } });
 
     expect(screen.getByTestId('live-total-pack')).toHaveTextContent('60 Pack');
     expect(screen.getByTestId('live-total-bilyet')).toHaveTextContent('2.700.000 Bilyet');
@@ -164,10 +208,48 @@ describe('BonMasukFormModal', () => {
     await waitFor(() => {
       expect(bonMasukService.updateBonMasuk).toHaveBeenCalledWith(99, expect.objectContaining({
         no_segel: 'SGL-EXISTING-99',
-        pack_dari: 1,
-        pack_sampai: 60,
+        items: [
+          {
+            batch_id: 1,
+            nomor_pack_list: '1-60',
+          },
+        ],
       }));
     });
+  });
+
+  it('displays lock indicator and disables input when batch has sorted packs', () => {
+    const lockedInitialData = {
+      id: 99,
+      no_segel: 'SGL-LOCKED-99',
+      shift_id: 1,
+      items: [
+        {
+          id: 1,
+          batch_id: 1,
+          nomor_pack_list: '1-50',
+          batch: mockBatches[0],
+        },
+      ],
+      packs: [
+        { id: 1, batch_id: 1, nomor_pack: 1, status: 'SORTED' },
+      ],
+    };
+
+    render(
+      <BonMasukFormModal
+        open={true}
+        onOpenChange={vi.fn()}
+        initialData={lockedInitialData}
+        batches={mockBatches}
+        shifts={mockShifts}
+        emisiList={mockEmisi}
+      />
+    );
+
+    expect(screen.getByText('Terkunci (Sudah Masuk Sortir)')).toBeInTheDocument();
+    const packInput = screen.getByPlaceholderText(/Contoh: 1-10, 13, 16, 20, 22/i);
+    expect(packInput).toBeDisabled();
   });
 });
 
