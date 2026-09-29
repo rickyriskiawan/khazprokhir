@@ -35,3 +35,4 @@ describe('Table component', () => {
     expect(screen.getByText('18 Doos')).toBeInTheDocument()
   })
 })
+

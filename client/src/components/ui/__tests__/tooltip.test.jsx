@@ -25,3 +25,4 @@ describe('Tooltip component', () => {
     expect(screen.getByText('Keterangan Bantuan')).toBeInTheDocument()
   })
 })
+

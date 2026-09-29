@@ -21,7 +21,7 @@ const DropdownMenuSubTrigger = React.forwardRef(({ className, inset, children, .
     {...props}
   >
     {children}
-    <ChevronRight className="ml-auto h-4 w-4" />
+    <ChevronRight className="ml-auto h-4 w-4" strokeWidth={1.75} />
   </DropdownMenuPrimitive.SubTrigger>
 ))
 DropdownMenuSubTrigger.displayName = DropdownMenuPrimitive.SubTrigger.displayName
@@ -78,7 +78,7 @@ const DropdownMenuCheckboxItem = React.forwardRef(({ className, children, checke
   >
     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <Check className="h-4 w-4 text-emerald" />
+        <Check className="h-4 w-4 text-emerald" strokeWidth={1.75} />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -150,3 +150,4 @@ export {
   DropdownMenuSubTrigger,
   DropdownMenuRadioGroup,
 }
+

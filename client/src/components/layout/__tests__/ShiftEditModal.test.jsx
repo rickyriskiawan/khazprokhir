@@ -31,4 +31,12 @@ describe('ShiftEditModal component', () => {
 
     expect(screen.queryByText('Pengaturan Jam Kerja Shift')).not.toBeInTheDocument();
   });
+
+  it('associates labels with time inputs for accessibility', () => {
+    render(<ShiftEditModal isOpen={true} onClose={vi.fn()} />);
+
+    expect(screen.getAllByLabelText(/Jam Mulai \(WIB\)/i).length).toBe(3);
+    expect(screen.getAllByLabelText(/Jam Selesai \(WIB\)/i).length).toBe(3);
+  });
 });
+

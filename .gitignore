@@ -37,6 +37,8 @@ yarn-error.log*
 prompt.txt
 issue.md
 planning.md
+CONTEXT.md
+implementation_plan.md
 
 #skills
 /.agents

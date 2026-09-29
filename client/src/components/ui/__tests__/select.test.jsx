@@ -28,3 +28,4 @@ describe('Select component', () => {
     expect(trigger).toHaveTextContent('Shift 1 (Pagi)')
   })
 })
+

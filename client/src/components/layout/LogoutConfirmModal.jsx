@@ -16,7 +16,7 @@ export default function LogoutConfirmModal({ isOpen, onClose, onConfirm, isLoadi
       <DialogContent className="max-w-md p-6">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 flex items-center justify-center shrink-0 text-rose-600 dark:text-rose-400">
-            <AlertTriangle className="w-6 h-6" />
+            <AlertTriangle className="w-6 h-6" strokeWidth={1.75} />
           </div>
 
           <DialogHeader className="flex-1">
@@ -45,7 +45,7 @@ export default function LogoutConfirmModal({ isOpen, onClose, onConfirm, isLoadi
             disabled={isLoading}
             className="gap-1.5"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4" strokeWidth={1.75} />
             <span>{isLoading ? 'Mengakhiri Sesi...' : 'Konfirmasi Keluar'}</span>
           </Button>
         </DialogFooter>

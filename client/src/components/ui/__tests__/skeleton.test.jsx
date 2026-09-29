@@ -13,3 +13,4 @@ describe('Skeleton component', () => {
     expect(el).toHaveClass('w-32')
   })
 })
+

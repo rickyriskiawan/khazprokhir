@@ -21,3 +21,4 @@ describe('Tabs component', () => {
     expect(screen.queryByText('Konten Tab Kedua')).not.toBeInTheDocument()
   })
 })
+

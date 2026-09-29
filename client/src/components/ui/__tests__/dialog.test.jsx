@@ -38,3 +38,4 @@ describe('Dialog component', () => {
     expect(screen.queryByText('Hidden Dialog')).not.toBeInTheDocument()
   })
 })
+

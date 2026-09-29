@@ -28,3 +28,4 @@ describe('Alert component', () => {
     expect(alert.className).toContain('border-rose-200')
   })
 })
+

@@ -146,4 +146,23 @@ describe('DashboardPage integration', () => {
       expect(screen.getByText(/Server Terputus/i)).toBeInTheDocument();
     });
   });
+
+  it('renders denomination inventory table using Shadcn Table component', async () => {
+    dashboardService.fetchDashboardOverview.mockResolvedValueOnce(mockOverviewData);
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Rincian Persediaan per Pecahan Uang Kertas')).toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
+      expect(screen.getByText('Pecahan / Emisi')).toBeInTheDocument();
+      expect(screen.getByText('Nilai Nominal')).toBeInTheDocument();
+      expect(screen.getByText('Akumulasi Nilai')).toBeInTheDocument();
+      expect(screen.getByText('TE 2022')).toBeInTheDocument();
+    });
+  });
 });

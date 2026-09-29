@@ -59,3 +59,4 @@ describe('LogoutConfirmModal component', () => {
     expect(screen.queryByText('Konfirmasi Keluar Sistem')).not.toBeInTheDocument();
   });
 });
+
