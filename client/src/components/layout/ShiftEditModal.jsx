@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Clock, CheckCircle2, AlertCircle, X, Save } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, Save } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Badge } from '../ui/badge';
+import { Alert, AlertDescription } from '../ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../ui/dialog';
 import { useShiftStore } from '../../stores/shiftStore';
 
 export default function ShiftEditModal({ isOpen, onClose }) {
@@ -34,8 +43,6 @@ export default function ShiftEditModal({ isOpen, onClose }) {
     );
   }
 
-  if (!isOpen || typeof document === 'undefined') return null;
-
   const handleChange = (id, field, value) => {
     setFormData((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
@@ -63,63 +70,38 @@ export default function ShiftEditModal({ isOpen, onClose }) {
     }
   };
 
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="shift-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-200"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="relative w-full max-w-lg bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-xl shadow-2xl p-6 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-border dark:border-border-dark">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div>
-              <h3
-                id="shift-modal-title"
-                className="text-base font-semibold text-ink dark:text-white tracking-tight"
-              >
-                Pengaturan Jam Kerja Shift
-              </h3>
-              <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark mt-0.5">
-                Konfigurasi jadwal kerja fisik & peralihan (Khusus Supervisor)
-              </p>
-            </div>
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg p-6">
+        <div className="flex items-center gap-3 pb-3 border-b border-border dark:border-border-dark">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+            <Clock className="w-5 h-5" />
           </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-ink-muted hover:text-ink dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            aria-label="Tutup modal"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <DialogHeader>
+            <DialogTitle>Pengaturan Jam Kerja Shift</DialogTitle>
+            <DialogDescription>
+              Konfigurasi jadwal kerja fisik & peralihan (Khusus Supervisor)
+            </DialogDescription>
+          </DialogHeader>
         </div>
 
         {/* Alerts */}
         {successMsg && (
-          <div className="mt-4 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-            <span>{successMsg}</span>
-          </div>
+          <Alert variant="emerald" className="mt-2 py-2.5">
+            <CheckCircle2 className="w-4 h-4" />
+            <AlertDescription>{successMsg}</AlertDescription>
+          </Alert>
         )}
 
         {errorMsg && (
-          <div className="mt-4 p-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-xs text-rose-800 dark:text-rose-300 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
-            <span>{errorMsg}</span>
-          </div>
+          <Alert variant="destructive" className="mt-2 py-2.5">
+            <AlertCircle className="w-4 h-4" />
+            <AlertDescription>{errorMsg}</AlertDescription>
+          </Alert>
         )}
 
         {/* Shift Form List */}
-        <div className="mt-4 space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+        <div className="mt-3 space-y-3 max-h-[55vh] overflow-y-auto pr-1">
           {formData.map((item) => {
             const isSaving = savingId === item.id;
             return (
@@ -132,15 +114,9 @@ export default function ShiftEditModal({ isOpen, onClose }) {
                     <span className="text-xs font-bold text-ink dark:text-white">
                       {item.nama}
                     </span>
-                    <span
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                        item.is_active
-                          ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
-                          : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                      }`}
-                    >
+                    <Badge variant={item.is_active ? 'emerald' : 'secondary'} className="text-[10px] px-2 py-0.5">
                       {item.is_active ? 'Aktif' : 'Non-Aktif'}
-                    </span>
+                    </Badge>
                   </div>
 
                   <label className="flex items-center gap-2 cursor-pointer text-xs text-ink-secondary dark:text-ink-secondary-dark">
@@ -198,13 +174,12 @@ export default function ShiftEditModal({ isOpen, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="mt-6 pt-4 border-t border-border dark:border-border-dark flex justify-end">
+        <DialogFooter className="mt-4 pt-3 border-t border-border dark:border-border-dark flex justify-end">
           <Button type="button" variant="outline" size="sm" onClick={onClose}>
             Selesai
           </Button>
-        </div>
-      </div>
-    </div>,
-    document.body
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

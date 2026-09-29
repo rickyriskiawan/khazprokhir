@@ -6,6 +6,14 @@ import ShiftPerformanceWidget from '@/components/dashboard/ShiftPerformanceWidge
 import QuickActionsBar from '@/components/dashboard/QuickActionsBar';
 import { fetchDashboardOverview } from '@/services/dashboardService';
 import { formatRupiah, formatDoos } from '@/utils/formatters';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 
 export default function DashboardPage() {
   const [overview, setOverview] = useState(null);
@@ -107,60 +115,60 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="text-[11px] font-semibold text-ink-secondary dark:text-ink-secondary-dark border-b border-border dark:border-border-dark">
-                  <th className="pb-3 px-3">Pecahan / Emisi</th>
-                  <th className="pb-3 px-3 text-right">Nilai Nominal</th>
-                  <th className="pb-3 px-3 text-center">Rentang Doos</th>
-                  <th className="pb-3 px-3 text-right">Total Pack</th>
-                  <th className="pb-3 px-3 text-right">Total Doos</th>
-                  <th className="pb-3 px-3 text-right">Akumulasi Nilai</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40 dark:divide-border-dark/40">
-                {denomRows.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-xs text-ink-muted">
-                      {loading ? 'Memuat rincian pecahan...' : 'Belum ada data produksi tercatat untuk hari ini.'}
-                    </td>
-                  </tr>
-                ) : (
-                  denomRows.map((denom, idx) => (
-                    <tr
-                      key={denom.denominasi_id || denom.nama || idx}
-                      className="text-xs hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark transition-colors"
-                    >
-                      <td className="py-3.5 px-3 font-bold text-ink dark:text-white flex items-center gap-2">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-b border-border dark:border-border-dark">
+                <TableHead className="px-3">Pecahan / Emisi</TableHead>
+                <TableHead className="px-3 text-right">Nilai Nominal</TableHead>
+                <TableHead className="px-3 text-center">Rentang Doos</TableHead>
+                <TableHead className="px-3 text-right">Total Pack</TableHead>
+                <TableHead className="px-3 text-right">Total Doos</TableHead>
+                <TableHead className="px-3 text-right">Akumulasi Nilai</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-border/40 dark:divide-border-dark/40">
+              {denomRows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-8 text-center text-xs text-ink-muted">
+                    {loading ? 'Memuat rincian pecahan...' : 'Belum ada data produksi tercatat untuk hari ini.'}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                denomRows.map((denom, idx) => (
+                  <TableRow
+                    key={denom.denominasi_id || denom.nama || idx}
+                    className="text-xs hover:bg-surface-subtle dark:hover:bg-surface-subtle-dark transition-colors"
+                  >
+                    <TableCell className="py-3.5 px-3 font-bold text-ink dark:text-white">
+                      <div className="flex items-center gap-2">
                         <span className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-mono flex items-center justify-center text-xs border border-emerald-200 dark:border-emerald-500/20">
                           {denom.nama || denom.denominasi}
                         </span>
                         <span>TE 2022</span>
-                      </td>
-                      <td className="py-3.5 px-3 text-right font-mono font-medium text-ink-secondary dark:text-ink-secondary-dark tabular-nums">
-                        {formatRupiah(denom.nilai)}
-                      </td>
-                      <td className="py-3.5 px-3 text-center font-mono text-xs tabular-nums text-ink-secondary dark:text-ink-secondary-dark">
-                        {denom.min_no_doos > 0
-                          ? `${formatDoos(denom.min_no_doos)} - ${formatDoos(denom.max_no_doos)}`
-                          : '-'}
-                      </td>
-                      <td className="py-3.5 px-3 text-right font-mono tabular-nums text-ink dark:text-white">
-                        {denom.total_pack || 0} Pack
-                      </td>
-                      <td className="py-3.5 px-3 text-right font-mono font-bold tabular-nums text-ink dark:text-white">
-                        {denom.total_doos || 0} Doos
-                      </td>
-                      <td className="py-3.5 px-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                        {denom.total_nominal_rupiah || formatRupiah(Number(denom.total_bilyet || 0) * (denom.nilai || 0))}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3.5 px-3 text-right font-mono font-medium text-ink-secondary dark:text-ink-secondary-dark tabular-nums">
+                      {formatRupiah(denom.nilai)}
+                    </TableCell>
+                    <TableCell className="py-3.5 px-3 text-center font-mono text-xs tabular-nums text-ink-secondary dark:text-ink-secondary-dark">
+                      {denom.min_no_doos > 0
+                        ? `${formatDoos(denom.min_no_doos)} - ${formatDoos(denom.max_no_doos)}`
+                        : '-'}
+                    </TableCell>
+                    <TableCell className="py-3.5 px-3 text-right font-mono tabular-nums text-ink dark:text-white">
+                      {denom.total_pack || 0} Pack
+                    </TableCell>
+                    <TableCell className="py-3.5 px-3 text-right font-mono font-bold tabular-nums text-ink dark:text-white">
+                      {denom.total_doos || 0} Doos
+                    </TableCell>
+                    <TableCell className="py-3.5 px-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                      {denom.total_nominal_rupiah || formatRupiah(Number(denom.total_bilyet || 0) * (denom.nilai || 0))}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
 
         {/* 5.2 Status Integritas Alur Produksi (Span 1) */}
