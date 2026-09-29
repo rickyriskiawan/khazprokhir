@@ -51,3 +51,4 @@ describe('ShiftPerformanceWidget component', () => {
     expect(skeletons.length).toBeGreaterThanOrEqual(1);
   });
 });
+

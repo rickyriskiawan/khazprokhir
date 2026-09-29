@@ -63,8 +63,9 @@ export async function getSystemHealth() {
  * Fetch items to calculate output per shift
  */
 export async function fetchShiftWorkData(tanggal) {
-  const kemasParams = { limit: 100, ...(tanggal && { tanggal_kemas: tanggal }) };
-  const sortirParams = { limit: 100, ...(tanggal && { tanggal_sortir: tanggal }) };
+  const targetDate = tanggal || new Date().toISOString().split('T')[0];
+  const kemasParams = { limit: 100, tanggal_kemas: targetDate };
+  const sortirParams = { limit: 100, tanggal_sortir: targetDate };
 
   const [kemasRes, sortirRes] = await Promise.allSettled([
     api.get('/kemas', { params: kemasParams }),
@@ -147,3 +148,4 @@ export async function fetchDashboardOverview(tanggal) {
     errors,
   };
 }
+

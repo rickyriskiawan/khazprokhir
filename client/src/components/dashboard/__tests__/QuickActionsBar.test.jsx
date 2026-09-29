@@ -46,3 +46,4 @@ describe('QuickActionsBar component', () => {
     expect(screen.queryByText(/Kemas Doos/i)).not.toBeInTheDocument();
   });
 });
+
