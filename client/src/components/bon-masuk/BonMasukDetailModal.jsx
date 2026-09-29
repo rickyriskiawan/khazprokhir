@@ -165,3 +165,4 @@ export default function BonMasukDetailModal({ open, onOpenChange, bonMasuk }) {
     </Dialog>
   );
 }
+

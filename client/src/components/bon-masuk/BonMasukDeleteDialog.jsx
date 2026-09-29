@@ -109,3 +109,4 @@ export default function BonMasukDeleteDialog({ open, onOpenChange, bonMasuk, onS
     </Dialog>
   );
 }
+

@@ -74,3 +74,4 @@ describe('BonMasukDetailModal', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });
+

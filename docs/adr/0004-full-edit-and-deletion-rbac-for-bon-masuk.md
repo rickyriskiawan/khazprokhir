@@ -15,3 +15,4 @@ Sistem memutuskan untuk:
 - Backend memperluas otorisasi route `DELETE` dan menambahkan route `PUT` pada `server/src/routes/bon-masuk.routes.js` untuk `OPERATOR` dan `SUPERVISOR`.
 - Penggantian rentang pack pada operasi edit dieksekusi dalam transaksi atomik Prisma (`$transaction`): pack lama yang tidak lagi masuk rentang dikembalikan ke status `PENDING`, dan pack baru dialokasikan ke status `RECEIVED`.
 - Antarmuka frontend menyediakan modal penyuntingan (*pre-filled form*) dan dialog konfirmasi pembatalan yang dapat diakses oleh operator.
+

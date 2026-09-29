@@ -175,7 +175,7 @@ export default function BonMasukPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1440px] w-full mx-auto pb-12">
       {/* 1. Header & Quick Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -564,3 +564,4 @@ export default function BonMasukPage() {
     </div>
   );
 }
+
