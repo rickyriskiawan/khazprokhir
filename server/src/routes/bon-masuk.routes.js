@@ -7,11 +7,12 @@ import {
   createBonMasuk,
   getAllBonMasuk,
   getBonMasukById,
+  updateBonMasuk,
   deleteBonMasuk,
   getTodaySummary,
 } from '../controllers/bon-masuk.controller.js';
 
-import { createBonMasukSchema } from '../validators/bon-masuk.validator.js';
+import { createBonMasukSchema, updateBonMasukSchema } from '../validators/bon-masuk.validator.js';
 
 const router = Router();
 
@@ -31,10 +32,17 @@ router.post(
   validate(createBonMasukSchema),
   createBonMasuk
 );
+router.put(
+  '/:id',
+  authenticateToken,
+  authorize('OPERATOR', 'SUPERVISOR'),
+  validate(updateBonMasukSchema),
+  updateBonMasuk
+);
 router.delete(
   '/:id',
   authenticateToken,
-  authorize('SUPERVISOR'),
+  authorize('OPERATOR', 'SUPERVISOR'),
   deleteBonMasuk
 );
 

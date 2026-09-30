@@ -56,10 +56,11 @@ describe('formatters utility', () => {
 
   describe('formatBilyet', () => {
     it('formats sheets with thousands separator and suffix', () => {
-      expect(formatBilyet(45000)).toBe('45.000 Lembar');
-      expect(formatBilyet('180000')).toBe('180.000 Lembar');
-      expect(formatBilyet(0)).toBe('0 Lembar');
-      expect(formatBilyet(null)).toBe('0 Lembar');
+      expect(formatBilyet(45000)).toBe('45.000 Bilyet');
+      expect(formatBilyet('180000')).toBe('180.000 Bilyet');
+      expect(formatBilyet(0)).toBe('0 Bilyet');
+      expect(formatBilyet(1000)).toBe('1.000 Bilyet');
+      expect(formatBilyet(1000, 'Bilyet')).toBe('1.000 Bilyet');
     });
   });
 

@@ -43,7 +43,7 @@ describe('ProductionKPICards component', () => {
 
     // Card 1: Penerimaan Bon Masuk
     expect(screen.getByText('Penerimaan Khazai')).toBeInTheDocument();
-    expect(screen.getAllByText(/2\.250\.000 Lembar/).length).toBe(2);
+    expect(screen.getAllByText(/2\.250\.000 Bilyet/).length).toBe(2);
     expect(screen.getAllByText(/50 Pack/).length).toBe(2);
 
     // Card 2: Hasil Sortir

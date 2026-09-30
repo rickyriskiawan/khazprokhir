@@ -188,6 +188,7 @@ model Batch {
 
   // Relations
   bon_masuk          BonMasuk[]
+  bon_masuk_items    BonMasukItem[]
   packs              PackDetail[]
   proses_sortir      ProsesSortir[]
   hasil_kemas        HasilKemas[]
@@ -199,28 +200,53 @@ model Batch {
 
 model BonMasuk {
   id                  Int                @id @default(autoincrement())
-  no_segel            String             @unique // Nomor segel unik dari bon Khazai
-  batch_id            Int
-  batch               Batch              @relation(fields: [batch_id], references: [id])
+  no_bon              String?            // Nomor referensi bon jika ada
+  no_segel            String             // Nomor segel fisik
+  tahun_anggaran      Int                @default(2026) // Tahun anggaran segel
+  batch_id            Int?               // Primary/legacy batch jika ada
+  batch               Batch?             @relation(fields: [batch_id], references: [id])
   tanggal_masuk       DateTime           @db.Date
   jam_masuk           String             // format "08:30"
-  pack_dari           Int                // contoh: 1
-  pack_sampai         Int                // contoh: 50
-  jumlah_bilyet       BigInt             // total bilyet dalam bon
+  pack_dari           Int?               // contoh: 1 (opsional jika multi-batch)
+  pack_sampai         Int?               // contoh: 50 (opsional jika multi-batch)
+  total_pack          Int                @default(0) // Akumulasi total pack
+  jumlah_bilyet       BigInt             @default(0) // Akumulasi total bilyet dalam bon
   jenis_mesin_sortir  String?            // metadata mesin di Khazai (contoh: "BPS M7")
   kategori_penerimaan KategoriPenerimaan @default(MASINAL)
   shift_id            Int
   shift               Shift              @relation(fields: [shift_id], references: [id])
   operator_id         Int
   operator            User               @relation(fields: [operator_id], references: [id])
+  petugas_khazai      String?            // Petugas serah terima dari Khazai
+  petugas_khazprokhir String?            // Petugas penerima dari Khazprokhir
   catatan             String?            @db.Text
   created_at          DateTime           @default(now())
   updated_at          DateTime           @updatedAt
 
   // Relations
+  items BonMasukItem[]
   packs PackDetail[]
 
+  @@unique([no_segel, tahun_anggaran])
   @@map("bon_masuk")
+}
+
+model BonMasukItem {
+  id               Int      @id @default(autoincrement())
+  bon_masuk_id     Int
+  bon_masuk        BonMasuk @relation(fields: [bon_masuk_id], references: [id], onDelete: Cascade)
+  batch_id         Int
+  batch            Batch    @relation(fields: [batch_id], references: [id])
+  nomor_pack_list  String   // format rentang pack acak (contoh: "1-10, 13, 16, 20, 22")
+  pack_dari        Int      // pack terkecil dalam batch ini
+  pack_sampai      Int      // pack terbesar dalam batch ini
+  total_pack       Int      // total pack dalam batch ini
+  jumlah_bilyet    BigInt   // total bilyet = total_pack * 45000
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@unique([bon_masuk_id, batch_id])
+  @@map("bon_masuk_item")
 }
 
 model PackDetail {

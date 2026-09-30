@@ -2,6 +2,7 @@ import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import DashboardLayout from '../layouts/DashboardLayout'
 import DashboardPage from '../pages/dashboard/DashboardPage'
+import BonMasukPage from '../pages/bon-masuk/BonMasukPage'
 import LoginPage from '../pages/auth/LoginPage'
 import { UnauthorizedPage } from '../pages/common/UnauthorizedPage'
 import NotFoundPage from '../pages/common/NotFoundPage'
@@ -24,16 +25,7 @@ export default function AppRoutes() {
 
           {/* Modul Operasional Fisik (Supervisor & Operator) */}
           <Route element={<ProtectedRoute allowedRoles={['SUPERVISOR', 'OPERATOR']} />}>
-            <Route
-              path="/bon-masuk"
-              element={
-                <ModulePlaceholderPage
-                  moduleName="Modul 1: Penerimaan Bon Masuk Khazai & Batch"
-                  moduleCode="FE-05"
-                  description="Pencatatan penerimaan fisik dari Khazai, verifikasi segel, dan registrasi 100 pack per batch."
-                />
-              }
-            />
+            <Route path="/bon-masuk" element={<BonMasukPage />} />
             <Route
               path="/sortir"
               element={
