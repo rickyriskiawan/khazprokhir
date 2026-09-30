@@ -66,6 +66,15 @@ export async function getBatches(params = {}) {
 }
 
 /**
+ * Mengambil detail batch beserta rincian status 100 pack
+ * @param {number|string} id
+ */
+export async function getBatchById(id) {
+  const response = await api.get(`/batches/${id}`);
+  return response.data?.data || null;
+}
+
+/**
  * Mendaftarkan batch produksi baru secara independen
  * @param {Object} data - { nomor_batch, tahun_anggaran, seri, kepala, emisi_id }
  */

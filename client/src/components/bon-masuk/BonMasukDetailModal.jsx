@@ -120,11 +120,11 @@ export default function BonMasukDetailModal({ open, onOpenChange, bonMasuk }) {
             <div className="grid grid-cols-2 gap-2.5 p-2.5 rounded-xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark text-xs">
               <div>
                 <span className="text-ink-muted">Petugas Khazai: </span>
-                <strong className="text-ink dark:text-white">{bonMasuk.petugas_khazai || '-'}</strong>
+                <strong className="text-ink dark:text-ink-dark">{bonMasuk.petugas_khazai || '-'}</strong>
               </div>
               <div>
                 <span className="text-ink-muted">Petugas Penerima: </span>
-                <strong className="text-ink dark:text-white">{bonMasuk.petugas_khazprokhir || '-'}</strong>
+                <strong className="text-ink dark:text-ink-dark">{bonMasuk.petugas_khazprokhir || '-'}</strong>
               </div>
             </div>
           )}
@@ -137,25 +137,25 @@ export default function BonMasukDetailModal({ open, onOpenChange, bonMasuk }) {
 
             <div className="space-y-2.5">
               {hasItems ? (
-                items.map((it, idx) => {
-                  const b = it.batch || {};
-                  const emisi = b.emisi || {};
+                items.map((item, idx) => {
+                  const batchItem = item.batch || {};
+                  const emisi = batchItem.emisi || {};
                   const denom = emisi.denominasi || {};
-                  const percent = Math.min(100, Math.max(0, it.total_pack));
+                  const percent = Math.min(100, Math.max(0, item.total_pack));
 
                   return (
                     <div
-                      key={it.id || idx}
+                      key={item.id || idx}
                       className="rounded-xl border border-border dark:border-border-dark p-3 bg-surface dark:bg-surface-dark space-y-2"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Layers className="h-4 w-4 text-emerald" strokeWidth={1.75} />
                           <span className="font-bold text-xs text-ink dark:text-ink-dark font-mono tabular-nums">
-                            {b.nomor_batch || `Batch #${it.batch_id}`}
+                            {batchItem.nomor_batch || `Batch #${item.batch_id}`}
                           </span>
                           <span className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
-                            (Seri: <strong className="font-mono tabular-nums text-ink dark:text-ink-dark">{b.seri}</strong> Kepala: <strong className="font-mono tabular-nums text-ink dark:text-ink-dark">{b.kepala}</strong>)
+                            (Seri: <strong className="font-mono tabular-nums text-ink dark:text-ink-dark">{batchItem.seri}</strong> Kepala: <strong className="font-mono tabular-nums text-ink dark:text-ink-dark">{batchItem.kepala}</strong>)
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -165,7 +165,7 @@ export default function BonMasukDetailModal({ open, onOpenChange, bonMasuk }) {
                             </Badge>
                           )}
                           <Badge variant="emerald" className="font-mono tabular-nums text-[10px]">
-                            {it.total_pack} Pack
+                            {item.total_pack} Pack
                           </Badge>
                         </div>
                       </div>
@@ -174,10 +174,10 @@ export default function BonMasukDetailModal({ open, onOpenChange, bonMasuk }) {
                       <div className="space-y-1">
                         <div className="flex justify-between text-[11px] text-ink-muted">
                           <span>
-                            Daftar Pack: <strong className="font-mono tabular-nums text-ink dark:text-ink-dark">{it.nomor_pack_list}</strong>
+                            Daftar Pack: <strong className="font-mono tabular-nums text-ink dark:text-ink-dark">{item.nomor_pack_list}</strong>
                           </span>
                           <span className="font-mono tabular-nums text-emerald dark:text-emerald-400 font-medium">
-                            {formatBilyet(it.jumlah_bilyet)}
+                            {formatBilyet(item.jumlah_bilyet)}
                           </span>
                         </div>
                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-subtle dark:bg-surface-subtle-dark">
@@ -187,7 +187,7 @@ export default function BonMasukDetailModal({ open, onOpenChange, bonMasuk }) {
                           />
                         </div>
                         <div className="text-[10px] text-ink-muted text-right font-mono tabular-nums">
-                          {it.total_pack} / 100 Pack ({percent}%)
+                          {item.total_pack} / 100 Pack ({percent}%)
                         </div>
                       </div>
                     </div>
