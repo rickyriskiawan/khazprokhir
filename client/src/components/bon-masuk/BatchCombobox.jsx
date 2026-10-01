@@ -2,10 +2,21 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, PlusCircle, Check, X } from 'lucide-react';
-import { formatRupiah } from '@/utils/formatters';
 import { parseBatchSearchQuery } from '@/utils/packParser';
 
 export { parseBatchSearchQuery };
+
+export const DENOM_COLOR_MAP = {
+  Y: 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800/60',
+  X: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800/60',
+  W: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/60',
+  V: 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800/60',
+  U: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/60',
+  T: 'bg-slate-200 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+  S: 'bg-lime-100 text-lime-800 border-lime-200 dark:bg-lime-950/60 dark:text-lime-300 dark:border-lime-800/60',
+};
+
+const getBatchDenomCode = (batch) => batch?.emisi?.denominasi?.nama || '';
 
 export default function BatchCombobox({
   batches = [],
@@ -27,7 +38,9 @@ export default function BatchCombobox({
       return;
     }
     if (selectedBatch) {
-      setSearchTerm(`${selectedBatch.nomor_batch} (${selectedBatch.seri}${selectedBatch.kepala})`);
+      const denomKode = getBatchDenomCode(selectedBatch);
+      const suffix = denomKode ? ` - ${denomKode}` : '';
+      setSearchTerm(`${selectedBatch.nomor_batch} (${selectedBatch.seri}${selectedBatch.kepala})${suffix}`);
     } else {
       setSearchTerm('');
     }
@@ -117,7 +130,7 @@ export default function BatchCombobox({
             <div className="space-y-1">
               {filteredBatches.map((b) => {
                 const isSelected = selectedBatch?.id === b.id;
-                const denomNilai = b.emisi?.denominasi?.nilai;
+                const denomNama = getBatchDenomCode(b);
                 return (
                   <button
                     key={b.id}
@@ -134,9 +147,14 @@ export default function BatchCombobox({
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {denomNilai && (
-                        <span className="rounded bg-surface-subtle px-1.5 py-0.5 text-[10px] font-mono tabular-nums text-ink-secondary dark:bg-surface-subtle-dark dark:text-ink-secondary-dark">
-                          {formatRupiah(denomNilai)}
+                      {denomNama && (
+                        <span
+                          className={`inline-flex items-center justify-center rounded px-2 py-0.5 text-xs font-mono font-bold border ${
+                            DENOM_COLOR_MAP[denomNama] ||
+                            'bg-surface-subtle text-ink-secondary border-border dark:bg-surface-subtle-dark dark:text-ink-secondary-dark'
+                          }`}
+                        >
+                          {denomNama}
                         </span>
                       )}
                       {isSelected && <Check className="h-3.5 w-3.5 text-emerald" strokeWidth={1.75} />}

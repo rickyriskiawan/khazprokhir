@@ -40,7 +40,7 @@ describe('BatchCombobox & parseBatchSearchQuery', () => {
         seri: 'AA-BA',
         kepala: '0',
         tahun_anggaran: 2026,
-        emisi: { denominasi: { nilai: 100000 } },
+        emisi: { denominasi: { nama: 'Y', nilai: 100000 } },
       },
       {
         id: 2,
@@ -48,7 +48,7 @@ describe('BatchCombobox & parseBatchSearchQuery', () => {
         seri: 'BB-CC',
         kepala: '1',
         tahun_anggaran: 2026,
-        emisi: { denominasi: { nilai: 50000 } },
+        emisi: { denominasi: { nama: 'X', nilai: 50000 } },
       },
     ];
 
@@ -69,8 +69,26 @@ describe('BatchCombobox & parseBatchSearchQuery', () => {
       expect(screen.getByText('ORD-101')).toBeInTheDocument();
       expect(screen.queryByText('ORD-102')).not.toBeInTheDocument();
 
+      // Memastikan badge kode pecahan huruf Y muncul dengan benar (bukan Rp 100.000)
+      const badgeY = screen.getByText('Y');
+      expect(badgeY).toBeInTheDocument();
+      expect(screen.queryByText('Rp 100.000')).not.toBeInTheDocument();
+
       fireEvent.click(screen.getByText('ORD-101'));
       expect(handleSelect).toHaveBeenCalledWith(sampleBatches[0]);
+    });
+
+    it('menampilkan format display 1822001 (AA-BA0) - Y saat batch terpilih', () => {
+      render(
+        <BatchCombobox
+          batches={sampleBatches}
+          selectedBatch={sampleBatches[0]}
+          onSelectBatch={vi.fn()}
+        />
+      );
+
+      const input = screen.getByPlaceholderText(/Cari Batch/i);
+      expect(input).toHaveValue('ORD-101 (AA-BA0) - Y');
     });
 
     it('menampilkan opsi registrasi batch baru jika batch tidak ditemukan', () => {

@@ -600,7 +600,7 @@ export default function BonMasukFormModal({
                         <div className="space-y-2">
                           <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-start">
                             {/* Pencarian Batch Terdaftar via Smart Combobox */}
-                            <div className="md:col-span-5 space-y-1">
+                            <div className="md:col-span-4 space-y-1">
                               <Label className="text-xs font-medium">Pilih / Cari Batch</Label>
                               <BatchCombobox
                                 batches={batches}
@@ -625,7 +625,7 @@ export default function BonMasukFormModal({
                             </div>
 
                             {/* Input Pack Acak & Trigger Matriks */}
-                            <div className="md:col-span-4 space-y-1">
+                            <div className="md:col-span-5 space-y-1">
                               <Label className="text-xs font-medium">
                                 Nomor Pack <span className="text-[10px] text-ink-muted font-normal">(1-100)</span>
                               </Label>
