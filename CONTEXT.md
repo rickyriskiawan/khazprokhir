@@ -20,6 +20,10 @@ _Avoid_: Bal, dus pack, paket
 Unit kemasan boks karton fisik standar Bank Indonesia yang berisi tepat 20 brood (setara 20.000 bilyet).
 _Avoid_: Kardus, box, karton, peti
 
+**Quad Pack**:
+Kelompok 4 pack berurutan (misal: Pack 1-4, Pack 5-8, s/d Pack 97-100) yang merupakan satuan atomik pemrosesan pada modul sortir dan pengemasan untuk menghasilkan tepat 9 doos kemasan standar (rasio fisik 4:9).
+_Avoid_: Blok 4, kelompok pack, set 4
+
 ## Entitas & Alur Distribusi
 
 **Khazanah Awal (Khazai)**:
