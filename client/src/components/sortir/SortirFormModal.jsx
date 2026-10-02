@@ -46,6 +46,10 @@ export default function SortirFormModal({
     const today = new Date();
     return today.toISOString().split('T')[0];
   });
+  const [jamSortir, setJamSortir] = useState(() => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  });
   const [shiftId, setShiftId] = useState(shifts[0]?.id || 1);
   const [penyortir1, setPenyortir1] = useState('');
   const [penyortir2, setPenyortir2] = useState('');
@@ -136,13 +140,19 @@ export default function SortirFormModal({
     setFormError(null);
 
     try {
+      const finalCatatan = jamSortir
+        ? catatan.trim()
+          ? `[Jam: ${jamSortir}] ${catatan.trim()}`
+          : `[Jam: ${jamSortir}]`
+        : catatan.trim() || null;
+
       const payload = {
         batch_id: selectedBatch.id,
         shift_id: Number(shiftId),
         tanggal_sortir: tanggalSortir,
         penyortir_1: penyortir1.trim(),
         penyortir_2: penyortir2.trim() || null,
-        catatan: catatan.trim() || null,
+        catatan: finalCatatan,
         selected_packs: selectedPacks,
       };
 
@@ -207,14 +217,15 @@ export default function SortirFormModal({
                 </p>
               </div>
 
-              {/* 2. Tanggal & Shift */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* 2. Tanggal, Jam & Shift */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-ink-muted" />
+                  <label htmlFor="sortirTanggal" className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-ink-muted" strokeWidth={1.75} />
                     Tanggal Sortir <span className="text-rose-500">*</span>
                   </label>
                   <Input
+                    id="sortirTanggal"
                     type="date"
                     value={tanggalSortir}
                     onChange={(e) => setTanggalSortir(e.target.value)}
@@ -225,11 +236,27 @@ export default function SortirFormModal({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-ink-muted" />
+                  <label htmlFor="sortirJam" className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-ink-muted" strokeWidth={1.75} />
+                    Jam Sortir
+                  </label>
+                  <Input
+                    id="sortirJam"
+                    type="time"
+                    value={jamSortir}
+                    onChange={(e) => setJamSortir(e.target.value)}
+                    disabled={submitting}
+                    className="h-9 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="sortirShift" className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-ink-muted" strokeWidth={1.75} />
                     Shift Kerja <span className="text-rose-500">*</span>
                   </label>
                   <select
+                    id="sortirShift"
                     value={shiftId}
                     onChange={(e) => setShiftId(Number(e.target.value))}
                     disabled={submitting}
@@ -247,11 +274,12 @@ export default function SortirFormModal({
               {/* 3. Petugas Penyortir Fisik (1 & 2) */}
               <div className="space-y-3 p-3.5 rounded-lg border border-border bg-canvas/40">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-ink-muted" />
+                  <label htmlFor="sortirPenyortir1" className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-ink-muted" strokeWidth={1.75} />
                     Petugas Penyortir 1 <span className="text-rose-500">*</span>
                   </label>
                   <Input
+                    id="sortirPenyortir1"
                     type="text"
                     value={penyortir1}
                     onChange={(e) => setPenyortir1(e.target.value)}
@@ -263,11 +291,12 @@ export default function SortirFormModal({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-ink-primary flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-ink-muted" />
+                  <label htmlFor="sortirPenyortir2" className="text-xs font-medium text-ink-primary flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-ink-muted" strokeWidth={1.75} />
                     Petugas Penyortir 2 <span className="text-ink-muted font-normal">(Opsional)</span>
                   </label>
                   <Input
+                    id="sortirPenyortir2"
                     type="text"
                     value={penyortir2}
                     onChange={(e) => setPenyortir2(e.target.value)}
@@ -280,11 +309,12 @@ export default function SortirFormModal({
 
               {/* 4. Catatan Operasional */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-ink-primary flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-ink-muted" />
+                <label htmlFor="sortirCatatan" className="text-xs font-medium text-ink-primary flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-ink-muted" strokeWidth={1.75} />
                   Catatan Operasional <span className="text-ink-muted font-normal">(Opsional)</span>
                 </label>
                 <textarea
+                  id="sortirCatatan"
                   rows={2}
                   value={catatan}
                   onChange={(e) => setCatatan(e.target.value)}
@@ -433,13 +463,13 @@ export default function SortirFormModal({
               </span>
             ) : !isMultipleOf4 ? (
               <span className="text-rose-600 dark:text-rose-400 font-medium flex items-center gap-1.5">
-                <AlertCircle className="w-3.5 h-3.5" />
-                Jumlah pack harus kelipatan 4 ({totalPack} dipilih)
+                <AlertCircle className="w-3.5 h-3.5" strokeWidth={1.75} />
+                Jumlah pack harus kelipatan 4 (<span className="font-mono tabular-nums">{totalPack}</span> dipilih)
               </span>
             ) : (
               <span className="text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span className="font-mono tabular-nums">{totalPack}</span> pack siap disortir ({totalPack / 4} Quad Pack = {setaraDoos} Doos)
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" strokeWidth={1.75} />
+                <span className="font-mono tabular-nums">{totalPack}</span> pack siap disortir (<span className="font-mono tabular-nums">{totalPack / 4}</span> Quad Pack = <span className="font-mono tabular-nums">{setaraDoos}</span> Doos)
               </span>
             )}
           </div>

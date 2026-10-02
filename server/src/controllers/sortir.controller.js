@@ -299,6 +299,13 @@ export async function getAllSortir(req, res) {
           operator: {
             select: USER_SAFE_SELECT,
           },
+          sortir_pack_details: {
+            include: {
+              pack_detail: {
+                select: { id: true, nomor_pack: true, status: true },
+              },
+            },
+          },
           _count: {
             select: { sortir_pack_details: true },
           },

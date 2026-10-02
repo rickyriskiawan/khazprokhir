@@ -170,14 +170,14 @@ export default function ProsesSortirPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-4 rounded-xl border border-border bg-surface shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <Layers className="w-6 h-6" />
+            <Layers className="w-6 h-6" strokeWidth={1.75} />
           </div>
           <div>
             <span className="text-xs text-ink-muted block">Total Pack Disortir Hari Ini</span>
             <span className="text-xl font-bold font-mono tabular-nums text-ink-primary">
               {todaySummary?.total_pack_today?.toLocaleString('id-ID') || 0} Pack
             </span>
-            <span className="text-[11px] text-ink-muted block mt-0.5">
+            <span className="text-[11px] text-ink-muted block mt-0.5 font-mono tabular-nums">
               ({Math.floor((todaySummary?.total_pack_today || 0) / 4)} Quad = {((todaySummary?.total_pack_today || 0) / 4) * 9} Doos)
             </span>
           </div>
@@ -185,7 +185,7 @@ export default function ProsesSortirPage() {
 
         <div className="p-4 rounded-xl border border-border bg-surface shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
-            <Coins className="w-6 h-6" />
+            <Coins className="w-6 h-6" strokeWidth={1.75} />
           </div>
           <div>
             <span className="text-xs text-ink-muted block">Volume Bilyet Hari Ini</span>
@@ -200,7 +200,7 @@ export default function ProsesSortirPage() {
 
         <div className="p-4 rounded-xl border border-border bg-surface shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-            <Box className="w-6 h-6" />
+            <Box className="w-6 h-6" strokeWidth={1.75} />
           </div>
           <div>
             <span className="text-xs text-ink-muted block">Jumlah Sesi Sortir Hari Ini</span>
@@ -279,7 +279,6 @@ export default function ProsesSortirPage() {
               <SelectContent>
                 <SelectItem value="all">Semua Status</SelectItem>
                 <SelectItem value="COMPLETED">COMPLETED</SelectItem>
-                <SelectItem value="CANCELLED">CANCELLED</SelectItem>
               </SelectContent>
             </Select>
 
@@ -289,10 +288,11 @@ export default function ProsesSortirPage() {
               size="icon"
               onClick={loadSessions}
               disabled={refreshing}
+              aria-label="Segarkan Data Sesi Sortir"
               className="h-9 w-9 shrink-0"
               title="Refresh Data"
             >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} strokeWidth={1.75} />
             </Button>
           </div>
         </div>
@@ -363,7 +363,7 @@ export default function ProsesSortirPage() {
                 return (
                   <TableRow key={session.id} className="hover:bg-canvas/40 transition-colors">
                     <TableCell className="text-xs">
-                      <span className="font-semibold text-ink-primary block">
+                      <span className="font-mono tabular-nums font-semibold text-ink-primary block">
                         #{session.id}
                       </span>
                       <span className="text-[11px] text-ink-muted">
@@ -378,7 +378,7 @@ export default function ProsesSortirPage() {
                         </span>
                         {denomNama && (
                           <span
-                            className={`inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-mono font-bold border ${
+                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border ${
                               DENOM_COLOR_MAP[denomNama] || ''
                             }`}
                           >
@@ -386,7 +386,7 @@ export default function ProsesSortirPage() {
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] text-ink-muted font-mono">
+                      <span className="text-[11px] text-ink-muted font-mono tabular-nums">
                         {session.batch?.seri}{session.batch?.kepala}
                       </span>
                     </TableCell>
@@ -416,7 +416,7 @@ export default function ProsesSortirPage() {
                           </TooltipProvider>
                         )}
                       </div>
-                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold font-mono tabular-nums">
                         {session.total_pack} Pack ({session.total_pack / 4} Quad)
                       </span>
                     </TableCell>
@@ -457,10 +457,11 @@ export default function ProsesSortirPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => setViewingSession(session)}
+                          aria-label="Lihat Detail Sesi Sortir"
                           title="Lihat Detail Sesi & Matriks"
                           className="h-8 w-8 text-ink-muted hover:text-ink-primary"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-4 h-4" strokeWidth={1.75} />
                         </Button>
 
                         {canCancel && session.status !== 'CANCELLED' && (

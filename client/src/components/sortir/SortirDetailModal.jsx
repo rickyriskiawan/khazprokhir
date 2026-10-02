@@ -87,10 +87,10 @@ export default function SortirDetailModal({
                   </Badge>
                 </DialogTitle>
                 <DialogDescription className="text-xs text-ink-muted mt-0.5">
-                  Nomor Batch: <strong className="font-mono text-ink-primary">{session.batch?.nomor_batch}</strong> ({session.batch?.seri}{session.batch?.kepala})
+                  Nomor Batch: <strong className="font-mono tabular-nums text-ink-primary">{session.batch?.nomor_batch}</strong> ({session.batch?.seri}{session.batch?.kepala})
                   {denomNama && (
                     <span
-                      className={`ml-2 inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-mono font-bold border ${
+                      className={`ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border ${
                         DENOM_COLOR_MAP[denomNama] || ''
                       }`}
                     >
@@ -109,7 +109,7 @@ export default function SortirDetailModal({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3 rounded-xl bg-canvas/60 border border-border">
               <span className="text-[11px] text-ink-muted flex items-center gap-1.5 mb-1">
-                <Calendar className="w-3.5 h-3.5" />
+                <Calendar className="w-3.5 h-3.5" strokeWidth={1.75} />
                 Tanggal & Shift
               </span>
               <p className="text-xs font-semibold text-ink-primary">
@@ -122,7 +122,7 @@ export default function SortirDetailModal({
 
             <div className="p-3 rounded-xl bg-canvas/60 border border-border">
               <span className="text-[11px] text-ink-muted flex items-center gap-1.5 mb-1">
-                <User className="w-3.5 h-3.5" />
+                <User className="w-3.5 h-3.5" strokeWidth={1.75} />
                 Petugas Penyortir
               </span>
               <p className="text-xs font-semibold text-ink-primary">
@@ -137,7 +137,7 @@ export default function SortirDetailModal({
 
             <div className="p-3 rounded-xl bg-canvas/60 border border-border">
               <span className="text-[11px] text-ink-muted flex items-center gap-1.5 mb-1">
-                <Layers className="w-3.5 h-3.5" />
+                <Layers className="w-3.5 h-3.5" strokeWidth={1.75} />
                 Volume Pack
               </span>
               <p className="text-xs font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
@@ -150,7 +150,7 @@ export default function SortirDetailModal({
 
             <div className="p-3 rounded-xl bg-canvas/60 border border-border">
               <span className="text-[11px] text-ink-muted flex items-center gap-1.5 mb-1">
-                <Coins className="w-3.5 h-3.5" />
+                <Coins className="w-3.5 h-3.5" strokeWidth={1.75} />
                 Volume Bilyet
               </span>
               <p className="text-xs font-bold font-mono tabular-nums text-ink-primary">
@@ -172,7 +172,7 @@ export default function SortirDetailModal({
           {/* Matriks 100 Pack Read-Only (Audit Mode) */}
           <div className="space-y-2">
             <h4 className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
-              <Eye className="w-3.5 h-3.5 text-ink-muted" />
+              <Eye className="w-3.5 h-3.5 text-ink-muted" strokeWidth={1.75} />
               Visualisasi Status 100 Pack Batch (Mode Audit)
             </h4>
             <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
