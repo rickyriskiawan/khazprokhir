@@ -164,18 +164,33 @@ export default function PackMatrixGrid({
     }
   };
 
-  // Live Accumulator calculations
+  // Live Accumulator calculations (Interactive Selection Mode vs Audit Mode)
   const totalSelectedPacks = selectedPacks.length;
   const selectedQuadsCount = Math.floor(totalSelectedPacks / 4);
   const setaraDoos = (totalSelectedPacks / 4) * 9;
   const totalBilyet = totalSelectedPacks * 45000;
+
+  // Batch-wide totals for read-only audit mode
+  const totalProcessedPacks =
+    statusCounts.RECEIVED +
+    statusCounts.SORTED +
+    statusCounts.PACKED +
+    statusCounts.SHIPPED;
+  const processedQuadsCount = Math.floor(totalProcessedPacks / 4);
+  const processedDoos = (totalProcessedPacks / 4) * 9;
+  const processedBilyet = totalProcessedPacks * 45000;
+
+  const displayPackCount = selectable ? totalSelectedPacks : totalProcessedPacks;
+  const displayQuadCount = selectable ? selectedQuadsCount : processedQuadsCount;
+  const displayDoosCount = selectable ? setaraDoos : processedDoos;
+  const displayBilyetCount = selectable ? totalBilyet : processedBilyet;
 
   const effectiveNominal =
     nominalPecahan ||
     batchInfo?.emisi?.denominasi?.nilai_nominal ||
     batchInfo?.emisi?.denominasi?.nilai ||
     0;
-  const totalNominal = totalBilyet * effectiveNominal;
+  const totalNominal = displayBilyetCount * effectiveNominal;
 
   // Batch header metadata
   const denomCode =
@@ -271,13 +286,13 @@ export default function PackMatrixGrid({
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-wider text-ink-secondary dark:text-ink-secondary-dark">
-                {selectable ? 'Alokasi Pack' : 'Total Pack'}
+                {selectable ? 'Alokasi Pack' : 'Total Diterima'}
               </div>
               <div
                 data-testid="accumulator-pack-count"
                 className="font-mono text-sm font-bold tabular-nums text-ink dark:text-ink-dark"
               >
-                {totalSelectedPacks} Pack
+                {displayPackCount} Pack
               </div>
             </div>
           </div>
@@ -288,13 +303,13 @@ export default function PackMatrixGrid({
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-wider text-ink-secondary dark:text-ink-secondary-dark">
-                Kelompok Quad
+                {selectable ? 'Kelompok Quad' : 'Quad Selesai'}
               </div>
               <div
                 data-testid="accumulator-quad-count"
                 className="font-mono text-sm font-bold tabular-nums text-ink dark:text-ink-dark"
               >
-                {selectedQuadsCount} / 25 Quad
+                {displayQuadCount} / 25 Quad
               </div>
             </div>
           </div>
@@ -311,7 +326,7 @@ export default function PackMatrixGrid({
                 data-testid="accumulator-doos-count"
                 className="font-mono text-sm font-bold tabular-nums text-purple-700 dark:text-purple-300"
               >
-                {setaraDoos} Doos
+                {displayDoosCount} Doos
               </div>
             </div>
           </div>
@@ -328,7 +343,7 @@ export default function PackMatrixGrid({
                 data-testid="accumulator-bilyet-count"
                 className="font-mono text-sm font-bold tabular-nums text-ink dark:text-ink-dark"
               >
-                {formatBilyet(totalBilyet)}
+                {formatBilyet(displayBilyetCount)}
               </div>
               {effectiveNominal > 0 && totalNominal > 0 && (
                 <div
