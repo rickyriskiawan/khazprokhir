@@ -278,27 +278,28 @@ model PackDetail {
 // -----------------------------------------------------------------------------
 
 model ProsesSortir {
-  id             Int          @id @default(autoincrement())
-  batch_id       Int
-  batch          Batch        @relation(fields: [batch_id], references: [id])
-  pack_dari      Int
-  pack_sampai    Int
-  total_pack     Int          // Wajib kelipatan 4: 4, 8, 12, dst.
-  shift_id       Int
-  shift          Shift        @relation(fields: [shift_id], references: [id])
-  operator_id    Int
-  operator       User         @relation(fields: [operator_id], references: [id])
-  penyortir_1    String       // Nama petugas fisik penyortir 1
-  penyortir_2    String       // Nama petugas fisik penyortir 2
-  tanggal_sortir DateTime     @db.Date
-  total_brood    Int          // total_pack * 45 (100% utuh tanpa reject)
-  total_bilyet   BigInt       // total_brood * 1000
-  status         StatusSortir @default(IN_PROGRESS)
-  catatan        String?      @db.Text
-  started_at     DateTime     @default(now())
-  completed_at   DateTime?
-  created_at     DateTime     @default(now())
-  updated_at     DateTime     @updatedAt
+  id              Int          @id @default(autoincrement())
+  batch_id        Int
+  batch           Batch        @relation(fields: [batch_id], references: [id])
+  nomor_pack_list String?      // daftar pack (contoh: "1,2,3,4,13,14,15,16")
+  pack_dari       Int
+  pack_sampai     Int
+  total_pack      Int          // Wajib kelipatan 4: 4, 8, 12, dst.
+  shift_id        Int
+  shift           Shift        @relation(fields: [shift_id], references: [id])
+  operator_id     Int
+  operator        User         @relation(fields: [operator_id], references: [id])
+  penyortir_1     String       // Nama petugas fisik penyortir 1
+  penyortir_2     String?      // Nama petugas fisik penyortir 2 (opsional)
+  tanggal_sortir  DateTime     @db.Date
+  total_brood     Int          // total_pack * 45 (100% utuh tanpa reject)
+  total_bilyet    BigInt       // total_brood * 1000
+  status          StatusSortir @default(COMPLETED)
+  catatan         String?      @db.Text
+  started_at      DateTime     @default(now())
+  completed_at    DateTime?
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
 
   // Relations
   sortir_pack_details SortirPackDetail[]

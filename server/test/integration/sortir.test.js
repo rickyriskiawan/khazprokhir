@@ -256,7 +256,7 @@ describe('Integration Test: Modul 2 - Proses Sortir & Penataan Pack (Step 6)', (
     assert.strictEqual(json.data.pack_sampai, 8);
     assert.strictEqual(json.data.penyortir_1, 'Ahmad Dahlan');
     assert.strictEqual(json.data.penyortir_2, 'Siti Fatimah');
-    assert.strictEqual(json.data.status, 'IN_PROGRESS');
+    assert.strictEqual(json.data.status, 'COMPLETED');
 
     // Zero Reject: 8 pack * 45 = 360 brood, 360 * 1000 = 360.000 bilyet
     assert.strictEqual(json.data.total_brood, 360);
@@ -320,6 +320,80 @@ describe('Integration Test: Modul 2 - Proses Sortir & Penataan Pack (Step 6)', (
     // Dari 40 pack awal, 8 pack telah disortir, tersisa 32 pack
     assert.strictEqual(json.data.total_available, 32);
     assert.strictEqual(json.data.available_pack_numbers[0], 9);
+  });
+
+  it('POST /api/sortir - Berhasil membuat sesi sortir non-kontigu kelipatan 4 dengan direct completion (ADR 0007)', async () => {
+    // Memilih Quad 3 (pack 9-12) dan Quad 5 (pack 17-20), melewati Quad 4 (pack 13-16)
+    const res = await fetch(`${baseUrl}/api/sortir`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${operatorToken}`,
+      },
+      body: JSON.stringify({
+        batch_id: testBatchId,
+        shift_id: testShiftId,
+        tanggal_sortir: '2026-09-15',
+        selected_packs: [9, 10, 11, 12, 17, 18, 19, 20],
+        penyortir_1: 'Budi Santoso',
+        // penyortir_2 sengaja dikosongkan untuk menguji sifat opsional (ADR 0007)
+        catatan: 'Sortir acak quad pack',
+      }),
+    });
+
+    const json = await res.json();
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(json.success, true);
+    assert.strictEqual(json.data.total_pack, 8);
+    assert.strictEqual(json.data.nomor_pack_list, '9,10,11,12,17,18,19,20');
+    assert.strictEqual(json.data.pack_dari, 9);
+    assert.strictEqual(json.data.pack_sampai, 20);
+    assert.strictEqual(json.data.penyortir_1, 'Budi Santoso');
+    assert.strictEqual(json.data.penyortir_2, null);
+    // Direct completion: langsung COMPLETED
+    assert.strictEqual(json.data.status, 'COMPLETED');
+    assert.ok(json.data.completed_at !== null);
+
+    // Pastikan pack 13-16 yang dilewati TETAP berstatus RECEIVED
+    const skippedPacks = await prisma.packDetail.findMany({
+      where: {
+        batch_id: testBatchId,
+        nomor_pack: { in: [13, 14, 15, 16] },
+      },
+    });
+    for (const p of skippedPacks) {
+      assert.strictEqual(p.status, 'RECEIVED');
+    }
+
+    // Pastikan pack 9-12 dan 17-20 telah menjadi SORTED
+    const sortedPacks = await prisma.packDetail.findMany({
+      where: {
+        batch_id: testBatchId,
+        nomor_pack: { in: [9, 10, 11, 12, 17, 18, 19, 20] },
+      },
+    });
+    assert.strictEqual(sortedPacks.length, 8);
+    for (const p of sortedPacks) {
+      assert.strictEqual(p.status, 'SORTED');
+    }
+
+    // Uji juga pembatalan sesi non-kontigu oleh SUPERVISOR
+    const delRes = await fetch(`${baseUrl}/api/sortir/${json.data.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${supervisorToken}` },
+    });
+    assert.strictEqual(delRes.status, 200);
+
+    // Pastikan pack 9-12 dan 17-20 kembali menjadi RECEIVED
+    const revertedPacks = await prisma.packDetail.findMany({
+      where: {
+        batch_id: testBatchId,
+        nomor_pack: { in: [9, 10, 11, 12, 17, 18, 19, 20] },
+      },
+    });
+    for (const p of revertedPacks) {
+      assert.strictEqual(p.status, 'RECEIVED');
+    }
   });
 
   it('GET /api/sortir - Mengambil daftar sesi sortir dengan filter batch dan penyortir', async () => {
