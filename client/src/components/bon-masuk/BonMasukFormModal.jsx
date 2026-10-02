@@ -374,8 +374,8 @@ export default function BonMasukFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[92vh] flex flex-col p-6">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-5 pb-3 border-b border-border dark:border-border-dark shrink-0 pr-12">
           <DialogTitle>
             {isEdit ? 'Edit Data Bon Masuk Khazai' : 'Input Penerimaan Bon Masuk Khazai'}
           </DialogTitle>
@@ -387,15 +387,17 @@ export default function BonMasukFormModal({
         </DialogHeader>
 
         {errorMsg && (
-          <Alert variant="destructive" className="my-1">
-            <AlertCircle className="h-4 w-4" strokeWidth={1.75} />
-            <AlertTitle>Terjadi Kesalahan</AlertTitle>
-            <AlertDescription>{errorMsg}</AlertDescription>
-          </Alert>
+          <div className="px-6 pt-3 shrink-0">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" strokeWidth={1.75} />
+              <AlertTitle>Terjadi Kesalahan</AlertTitle>
+              <AlertDescription>{errorMsg}</AlertDescription>
+            </Alert>
+          </div>
         )}
 
-        <ScrollArea className="max-h-[calc(88vh-140px)] pr-3">
-          <form id="bonMasukForm" onSubmit={handleSubmit} className="space-y-4 pt-1">
+        <ScrollArea className="flex-1 min-h-0">
+          <form id="bonMasukForm" onSubmit={handleSubmit} className="space-y-4 px-6 py-4">
             {/* 1. Header Dokumen Bon Masuk (2 Baris Terstruktur) */}
             <div className="rounded-xl border border-border p-3.5 dark:border-border-dark bg-surface-subtle/50 dark:bg-surface-subtle-dark/50 space-y-3">
               <div className="flex items-center justify-between">
@@ -843,7 +845,7 @@ export default function BonMasukFormModal({
           </form>
         </ScrollArea>
 
-        <DialogFooter className="pt-3 border-t border-border dark:border-border-dark flex items-center justify-end gap-2">
+        <DialogFooter className="px-6 py-3.5 mt-0 border-t border-border dark:border-border-dark shrink-0 bg-surface dark:bg-surface-dark flex items-center justify-end gap-2">
           <Button
             type="button"
             variant="outline"

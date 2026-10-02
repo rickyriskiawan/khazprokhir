@@ -207,12 +207,17 @@ describe('BonMasukFormModal', () => {
 
     expect(screen.getByText('Batch #2')).toBeInTheDocument();
 
+    // Tambah lagi batch ketiga
+    fireEvent.click(addBtn);
+    expect(screen.getByText('Batch #3')).toBeInTheDocument();
+
     // Hapus baris kedua
     const removeBtns = screen.getAllByTitle('Hapus Batch Ini dari Segel');
-    expect(removeBtns).toHaveLength(2);
+    expect(removeBtns).toHaveLength(3);
     fireEvent.click(removeBtns[1]);
 
-    expect(screen.queryByText('Batch #2')).not.toBeInTheDocument();
+    expect(screen.queryByText('Batch #3')).not.toBeInTheDocument();
+    expect(screen.getByText('Batch #2')).toBeInTheDocument();
   });
 
   it('pre-fills data and calls updateBonMasuk in Edit mode with granular safety locking', async () => {
