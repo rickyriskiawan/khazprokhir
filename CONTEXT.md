@@ -79,6 +79,10 @@ _Avoid_: Surat jalan masuk, delivery order, faktur penerimaan
 Nomor pengaman fisik sekali pakai yang mengunci wadah uang kertas saat dipindahkan dari Khazai ke Khazprokhir.
 _Avoid_: Kunci, lak, seal barcode
 
+**Hasil Sortir (Proses Sortir)**:
+Pencatatan hasil verifikasi dan penataan fisik pack yang telah diterima (`RECEIVED`) menjadi pack siap kemas (`SORTED`). Menggunakan pemilihan visual berbasis satuan atomik Quad Pack (kelipatan 4) pada matriks 10x10, dan langsung berstatus final `COMPLETED` saat disimpan sesuai prinsip Zero Reject.
+_Avoid_: Order sortir, tiket sortir, sesi sortir sementara
+
 **Hasil Kemas**:
 Transaksi pencatatan hasil pengemasan pack yang telah disortir ke dalam rentang nomor doos fisik (dengan rasio 4 pack = 9 doos).
 _Avoid_: Packaging order, packing list, kemasan
