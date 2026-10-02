@@ -18,7 +18,7 @@ const mockBatches = [
     seri: 'AA-BA',
     kepala: '0',
     tahun_anggaran: 2026,
-    emisi: { denominasi: { nama: 'Rp 100.000' } },
+    emisi: { denominasi: { nama: 'Y', nilai: 100000 } },
     packs: [
       { id: 1, nomor_pack: 1, status: 'RECEIVED' },
       { id: 2, nomor_pack: 2, status: 'RECEIVED' },
@@ -33,7 +33,7 @@ const mockShifts = [
 ];
 
 const mockEmisi = [
-  { id: 1, kode_emisi: 'TE 2022', denominasi: { nama: 'Rp 100.000', nilai: 100000 } },
+  { id: 1, kode_emisi: 'TE 2022', denominasi: { nama: 'Y', nilai: 100000 } },
 ];
 
 describe('BonMasukFormModal', () => {
@@ -69,6 +69,10 @@ describe('BonMasukFormModal', () => {
     // Clean empty initial batch
     expect(screen.getByTestId('live-total-pack')).toHaveTextContent('0 Pack');
     expect(screen.getByTestId('live-total-bilyet')).toHaveTextContent('0 Bilyet');
+
+    // Matrix popover trigger button should be disabled when no batch is selected
+    const matrixBtn = screen.getByRole('button', { name: /buka visualisasi matriks 100 pack/i });
+    expect(matrixBtn).toBeDisabled();
   });
 
   it('reactively updates Live Calculator when pack input changes on a selected batch', () => {
@@ -203,12 +207,17 @@ describe('BonMasukFormModal', () => {
 
     expect(screen.getByText('Batch #2')).toBeInTheDocument();
 
+    // Tambah lagi batch ketiga
+    fireEvent.click(addBtn);
+    expect(screen.getByText('Batch #3')).toBeInTheDocument();
+
     // Hapus baris kedua
     const removeBtns = screen.getAllByTitle('Hapus Batch Ini dari Segel');
-    expect(removeBtns).toHaveLength(2);
+    expect(removeBtns).toHaveLength(3);
     fireEvent.click(removeBtns[1]);
 
-    expect(screen.queryByText('Batch #2')).not.toBeInTheDocument();
+    expect(screen.queryByText('Batch #3')).not.toBeInTheDocument();
+    expect(screen.getByText('Batch #2')).toBeInTheDocument();
   });
 
   it('pre-fills data and calls updateBonMasuk in Edit mode with granular safety locking', async () => {

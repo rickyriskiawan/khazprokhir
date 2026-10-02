@@ -36,7 +36,34 @@ _Avoid_: Klien, customer, pembeli, bank sentral
 
 **Batch**:
 Kelompok produksi uang kertas sebesar 100 pack (4.500.000 bilyet) yang terikat pada satu kombinasi tahun anggaran, denominasi, seri, dan nomor kepala.
+Format standar nomor batch terdiri dari 7 digit (contoh: `1822001`):
+- 2 digit pertama: Kode numerik pecahan (`18` = Y, `17` = X, `16` = W, `15` = V, `14` = U, `19` = T, `13` = S).
+- 2 digit tengah: Tahun emisi (`22` = Emisi TE 2022).
+- 3 digit terakhir: Nomor urutan batch (`001`, `002`, dst.).
 _Avoid_: Lot, gelombang, kelompok produksi
+
+## Kode Pecahan Denominasi (Emisi TE 2022)
+
+**Y (Rp 100.000)**:
+Pecahan seratus ribu Rupiah dengan kode prefix batch `18` dan warna dominan merah muda / rose.
+
+**X (Rp 50.000)**:
+Pecahan lima puluh ribu Rupiah dengan kode prefix batch `17` dan warna dominan biru.
+
+**W (Rp 20.000)**:
+Pecahan dua puluh ribu Rupiah dengan kode prefix batch `16` dan warna dominan hijau emerald.
+
+**V (Rp 10.000)**:
+Pecahan sepuluh ribu Rupiah dengan kode prefix batch `15` dan warna dominan ungu.
+
+**U (Rp 5.000)**:
+Pecahan lima ribu Rupiah dengan kode prefix batch `14` dan warna dominan cokelat / amber.
+
+**T (Rp 2.000)**:
+Pecahan dua ribu Rupiah dengan kode prefix batch `19` dan warna dominan abu-abu kebiruan / slate.
+
+**S (Rp 1.000)**:
+Pecahan seribu Rupiah dengan kode prefix batch `13` dan warna dominan hijau kekuningan / zaitun.
 
 ## Dokumen & Registrasi Fisik
 

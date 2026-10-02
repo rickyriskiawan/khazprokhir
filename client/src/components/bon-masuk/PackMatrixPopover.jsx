@@ -34,19 +34,18 @@ export default function PackMatrixPopover({
       <Button
         type="button"
         variant="outline"
-        size="sm"
+        size="icon"
         disabled={disabled}
         onClick={() => setOpen(true)}
-        className="text-xs h-9 px-2.5 gap-1.5 shrink-0 hover:border-emerald hover:text-emerald"
+        className={`h-9 w-9 p-0 shrink-0 transition-colors disabled:pointer-events-auto disabled:cursor-not-allowed ${
+          selectedCount > 0
+            ? 'border-emerald text-emerald bg-emerald/5 dark:bg-emerald/10 hover:bg-emerald/10 dark:hover:bg-emerald/15'
+            : 'text-ink-secondary hover:text-ink hover:border-emerald dark:text-ink-secondary-dark dark:hover:text-ink-dark'
+        }`}
         title="Buka visualisasi matriks 100 pack"
+        aria-label="Buka visualisasi matriks 100 pack"
       >
-        <Grid3X3 className="h-3.5 w-3.5" strokeWidth={1.75} />
-        <span>Matriks 100 Pack</span>
-        {selectedCount > 0 && (
-          <Badge variant="emerald" className="px-1.5 py-0 text-[10px] font-mono tabular-nums h-4">
-            {selectedCount}
-          </Badge>
-        )}
+        <Grid3X3 className="h-4 w-4" strokeWidth={1.75} />
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>

@@ -12,17 +12,31 @@ describe('PackMatrixPopover component', () => {
     disabled: false,
   };
 
-  it('renders trigger button with matrix label and selection count', () => {
-    render(<PackMatrixPopover {...defaultProps} />);
+  it('renders trigger button as pure icon button with title and active state', () => {
+    const { rerender } = render(<PackMatrixPopover {...defaultProps} selectedPacks={[]} />);
 
-    const triggerBtn = screen.getByRole('button', { name: /matriks 100 pack/i });
+    const triggerBtn = screen.getByRole('button', { name: /buka visualisasi matriks 100 pack/i });
     expect(triggerBtn).toBeInTheDocument();
+    expect(screen.queryByText(/matriks 100 pack/i)).not.toBeInTheDocument();
+
+    // Inactive state (no selected packs)
+    expect(triggerBtn).not.toHaveClass('border-emerald');
+
+    // Active state (with selected packs)
+    rerender(<PackMatrixPopover {...defaultProps} selectedPacks={[6, 7, 8]} />);
+    const activeBtn = screen.getByRole('button', { name: /buka visualisasi matriks 100 pack/i });
+    expect(activeBtn).toHaveClass('border-emerald');
+
+    // Disabled state
+    rerender(<PackMatrixPopover {...defaultProps} disabled={true} />);
+    const disabledBtn = screen.getByRole('button', { name: /buka visualisasi matriks 100 pack/i });
+    expect(disabledBtn).toBeDisabled();
   });
 
   it('opens dialog showing 100 pack buttons and identifies received vs selected packs', () => {
     render(<PackMatrixPopover {...defaultProps} />);
 
-    const triggerBtn = screen.getByRole('button', { name: /matriks 100 pack/i });
+    const triggerBtn = screen.getByRole('button', { name: /buka visualisasi matriks 100 pack/i });
     fireEvent.click(triggerBtn);
 
     expect(screen.getByText(/matriks keterisian 100 pack/i)).toBeInTheDocument();
