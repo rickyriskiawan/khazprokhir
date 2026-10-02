@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuthStore } from '@/stores/authStore';
 import { createBonMasuk, updateBonMasuk, getBatchById } from '@/services/bonMasukService';
 import { formatBilyet, formatRupiah } from '@/utils/formatters';
@@ -396,7 +395,7 @@ export default function BonMasukFormModal({
           </div>
         )}
 
-        <ScrollArea className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <form id="bonMasukForm" onSubmit={handleSubmit} className="space-y-4 px-6 py-4">
             {/* 1. Header Dokumen Bon Masuk (2 Baris Terstruktur) */}
             <div className="rounded-xl border border-border p-3.5 dark:border-border-dark bg-surface-subtle/50 dark:bg-surface-subtle-dark/50 space-y-3">
@@ -843,7 +842,7 @@ export default function BonMasukFormModal({
               </div>
             </div>
           </form>
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="px-6 py-3.5 mt-0 border-t border-border dark:border-border-dark shrink-0 bg-surface dark:bg-surface-dark flex items-center justify-end gap-2">
           <Button
