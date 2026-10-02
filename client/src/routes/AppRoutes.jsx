@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import DashboardLayout from '../layouts/DashboardLayout'
 import DashboardPage from '../pages/dashboard/DashboardPage'
 import BonMasukPage from '../pages/bon-masuk/BonMasukPage'
+import ProsesSortirPage from '../pages/sortir/ProsesSortirPage'
 import LoginPage from '../pages/auth/LoginPage'
 import { UnauthorizedPage } from '../pages/common/UnauthorizedPage'
 import NotFoundPage from '../pages/common/NotFoundPage'
@@ -26,16 +27,7 @@ export default function AppRoutes() {
           {/* Modul Operasional Fisik (Supervisor & Operator) */}
           <Route element={<ProtectedRoute allowedRoles={['SUPERVISOR', 'OPERATOR']} />}>
             <Route path="/bon-masuk" element={<BonMasukPage />} />
-            <Route
-              path="/sortir"
-              element={
-                <ModulePlaceholderPage
-                  moduleName="Modul 2: Proses Sortir & Penataan Pack"
-                  moduleCode="FE-06 s/d FE-07"
-                  description="Pemeriksaan fisik lembar bilyet kelipatan 4 pack, kalkulasi Zero Reject, dan pencatatan 2 petugas sortir."
-                />
-              }
-            />
+            <Route path="/sortir" element={<ProsesSortirPage />} />
             <Route
               path="/kemas"
               element={
