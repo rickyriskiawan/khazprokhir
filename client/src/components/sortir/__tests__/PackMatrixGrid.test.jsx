@@ -338,6 +338,21 @@ describe('PackMatrixGrid Component (FE-06)', () => {
       fireEvent.click(cell1);
       expect(handleSelectionChange).not.toHaveBeenCalled();
     });
+
+    it('menampilkan total akumulasi progres batch pada accumulator saat mode audit', () => {
+      // In mock data: 11 RECEIVED + 4 SORTED + 4 PACKED + 4 SHIPPED = 23 packs processed
+      render(
+        <PackMatrixGrid
+          packs={generateMockPacks()}
+          selectedPacks={[]}
+          selectable={false}
+        />
+      );
+
+      // Accumulator should show 23 Pack (not 0 Pack)
+      expect(screen.getByTestId('accumulator-pack-count')).toHaveTextContent('23 Pack');
+      expect(screen.getByTestId('accumulator-bilyet-count')).toHaveTextContent('1.035.000 Bilyet');
+    });
   });
 
   describe('7. Sinkronisasi Hover Quad Highlight', () => {
