@@ -231,7 +231,7 @@ export default function ProsesSortirPage() {
               <SelectItem value="all">Semua Shift</SelectItem>
               {shifts.map((s) => (
                 <SelectItem key={s.id} value={String(s.id)}>
-                  {s.nama_shift}
+                  {s.nama || s.nama_shift}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -374,7 +374,7 @@ export default function ProsesSortirPage() {
                     </TableCell>
 
                     <TableCell className="text-xs text-ink-secondary">
-                      {session.shift?.nama_shift || `Shift ${session.shift_id}`}
+                      {session.shift?.nama || session.shift?.nama_shift || `Shift ${session.shift_id}`}
                     </TableCell>
 
                     <TableCell className="text-xs">

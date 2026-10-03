@@ -116,7 +116,7 @@ export default function SortirDetailModal({
                 {formatIndonesianDate(session.tanggal_sortir)}
               </p>
               <p className="text-[11px] text-ink-muted mt-0.5">
-                {session.shift?.nama_shift || `Shift ${session.shift_id}`}
+                {session.shift?.nama || session.shift?.nama_shift || `Shift ${session.shift_id}`}
               </p>
             </div>
 

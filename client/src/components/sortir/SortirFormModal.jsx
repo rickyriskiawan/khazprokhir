@@ -264,7 +264,7 @@ export default function SortirFormModal({
                   >
                     {shifts.map((s) => (
                       <option key={s.id} value={s.id}>
-                        {s.nama_shift} ({s.jam_mulai} - {s.jam_selesai})
+                        {s.nama || s.nama_shift} ({s.jam_mulai} - {s.jam_selesai})
                       </option>
                     ))}
                   </select>
