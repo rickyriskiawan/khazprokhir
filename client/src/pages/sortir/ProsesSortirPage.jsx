@@ -42,7 +42,6 @@ import {
   Eye,
   Trash2,
   Layers,
-  Box,
   Coins,
   Inbox,
   ChevronLeft,
@@ -167,7 +166,7 @@ export default function ProsesSortirPage() {
       </div>
 
       {/* Mini KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="p-4 rounded-xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <Layers className="w-6 h-6" strokeWidth={1.75} />
@@ -194,21 +193,6 @@ export default function ProsesSortirPage() {
             </span>
             <span className="text-[11px] text-ink-muted block mt-0.5 font-mono tabular-nums">
               {(todaySummary?.total_brood || 0).toLocaleString('id-ID')} Brood
-            </span>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-            <Box className="w-6 h-6" strokeWidth={1.75} />
-          </div>
-          <div>
-            <span className="text-xs text-ink-muted block">Jumlah Sesi Sortir Hari Ini</span>
-            <span className="text-xl font-bold font-mono tabular-nums text-ink dark:text-ink-dark">
-              {todaySummary?.total_sesi || 0} Sesi
-            </span>
-            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block mt-0.5 font-medium">
-              100% Zero Reject
             </span>
           </div>
         </div>
@@ -304,7 +288,7 @@ export default function ProsesSortirPage() {
         <Table>
           <TableHeader>
             <TableRow className="bg-canvas dark:bg-canvas-dark/50">
-              <TableHead className="text-xs font-semibold">Tanggal & Sesi</TableHead>
+              <TableHead className="text-xs font-semibold">Tanggal</TableHead>
               <TableHead className="text-xs font-semibold">Batch & Pecahan</TableHead>
               <TableHead className="text-xs font-semibold">Shift</TableHead>
               <TableHead className="text-xs font-semibold">Rentang Pack</TableHead>
@@ -364,10 +348,7 @@ export default function ProsesSortirPage() {
                 return (
                   <TableRow key={session.id} className="hover:bg-canvas dark:bg-canvas-dark/40 transition-colors">
                     <TableCell className="text-xs">
-                      <span className="font-mono tabular-nums font-semibold text-ink dark:text-ink-dark block">
-                        #{session.id}
-                      </span>
-                      <span className="text-[11px] text-ink-muted">
+                      <span className="font-medium text-ink dark:text-ink-dark">
                         {formatIndonesianDate(session.tanggal_sortir)}
                       </span>
                     </TableCell>
