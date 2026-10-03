@@ -88,9 +88,9 @@ const mockSortirSessions = [
 
 const mockSummary = {
   total_sesi: 2,
-  total_pack_today: 12,
-  total_brood_today: 540,
-  total_bilyet_today: 540000,
+  total_pack: 12,
+  total_brood: 540,
+  total_bilyet: 540000,
 };
 
 describe('ProsesSortirPage Component (FE-07)', () => {

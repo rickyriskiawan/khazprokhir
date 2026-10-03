@@ -118,10 +118,10 @@ describe('sortirService - API Endpoints', () => {
   });
 
   it('getTodaySortirSummary memanggil GET /sortir/summary/today', async () => {
-    api.get.mockResolvedValueOnce({ data: { data: { total_pack_today: 40 } } });
+    api.get.mockResolvedValueOnce({ data: { data: { total_pack: 40 } } });
     const result = await getTodaySortirSummary('2026-09-15');
 
     expect(api.get).toHaveBeenCalledWith('/sortir/summary/today', { params: { tanggal: '2026-09-15' } });
-    expect(result.total_pack_today).toBe(40);
+    expect(result.total_pack).toBe(40);
   });
 });

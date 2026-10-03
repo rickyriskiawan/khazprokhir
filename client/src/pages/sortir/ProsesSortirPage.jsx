@@ -175,10 +175,10 @@ export default function ProsesSortirPage() {
           <div>
             <span className="text-xs text-ink-muted block">Total Pack Disortir Hari Ini</span>
             <span className="text-xl font-bold font-mono tabular-nums text-ink dark:text-ink-dark">
-              {todaySummary?.total_pack_today?.toLocaleString('id-ID') || 0} Pack
+              {todaySummary?.total_pack?.toLocaleString('id-ID') || 0} Pack
             </span>
             <span className="text-[11px] text-ink-muted block mt-0.5 font-mono tabular-nums">
-              ({Math.floor((todaySummary?.total_pack_today || 0) / 4)} Quad = {((todaySummary?.total_pack_today || 0) / 4) * 9} Doos)
+              ({Math.floor((todaySummary?.total_pack || 0) / 4)} Quad = {((todaySummary?.total_pack || 0) / 4) * 9} Doos)
             </span>
           </div>
         </div>
@@ -190,10 +190,10 @@ export default function ProsesSortirPage() {
           <div>
             <span className="text-xs text-ink-muted block">Volume Bilyet Hari Ini</span>
             <span className="text-xl font-bold font-mono tabular-nums text-ink dark:text-ink-dark">
-              {formatBilyet(todaySummary?.total_bilyet_today || 0)}
+              {formatBilyet(todaySummary?.total_bilyet || 0)}
             </span>
             <span className="text-[11px] text-ink-muted block mt-0.5 font-mono tabular-nums">
-              {(todaySummary?.total_brood_today || 0).toLocaleString('id-ID')} Brood
+              {(todaySummary?.total_brood || 0).toLocaleString('id-ID')} Brood
             </span>
           </div>
         </div>
