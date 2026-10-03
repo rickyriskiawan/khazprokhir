@@ -172,12 +172,12 @@ export default function SortirFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl w-[96vw] max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden bg-surface border-border">
+      <DialogContent className="max-w-6xl w-[96vw] max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden bg-surface dark:bg-surface-dark border-border dark:border-border-dark">
         {/* Pinned Header */}
-        <DialogHeader className="shrink-0 px-6 py-4 border-b border-border bg-surface">
+        <DialogHeader className="shrink-0 px-6 py-4 border-b border-border dark:border-border-dark bg-surface dark:bg-surface-dark">
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-lg font-semibold text-ink-primary flex items-center gap-2">
+              <DialogTitle className="text-lg font-semibold text-ink dark:text-ink-dark flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 Pencatatan Hasil Sortir Pack
               </DialogTitle>
@@ -202,7 +202,7 @@ export default function SortirFormModal({
             <div className="lg:col-span-5 space-y-4">
               {/* 1. Pilih Batch Produksi */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
+                <label className="text-xs font-semibold text-ink dark:text-ink-dark flex items-center gap-1.5">
                   <Box className="w-3.5 h-3.5 text-ink-muted" />
                   Nomor Batch Produksi <span className="text-rose-500">*</span>
                 </label>
@@ -220,7 +220,7 @@ export default function SortirFormModal({
               {/* 2. Tanggal, Jam & Shift */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1.5">
-                  <label htmlFor="sortirTanggal" className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
+                  <label htmlFor="sortirTanggal" className="text-xs font-semibold text-ink dark:text-ink-dark flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-ink-muted" strokeWidth={1.75} />
                     Tanggal Sortir <span className="text-rose-500">*</span>
                   </label>
@@ -236,7 +236,7 @@ export default function SortirFormModal({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label htmlFor="sortirJam" className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
+                  <label htmlFor="sortirJam" className="text-xs font-semibold text-ink dark:text-ink-dark flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-ink-muted" strokeWidth={1.75} />
                     Jam Sortir
                   </label>
@@ -251,7 +251,7 @@ export default function SortirFormModal({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label htmlFor="sortirShift" className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
+                  <label htmlFor="sortirShift" className="text-xs font-semibold text-ink dark:text-ink-dark flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-ink-muted" strokeWidth={1.75} />
                     Shift Kerja <span className="text-rose-500">*</span>
                   </label>
@@ -260,7 +260,7 @@ export default function SortirFormModal({
                     value={shiftId}
                     onChange={(e) => setShiftId(Number(e.target.value))}
                     disabled={submitting}
-                    className="w-full h-9 rounded-md border border-input bg-surface px-3 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    className="w-full h-9 rounded-md border border-input bg-surface dark:bg-surface-dark px-3 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
                     {shifts.map((s) => (
                       <option key={s.id} value={s.id}>
@@ -272,9 +272,9 @@ export default function SortirFormModal({
               </div>
 
               {/* 3. Petugas Penyortir Fisik (1 & 2) */}
-              <div className="space-y-3 p-3.5 rounded-lg border border-border bg-canvas/40">
+              <div className="space-y-3 p-3.5 rounded-lg border border-border dark:border-border-dark bg-canvas dark:bg-canvas-dark/40">
                 <div className="space-y-1.5">
-                  <label htmlFor="sortirPenyortir1" className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
+                  <label htmlFor="sortirPenyortir1" className="text-xs font-semibold text-ink dark:text-ink-dark flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-ink-muted" strokeWidth={1.75} />
                     Petugas Penyortir 1 <span className="text-rose-500">*</span>
                   </label>
@@ -291,7 +291,7 @@ export default function SortirFormModal({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label htmlFor="sortirPenyortir2" className="text-xs font-medium text-ink-primary flex items-center gap-1.5">
+                  <label htmlFor="sortirPenyortir2" className="text-xs font-medium text-ink dark:text-ink-dark flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-ink-muted" strokeWidth={1.75} />
                     Petugas Penyortir 2 <span className="text-ink-muted font-normal">(Opsional)</span>
                   </label>
@@ -309,7 +309,7 @@ export default function SortirFormModal({
 
               {/* 4. Catatan Operasional */}
               <div className="space-y-1.5">
-                <label htmlFor="sortirCatatan" className="text-xs font-medium text-ink-primary flex items-center gap-1.5">
+                <label htmlFor="sortirCatatan" className="text-xs font-medium text-ink dark:text-ink-dark flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-ink-muted" strokeWidth={1.75} />
                   Catatan Operasional <span className="text-ink-muted font-normal">(Opsional)</span>
                 </label>
@@ -320,7 +320,7 @@ export default function SortirFormModal({
                   onChange={(e) => setCatatan(e.target.value)}
                   placeholder="Catatan kondisi fisik uang kertas, meja kerja, dsb..."
                   disabled={submitting}
-                  className="w-full rounded-md border border-input bg-surface p-2.5 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="w-full rounded-md border border-input bg-surface dark:bg-surface-dark p-2.5 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
               </div>
 
@@ -339,11 +339,11 @@ export default function SortirFormModal({
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-center">
-                  <div className="p-2.5 rounded-lg bg-surface/80 border border-emerald-500/10">
+                  <div className="p-2.5 rounded-lg bg-surface dark:bg-surface-dark/80 border border-emerald-500/10">
                     <span className="text-[11px] text-ink-muted block">Pack Terpilih</span>
                     <span
                       data-testid="zero-reject-pack-count"
-                      className="text-base font-bold font-mono tabular-nums text-ink-primary"
+                      className="text-base font-bold font-mono tabular-nums text-ink dark:text-ink-dark"
                     >
                       {totalPack}
                     </span>
@@ -352,7 +352,7 @@ export default function SortirFormModal({
                     </span>
                   </div>
 
-                  <div className="p-2.5 rounded-lg bg-surface/80 border border-emerald-500/10">
+                  <div className="p-2.5 rounded-lg bg-surface dark:bg-surface-dark/80 border border-emerald-500/10">
                     <span className="text-[11px] text-ink-muted block">Setara Kemasan</span>
                     <span
                       data-testid="zero-reject-doos-count"
@@ -365,11 +365,11 @@ export default function SortirFormModal({
                     </span>
                   </div>
 
-                  <div className="p-2.5 rounded-lg bg-surface/80 border border-emerald-500/10">
+                  <div className="p-2.5 rounded-lg bg-surface dark:bg-surface-dark/80 border border-emerald-500/10">
                     <span className="text-[11px] text-ink-muted block">Total Brood</span>
                     <span
                       data-testid="zero-reject-brood-count"
-                      className="text-sm font-semibold font-mono tabular-nums text-ink-primary"
+                      className="text-sm font-semibold font-mono tabular-nums text-ink dark:text-ink-dark"
                     >
                       {totalBrood.toLocaleString('id-ID')}
                     </span>
@@ -378,11 +378,11 @@ export default function SortirFormModal({
                     </span>
                   </div>
 
-                  <div className="p-2.5 rounded-lg bg-surface/80 border border-emerald-500/10">
+                  <div className="p-2.5 rounded-lg bg-surface dark:bg-surface-dark/80 border border-emerald-500/10">
                     <span className="text-[11px] text-ink-muted block">Total Bilyet</span>
                     <span
                       data-testid="zero-reject-bilyet-count"
-                      className="text-sm font-semibold font-mono tabular-nums text-ink-primary"
+                      className="text-sm font-semibold font-mono tabular-nums text-ink dark:text-ink-dark"
                     >
                       {totalBilyet.toLocaleString('id-ID')}
                     </span>
@@ -407,7 +407,7 @@ export default function SortirFormModal({
             <div className="lg:col-span-7 flex flex-col space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-semibold text-ink-primary flex items-center gap-1.5">
+                  <h4 className="text-xs font-semibold text-ink dark:text-ink-dark flex items-center gap-1.5">
                     <Layers className="w-3.5 h-3.5 text-ink-muted" />
                     Pilih Pack via Matriks 100 Pack
                   </h4>
@@ -418,24 +418,24 @@ export default function SortirFormModal({
               </div>
 
               {!selectedBatch ? (
-                <div className="flex-1 min-h-[420px] rounded-xl border border-dashed border-border bg-canvas/40 flex flex-col items-center justify-center p-8 text-center">
-                  <div className="w-12 h-12 rounded-full bg-surface border border-border flex items-center justify-center mb-3 text-ink-muted shadow-sm">
+                <div className="flex-1 min-h-[420px] rounded-xl border border-dashed border-border dark:border-border-dark bg-canvas dark:bg-canvas-dark/40 flex flex-col items-center justify-center p-8 text-center">
+                  <div className="w-12 h-12 rounded-full bg-surface dark:bg-surface-dark border border-border dark:border-border-dark flex items-center justify-center mb-3 text-ink-muted shadow-sm">
                     <Box className="w-6 h-6" />
                   </div>
-                  <h5 className="text-sm font-medium text-ink-primary">Pilih Batch Terlebih Dahulu</h5>
+                  <h5 className="text-sm font-medium text-ink dark:text-ink-dark">Pilih Batch Terlebih Dahulu</h5>
                   <p className="text-xs text-ink-muted max-w-sm mt-1">
                     Silakan tentukan nomor batch pada panel kiri untuk memuat status 100 pack dan mengaktifkan matriks pemilihan.
                   </p>
                 </div>
               ) : loadingBatch ? (
-                <div className="flex-1 min-h-[420px] rounded-xl border border-border bg-canvas/40 flex flex-col items-center justify-center p-8 text-center">
+                <div className="flex-1 min-h-[420px] rounded-xl border border-border dark:border-border-dark bg-canvas dark:bg-canvas-dark/40 flex flex-col items-center justify-center p-8 text-center">
                   <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin mb-3" />
                   <p className="text-xs text-ink-muted">Memuat rincian 100 pack batch {selectedBatch.nomor_batch}...</p>
                 </div>
               ) : (
-                <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+                <div className="rounded-xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark p-4 shadow-sm">
                   <PackMatrixGrid
-                    packs={batchData?.pack_details || []}
+                    packs={batchData?.packs || []}
                     selectedPacks={selectedPacks}
                     onSelectionChange={setSelectedPacks}
                     selectable={true}
@@ -444,6 +444,7 @@ export default function SortirFormModal({
                       nomor_batch: selectedBatch.nomor_batch,
                       seri: selectedBatch.seri,
                       kepala: selectedBatch.kepala,
+                      tahun_anggaran: selectedBatch.tahun_anggaran,
                     }}
                     nominalPecahan={nominalPecahan}
                   />
@@ -454,7 +455,7 @@ export default function SortirFormModal({
         </div>
 
         {/* Pinned Footer */}
-        <DialogFooter className="shrink-0 px-6 py-4 border-t border-border bg-surface flex items-center justify-between sm:justify-between">
+        <DialogFooter className="shrink-0 px-6 py-4 border-t border-border dark:border-border-dark bg-surface dark:bg-surface-dark flex items-center justify-between sm:justify-between">
           <div className="flex items-center gap-2 text-xs">
             {totalPack === 0 ? (
               <span className="text-ink-muted flex items-center gap-1.5">

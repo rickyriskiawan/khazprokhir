@@ -41,7 +41,7 @@ describe('SortirDetailModal Component', () => {
     bonMasukService.getBatchById.mockResolvedValue({
       id: 10,
       nomor_batch: '1822001',
-      pack_details: [
+      packs: [
         { id: 1, nomor_pack: 1, status: 'SORTED' },
         { id: 2, nomor_pack: 2, status: 'SORTED' },
       ],

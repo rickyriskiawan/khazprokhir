@@ -139,11 +139,11 @@ export default function ProsesSortirPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1440px] w-full mx-auto pb-12">
       {/* Top Header & Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-ink-primary flex items-center gap-2.5">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-ink dark:text-ink-dark flex items-center gap-2.5">
             <Sparkles className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             Proses & Hasil Sortir Pack
           </h1>
@@ -168,13 +168,13 @@ export default function ProsesSortirPage() {
 
       {/* Mini KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-xl border border-border bg-surface shadow-xs flex items-center gap-4">
+        <div className="p-4 rounded-xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <Layers className="w-6 h-6" strokeWidth={1.75} />
           </div>
           <div>
             <span className="text-xs text-ink-muted block">Total Pack Disortir Hari Ini</span>
-            <span className="text-xl font-bold font-mono tabular-nums text-ink-primary">
+            <span className="text-xl font-bold font-mono tabular-nums text-ink dark:text-ink-dark">
               {todaySummary?.total_pack_today?.toLocaleString('id-ID') || 0} Pack
             </span>
             <span className="text-[11px] text-ink-muted block mt-0.5 font-mono tabular-nums">
@@ -183,13 +183,13 @@ export default function ProsesSortirPage() {
           </div>
         </div>
 
-        <div className="p-4 rounded-xl border border-border bg-surface shadow-xs flex items-center gap-4">
+        <div className="p-4 rounded-xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
             <Coins className="w-6 h-6" strokeWidth={1.75} />
           </div>
           <div>
             <span className="text-xs text-ink-muted block">Volume Bilyet Hari Ini</span>
-            <span className="text-xl font-bold font-mono tabular-nums text-ink-primary">
+            <span className="text-xl font-bold font-mono tabular-nums text-ink dark:text-ink-dark">
               {formatBilyet(todaySummary?.total_bilyet_today || 0)}
             </span>
             <span className="text-[11px] text-ink-muted block mt-0.5 font-mono tabular-nums">
@@ -198,13 +198,13 @@ export default function ProsesSortirPage() {
           </div>
         </div>
 
-        <div className="p-4 rounded-xl border border-border bg-surface shadow-xs flex items-center gap-4">
+        <div className="p-4 rounded-xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
             <Box className="w-6 h-6" strokeWidth={1.75} />
           </div>
           <div>
             <span className="text-xs text-ink-muted block">Jumlah Sesi Sortir Hari Ini</span>
-            <span className="text-xl font-bold font-mono tabular-nums text-ink-primary">
+            <span className="text-xl font-bold font-mono tabular-nums text-ink dark:text-ink-dark">
               {todaySummary?.total_sesi || 0} Sesi
             </span>
             <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block mt-0.5 font-medium">
@@ -215,7 +215,7 @@ export default function ProsesSortirPage() {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="p-4 rounded-xl border border-border bg-surface space-y-3">
+      <div className="p-4 rounded-xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           {/* Search Box */}
           <div className="relative">
@@ -279,6 +279,7 @@ export default function ProsesSortirPage() {
               <SelectContent>
                 <SelectItem value="all">Semua Status</SelectItem>
                 <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+                <SelectItem value="CANCELLED">CANCELLED</SelectItem>
               </SelectContent>
             </Select>
 
@@ -299,10 +300,10 @@ export default function ProsesSortirPage() {
       </div>
 
       {/* Main Table */}
-      <div className="rounded-xl border border-border bg-surface overflow-hidden shadow-xs">
+      <div className="rounded-xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark overflow-hidden shadow-xs">
         <Table>
           <TableHeader>
-            <TableRow className="bg-canvas/50">
+            <TableRow className="bg-canvas dark:bg-canvas-dark/50">
               <TableHead className="text-xs font-semibold">Tanggal & Sesi</TableHead>
               <TableHead className="text-xs font-semibold">Batch & Pecahan</TableHead>
               <TableHead className="text-xs font-semibold">Shift</TableHead>
@@ -328,7 +329,7 @@ export default function ProsesSortirPage() {
                 <TableCell colSpan={8} className="h-48 text-center text-xs text-ink-muted">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Inbox className="w-8 h-8 text-ink-muted/60" />
-                    <span className="font-medium text-ink-primary">Belum Ada Riwayat Sortir</span>
+                    <span className="font-medium text-ink dark:text-ink-dark">Belum Ada Riwayat Sortir</span>
                     <p className="max-w-sm text-[11px]">
                       Tidak ada catatan sesi sortir yang sesuai dengan kriteria filter saat ini.
                     </p>
@@ -361,9 +362,9 @@ export default function ProsesSortirPage() {
                 );
 
                 return (
-                  <TableRow key={session.id} className="hover:bg-canvas/40 transition-colors">
+                  <TableRow key={session.id} className="hover:bg-canvas dark:bg-canvas-dark/40 transition-colors">
                     <TableCell className="text-xs">
-                      <span className="font-mono tabular-nums font-semibold text-ink-primary block">
+                      <span className="font-mono tabular-nums font-semibold text-ink dark:text-ink-dark block">
                         #{session.id}
                       </span>
                       <span className="text-[11px] text-ink-muted">
@@ -373,7 +374,7 @@ export default function ProsesSortirPage() {
 
                     <TableCell className="text-xs">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono tabular-nums font-semibold text-ink-primary">
+                        <span className="font-mono tabular-nums font-semibold text-ink dark:text-ink-dark">
                           {session.batch?.nomor_batch}
                         </span>
                         {denomNama && (
@@ -397,14 +398,14 @@ export default function ProsesSortirPage() {
 
                     <TableCell className="text-xs">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-mono tabular-nums text-ink-primary font-medium">
+                        <span className="font-mono tabular-nums text-ink dark:text-ink-dark font-medium">
                           {packRangeInfo.display}
                         </span>
                         {packRangeInfo.isTruncated && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="cursor-help px-1.5 py-0.5 rounded bg-surface border border-border text-[10px] font-mono font-semibold text-ink-muted">
+                                <span className="cursor-help px-1.5 py-0.5 rounded bg-surface dark:bg-surface-dark border border-border dark:border-border-dark text-[10px] font-mono font-semibold text-ink-muted">
                                   +{packRangeInfo.remainingGroups} grup
                                 </span>
                               </TooltipTrigger>
@@ -422,7 +423,7 @@ export default function ProsesSortirPage() {
                     </TableCell>
 
                     <TableCell className="text-xs font-mono tabular-nums">
-                      <span className="font-semibold text-ink-primary block">
+                      <span className="font-semibold text-ink dark:text-ink-dark block">
                         {formatBilyet(session.total_bilyet)}
                       </span>
                       <span className="text-[11px] text-ink-muted">
@@ -431,7 +432,7 @@ export default function ProsesSortirPage() {
                     </TableCell>
 
                     <TableCell className="text-xs">
-                      <span className="font-medium text-ink-primary block">
+                      <span className="font-medium text-ink dark:text-ink-dark block">
                         {session.penyortir_1}
                       </span>
                       {session.penyortir_2 && (
@@ -459,7 +460,7 @@ export default function ProsesSortirPage() {
                           onClick={() => setViewingSession(session)}
                           aria-label="Lihat Detail Sesi Sortir"
                           title="Lihat Detail Sesi & Matriks"
-                          className="h-8 w-8 text-ink-muted hover:text-ink-primary"
+                          className="h-8 w-8 text-ink-muted hover:text-ink dark:text-ink-dark"
                         >
                           <Eye className="w-4 h-4" strokeWidth={1.75} />
                         </Button>
@@ -505,7 +506,7 @@ export default function ProsesSortirPage() {
 
         {/* Pagination Footer */}
         {meta.totalPages > 1 && (
-          <div className="px-6 py-3 border-t border-border bg-canvas/30 flex items-center justify-between text-xs text-ink-muted">
+          <div className="px-6 py-3 border-t border-border dark:border-border-dark bg-canvas dark:bg-canvas-dark/30 flex items-center justify-between text-xs text-ink-muted">
             <span>
               Menampilkan {sessions.length} dari {meta.total} sesi sortir
             </span>

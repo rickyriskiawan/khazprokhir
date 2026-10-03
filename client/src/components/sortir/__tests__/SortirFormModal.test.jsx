@@ -41,7 +41,7 @@ const mockBatchDetail = {
   kepala: '0',
   tahun_anggaran: 2026,
   emisi: { denominasi: { nama: 'Y', nilai: 100000 } },
-  pack_details: Array.from({ length: 100 }, (_, i) => ({
+  packs: Array.from({ length: 100 }, (_, i) => ({
     id: i + 1,
     nomor_pack: i + 1,
     status: i < 20 ? 'RECEIVED' : 'PENDING',
