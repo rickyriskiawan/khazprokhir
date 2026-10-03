@@ -478,7 +478,7 @@ export default function BonMasukFormModal({
                     <SelectContent>
                       {shifts.map((s) => (
                         <SelectItem key={s.id} value={String(s.id)}>
-                          {s.nama_shift || `Shift ${s.id}`} ({s.jam_mulai} - {s.jam_selesai})
+                          {s.nama || s.nama_shift || `Shift ${s.id}`} ({s.jam_mulai} - {s.jam_selesai})
                         </SelectItem>
                       ))}
                     </SelectContent>

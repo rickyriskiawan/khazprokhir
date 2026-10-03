@@ -92,7 +92,7 @@ export default function BonMasukDetailModal({ open, onOpenChange, bonMasuk }) {
                 <span>Shift & Operator</span>
               </div>
               <div className="font-semibold text-xs text-ink dark:text-white">
-                {shiftInfo.nama_shift || 'Shift'}
+                {shiftInfo.nama || shiftInfo.nama_shift || 'Shift'}
               </div>
               <div className="text-[11px] text-ink-secondary dark:text-ink-secondary-dark truncate">
                 Opr: {operatorInfo.full_name || operatorInfo.username || '-'}

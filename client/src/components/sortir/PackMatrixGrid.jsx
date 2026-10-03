@@ -235,8 +235,12 @@ export default function PackMatrixGrid({
                   {batchInfo.seri}
                   {batchInfo.kepala !== undefined ? batchInfo.kepala : ''}
                 </span>
-                <span className="opacity-40">•</span>
-                <span>TA {batchInfo.tahun_anggaran}</span>
+                {batchInfo.tahun_anggaran ? (
+                  <>
+                    <span className="opacity-40">•</span>
+                    <span>TA {batchInfo.tahun_anggaran}</span>
+                  </>
+                ) : null}
               </p>
             ) : (
               <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark mt-0.5">
