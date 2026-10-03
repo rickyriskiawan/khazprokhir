@@ -6,16 +6,14 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { formatBilyet, formatCompactRupiah } from '@/utils/formatters';
+import { formatBilyet } from '@/utils/formatters';
 import {
   Check,
   Lock,
   Layers,
-  Box,
   Coins,
   CheckCheck,
   RotateCcw,
-  Sparkles,
 } from 'lucide-react';
 import { DENOM_COLOR_MAP, STATUS_CONFIG } from './sortirConstants';
 
@@ -31,7 +29,6 @@ export default function PackMatrixGrid({
   selectable = true,
   selectableStatuses = ['RECEIVED'],
   batchInfo = null,
-  nominalPecahan = null,
   className = '',
 }) {
   const [hoveredQuadIndex, setHoveredQuadIndex] = useState(null);
@@ -166,8 +163,6 @@ export default function PackMatrixGrid({
 
   // Live Accumulator calculations (Interactive Selection Mode vs Audit Mode)
   const totalSelectedPacks = selectedPacks.length;
-  const selectedQuadsCount = Math.floor(totalSelectedPacks / 4);
-  const setaraDoos = (totalSelectedPacks / 4) * 9;
   const totalBilyet = totalSelectedPacks * 45000;
 
   // Batch-wide totals for read-only audit mode
@@ -176,21 +171,10 @@ export default function PackMatrixGrid({
     statusCounts.SORTED +
     statusCounts.PACKED +
     statusCounts.SHIPPED;
-  const processedQuadsCount = Math.floor(totalProcessedPacks / 4);
-  const processedDoos = (totalProcessedPacks / 4) * 9;
   const processedBilyet = totalProcessedPacks * 45000;
 
   const displayPackCount = selectable ? totalSelectedPacks : totalProcessedPacks;
-  const displayQuadCount = selectable ? selectedQuadsCount : processedQuadsCount;
-  const displayDoosCount = selectable ? setaraDoos : processedDoos;
   const displayBilyetCount = selectable ? totalBilyet : processedBilyet;
-
-  const effectiveNominal =
-    nominalPecahan ||
-    batchInfo?.emisi?.denominasi?.nilai_nominal ||
-    batchInfo?.emisi?.denominasi?.nilai ||
-    0;
-  const totalNominal = displayBilyetCount * effectiveNominal;
 
   // Batch header metadata
   const denomCode =
@@ -225,20 +209,24 @@ export default function PackMatrixGrid({
               )}
             </div>
             {batchInfo ? (
-              <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark flex items-center gap-1.5 mt-0.5">
+              <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
                 <span>Batch:</span>
                 <strong className="font-mono text-ink dark:text-ink-dark">
                   {batchInfo.nomor_batch}
                 </strong>
                 <span className="opacity-40">•</span>
-                <span className="font-mono text-ink dark:text-ink-dark">
+                <span>Seri:</span>
+                <strong className="font-mono text-ink dark:text-ink-dark">
                   {batchInfo.seri}
-                  {batchInfo.kepala !== undefined ? batchInfo.kepala : ''}
-                </span>
+                  {batchInfo.kepala !== undefined && batchInfo.kepala !== null ? batchInfo.kepala : ''}
+                </strong>
                 {batchInfo.tahun_anggaran ? (
                   <>
                     <span className="opacity-40">•</span>
-                    <span>TA {batchInfo.tahun_anggaran}</span>
+                    <span>Tahun Anggaran:</span>
+                    <strong className="font-mono text-ink dark:text-ink-dark">
+                      {batchInfo.tahun_anggaran}
+                    </strong>
                   </>
                 ) : null}
               </p>
@@ -281,9 +269,9 @@ export default function PackMatrixGrid({
         )}
       </div>
 
-      {/* 2. Live Volume Accumulator (Selection Mode) or Audit Summary (Read-Only Mode) */}
+      {/* 2. Live Accumulator: Alokasi Pack & Volume Bilyet */}
       <div className="my-3 p-3 rounded-xl bg-surface-subtle/80 border border-border/80 dark:bg-surface-subtle-dark/40 dark:border-border-dark/80">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-lg bg-emerald/10 text-emerald flex items-center justify-center shrink-0">
               <Layers className="h-4 w-4" strokeWidth={1.75} />
@@ -302,40 +290,6 @@ export default function PackMatrixGrid({
           </div>
 
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
-              <Sparkles className="h-4 w-4" strokeWidth={1.75} />
-            </div>
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-ink-secondary dark:text-ink-secondary-dark">
-                {selectable ? 'Kelompok Quad' : 'Quad Selesai'}
-              </div>
-              <div
-                data-testid="accumulator-quad-count"
-                className="font-mono text-sm font-bold tabular-nums text-ink dark:text-ink-dark"
-              >
-                {displayQuadCount} / 25 Quad
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-              <Box className="h-4 w-4" strokeWidth={1.75} />
-            </div>
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-ink-secondary dark:text-ink-secondary-dark">
-                Setara Hasil Kemas
-              </div>
-              <div
-                data-testid="accumulator-doos-count"
-                className="font-mono text-sm font-bold tabular-nums text-purple-700 dark:text-purple-300"
-              >
-                {displayDoosCount} Doos
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <Coins className="h-4 w-4" strokeWidth={1.75} />
             </div>
@@ -349,14 +303,6 @@ export default function PackMatrixGrid({
               >
                 {formatBilyet(displayBilyetCount)}
               </div>
-              {effectiveNominal > 0 && totalNominal > 0 && (
-                <div
-                  data-testid="accumulator-nominal"
-                  className="font-mono text-[11px] tabular-nums text-emerald font-semibold"
-                >
-                  {formatCompactRupiah(totalNominal)}
-                </div>
-              )}
             </div>
           </div>
         </div>

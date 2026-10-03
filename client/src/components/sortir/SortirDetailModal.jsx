@@ -15,15 +15,10 @@ import { formatBilyet, formatIndonesianDate } from '@/utils/formatters';
 import { DENOM_COLOR_MAP } from '@/constants/denominationColors';
 import {
   Layers,
-  Box,
   Coins,
   Calendar,
-  Clock,
   User,
-  FileText,
   Eye,
-  CheckCircle2,
-  XCircle,
 } from 'lucide-react';
 
 export default function SortirDetailModal({
@@ -64,7 +59,6 @@ export default function SortirDetailModal({
   if (!session) return null;
 
   const denomNama = session.batch?.emisi?.denominasi?.nama || '';
-  const denomNilai = session.batch?.emisi?.denominasi?.nilai || 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -191,7 +185,6 @@ export default function SortirDetailModal({
                     kepala: session.batch?.kepala,
                     tahun_anggaran: session.batch?.tahun_anggaran,
                   }}
-                  nominalPecahan={denomNilai}
                 />
               )}
             </div>

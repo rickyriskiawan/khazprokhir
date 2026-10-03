@@ -109,13 +109,10 @@ describe('SortirFormModal Component (FE-07)', () => {
     const pack1 = screen.getByTestId('pack-cell-1');
     fireEvent.click(pack1);
 
-    // Periksa kalkulator Zero Reject:
-    // 4 Pack -> 180 Brood -> 180.000 Bilyet -> 9 Doos
+    // Volume kini ditampilkan oleh accumulator di dalam PackMatrixGrid
     await waitFor(() => {
-      expect(screen.getByTestId('zero-reject-pack-count')).toHaveTextContent('4');
-      expect(screen.getByTestId('zero-reject-brood-count')).toHaveTextContent('180');
-      expect(screen.getByTestId('zero-reject-bilyet-count')).toHaveTextContent('180.000');
-      expect(screen.getByTestId('zero-reject-doos-count')).toHaveTextContent('9');
+      expect(screen.getByTestId('accumulator-pack-count')).toHaveTextContent('4 Pack');
+      expect(screen.getByTestId('accumulator-bilyet-count')).toHaveTextContent('180.000 Bilyet');
     });
 
     // Tombol simpan kini aktif

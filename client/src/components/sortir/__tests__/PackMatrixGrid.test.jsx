@@ -225,28 +225,24 @@ describe('PackMatrixGrid Component (FE-06)', () => {
   });
 
   describe('4. Akumulator Volume Real-time (Live Volume Accumulator)', () => {
-    it('menampilkan total pack, kelompok quad, setara doos (rasio 4:9), dan bilyet secara presisi', () => {
+    it('menampilkan total pack dan volume bilyet secara presisi', () => {
       // 8 packs selected (Quad 1 & Quad 2)
       render(
         <PackMatrixGrid
           packs={generateMockPacks()}
           selectedPacks={[1, 2, 3, 4, 5, 6, 7, 8]}
           batchInfo={sampleBatch}
-          nominalPecahan={100000}
           selectable={true}
         />
       );
 
       // 8 Pack
       expect(screen.getByTestId('accumulator-pack-count')).toHaveTextContent('8 Pack');
-      // 2 / 25 Quad
-      expect(screen.getByTestId('accumulator-quad-count')).toHaveTextContent('2 / 25 Quad');
-      // Setara 18 Doos: (8 / 4) * 9 = 18 Doos
-      expect(screen.getByTestId('accumulator-doos-count')).toHaveTextContent('18 Doos');
       // 8 * 45,000 = 360,000 Bilyet
       expect(screen.getByTestId('accumulator-bilyet-count')).toHaveTextContent('360.000 Bilyet');
-      // Nominal Rupiah: 360,000 * 100,000 = 36,000,000,000 (36 Miliar)
-      expect(screen.getByTestId('accumulator-nominal')).toHaveTextContent('Rp 36 Miliar');
+      // Hanya 2 metrik yang ditampilkan (pack & bilyet)
+      expect(screen.queryByTestId('accumulator-quad-count')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('accumulator-doos-count')).not.toBeInTheDocument();
     });
 
     it('menampilkan nol saat tidak ada pack yang dipilih', () => {
@@ -260,8 +256,6 @@ describe('PackMatrixGrid Component (FE-06)', () => {
       );
 
       expect(screen.getByTestId('accumulator-pack-count')).toHaveTextContent('0 Pack');
-      expect(screen.getByTestId('accumulator-quad-count')).toHaveTextContent('0 / 25 Quad');
-      expect(screen.getByTestId('accumulator-doos-count')).toHaveTextContent('0 Doos');
       expect(screen.getByTestId('accumulator-bilyet-count')).toHaveTextContent('0 Bilyet');
     });
   });

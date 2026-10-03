@@ -160,7 +160,7 @@ export default function ProsesSortirPage() {
             className="h-10 px-4 text-xs font-semibold shadow-sm flex items-center gap-2 self-start sm:self-auto"
           >
             <Plus className="w-4 h-4" />
-            + Catat Hasil Sortir
+            Catat Hasil Sortir
           </Button>
         )}
       </div>

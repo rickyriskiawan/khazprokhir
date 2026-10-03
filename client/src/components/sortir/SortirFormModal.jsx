@@ -14,11 +14,9 @@ import PackMatrixGrid from './PackMatrixGrid';
 import { createSortir } from '@/services/sortirService';
 import { getBatchById } from '@/services/bonMasukService';
 import { useAuthStore } from '@/stores/authStore';
-import { formatCompactRupiah } from '@/utils/formatters';
 import {
   Layers,
   Box,
-  Calculator,
   Calendar,
   Clock,
   User,
@@ -69,7 +67,9 @@ export default function SortirFormModal({
       } else if (currentUser?.username) {
         setPenyortir1(currentUser.username);
       }
-      // Reset selection when modal opens
+      // Reset form to blank on open: no batch pre-selected
+      setSelectedBatch(null);
+      setBatchData(null);
       setSelectedPacks([]);
       setFormError(null);
     }
@@ -115,15 +115,10 @@ export default function SortirFormModal({
     };
   }, [selectedBatch]);
 
-  // Calculations for live Zero Reject
+  // Zero Reject validation (volumes are surfaced by the pack matrix grid)
   const totalPack = selectedPacks.length;
   const isMultipleOf4 = totalPack > 0 && totalPack % 4 === 0;
-  const totalBrood = totalPack * 45;
-  const totalBilyet = totalPack * 45000;
   const setaraDoos = (totalPack / 4) * 9;
-
-  const nominalPecahan = batchData?.emisi?.denominasi?.nilai || selectedBatch?.emisi?.denominasi?.nilai || 0;
-  const totalNominalRupiah = totalBilyet * nominalPecahan;
 
   const canSubmit =
     Boolean(selectedBatch?.id) &&
@@ -198,7 +193,7 @@ export default function SortirFormModal({
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Panel Kiri: Metadata & Zero Reject Calculator (lg:col-span-5) */}
+            {/* Panel Kiri: Metadata Sesi (lg:col-span-5) */}
             <div className="lg:col-span-5 space-y-4">
               {/* 1. Pilih Batch Produksi */}
               <div className="space-y-1.5">
@@ -323,84 +318,6 @@ export default function SortirFormModal({
                   className="w-full rounded-md border border-input bg-surface dark:bg-surface-dark p-2.5 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
               </div>
-
-              {/* 5. Live Zero Reject Calculator Card */}
-              <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-950/20 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calculator className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-                      Kalkulator Live Zero Reject
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-                    Rasio 4 Pack : 9 Doos
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-center">
-                  <div className="p-2.5 rounded-lg bg-surface dark:bg-surface-dark/80 border border-emerald-500/10">
-                    <span className="text-[11px] text-ink-muted block">Pack Terpilih</span>
-                    <span
-                      data-testid="zero-reject-pack-count"
-                      className="text-base font-bold font-mono tabular-nums text-ink dark:text-ink-dark"
-                    >
-                      {totalPack}
-                    </span>
-                    <span className="text-[10px] text-ink-muted block mt-0.5">
-                      ({totalPack / 4} Quad Pack)
-                    </span>
-                  </div>
-
-                  <div className="p-2.5 rounded-lg bg-surface dark:bg-surface-dark/80 border border-emerald-500/10">
-                    <span className="text-[11px] text-ink-muted block">Setara Kemasan</span>
-                    <span
-                      data-testid="zero-reject-doos-count"
-                      className="text-base font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400"
-                    >
-                      {setaraDoos}
-                    </span>
-                    <span className="text-[10px] text-ink-muted block mt-0.5">
-                      Doos Standar BI
-                    </span>
-                  </div>
-
-                  <div className="p-2.5 rounded-lg bg-surface dark:bg-surface-dark/80 border border-emerald-500/10">
-                    <span className="text-[11px] text-ink-muted block">Total Brood</span>
-                    <span
-                      data-testid="zero-reject-brood-count"
-                      className="text-sm font-semibold font-mono tabular-nums text-ink dark:text-ink-dark"
-                    >
-                      {totalBrood.toLocaleString('id-ID')}
-                    </span>
-                    <span className="text-[10px] text-ink-muted block mt-0.5">
-                      (@ 1.000 bilyet)
-                    </span>
-                  </div>
-
-                  <div className="p-2.5 rounded-lg bg-surface dark:bg-surface-dark/80 border border-emerald-500/10">
-                    <span className="text-[11px] text-ink-muted block">Total Bilyet</span>
-                    <span
-                      data-testid="zero-reject-bilyet-count"
-                      className="text-sm font-semibold font-mono tabular-nums text-ink dark:text-ink-dark"
-                    >
-                      {totalBilyet.toLocaleString('id-ID')}
-                    </span>
-                    <span className="text-[10px] text-ink-muted block mt-0.5">
-                      100% Utuh
-                    </span>
-                  </div>
-                </div>
-
-                {nominalPecahan > 0 && totalPack > 0 && (
-                  <div className="pt-1 border-t border-emerald-500/10 flex items-center justify-between text-xs">
-                    <span className="text-ink-muted">Estimasi Nilai Nominal:</span>
-                    <span className="font-bold font-mono tabular-nums text-emerald-700 dark:text-emerald-300">
-                      {formatCompactRupiah(totalNominalRupiah)}
-                    </span>
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* Panel Kanan: Matriks 10x10 Interaktif (lg:col-span-7) */}
@@ -446,7 +363,6 @@ export default function SortirFormModal({
                       kepala: selectedBatch.kepala,
                       tahun_anggaran: selectedBatch.tahun_anggaran,
                     }}
-                    nominalPecahan={nominalPecahan}
                   />
                 </div>
               )}
