@@ -323,7 +323,7 @@ export default function BonMasukPage() {
               <SelectItem value="all">Semua Shift</SelectItem>
               {shiftList.map((s) => (
                 <SelectItem key={s.id} value={String(s.id)}>
-                  {s.nama_shift}
+                  {s.nama || s.nama_shift}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -505,7 +505,7 @@ export default function BonMasukPage() {
                       </TableCell>
 
                       <TableCell className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
-                        {shift.nama_shift || 'Shift'}
+                        {shift.nama || shift.nama_shift || 'Shift'}
                       </TableCell>
 
                       <TableCell className="text-right">

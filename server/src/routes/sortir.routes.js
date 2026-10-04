@@ -58,7 +58,7 @@ router.post(
 router.delete(
   '/:id',
   authenticateToken,
-  authorize('SUPERVISOR'),
+  authorize('SUPERVISOR', 'ADMIN'),
   deleteSortir
 );
 

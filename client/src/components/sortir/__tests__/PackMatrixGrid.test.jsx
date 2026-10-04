@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import PackMatrixGrid from '../PackMatrixGrid.jsx';
+import PackMatrixGrid, { buildPackInfoLines } from '../PackMatrixGrid.jsx';
 
 describe('PackMatrixGrid Component (FE-06)', () => {
   // Mock data: 100 packs with different statuses
@@ -101,7 +101,7 @@ describe('PackMatrixGrid Component (FE-06)', () => {
       expect(screen.getByTestId('legend-pending')).toHaveTextContent('77');
     });
 
-    it('menampilkan informasi batch pada header', () => {
+    it('menampilkan informasi pecahan, batch, seri, dan tahun anggaran pada header', () => {
       render(
         <PackMatrixGrid
           packs={generateMockPacks()}
@@ -109,9 +109,33 @@ describe('PackMatrixGrid Component (FE-06)', () => {
         />
       );
 
+      // Nilai batch, seri, dan tahun anggaran tampil di header
       expect(screen.getByText(/1822001/)).toBeInTheDocument();
       expect(screen.getByText(/AA-BA0/)).toBeInTheDocument();
-      expect(screen.getByText('Y')).toBeInTheDocument();
+      expect(screen.getByText('2026')).toBeInTheDocument();
+      // Badge pecahan tampil di header
+      expect(screen.getByTestId('matrix-denom-badge')).toHaveTextContent('Y');
+      // Judul lama tidak lagi dirender
+      expect(screen.queryByText(/Matriks Produksi/)).not.toBeInTheDocument();
+    });
+
+    it('menempatkan tombol aksi seleksi di bawah grid, bukan di header', () => {
+      render(
+        <PackMatrixGrid
+          packs={generateMockPacks()}
+          selectedPacks={[]}
+          selectable={true}
+        />
+      );
+
+      // Tombol tetap ada
+      expect(screen.getByTestId('btn-select-all-ready')).toBeInTheDocument();
+      expect(screen.getByTestId('btn-reset-selection')).toBeInTheDocument();
+
+      // Tombol berada setelah grid (di DOM), bukan di dalam header batch
+      const grid = screen.getByRole('grid');
+      const selectAll = screen.getByTestId('btn-select-all-ready');
+      expect(grid.compareDocumentPosition(selectAll) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
   });
 
@@ -225,28 +249,24 @@ describe('PackMatrixGrid Component (FE-06)', () => {
   });
 
   describe('4. Akumulator Volume Real-time (Live Volume Accumulator)', () => {
-    it('menampilkan total pack, kelompok quad, setara doos (rasio 4:9), dan bilyet secara presisi', () => {
+    it('menampilkan total pack dan volume bilyet secara presisi', () => {
       // 8 packs selected (Quad 1 & Quad 2)
       render(
         <PackMatrixGrid
           packs={generateMockPacks()}
           selectedPacks={[1, 2, 3, 4, 5, 6, 7, 8]}
           batchInfo={sampleBatch}
-          nominalPecahan={100000}
           selectable={true}
         />
       );
 
       // 8 Pack
       expect(screen.getByTestId('accumulator-pack-count')).toHaveTextContent('8 Pack');
-      // 2 / 25 Quad
-      expect(screen.getByTestId('accumulator-quad-count')).toHaveTextContent('2 / 25 Quad');
-      // Setara 18 Doos: (8 / 4) * 9 = 18 Doos
-      expect(screen.getByTestId('accumulator-doos-count')).toHaveTextContent('18 Doos');
       // 8 * 45,000 = 360,000 Bilyet
       expect(screen.getByTestId('accumulator-bilyet-count')).toHaveTextContent('360.000 Bilyet');
-      // Nominal Rupiah: 360,000 * 100,000 = 36,000,000,000 (36 Miliar)
-      expect(screen.getByTestId('accumulator-nominal')).toHaveTextContent('Rp 36 Miliar');
+      // Hanya 2 metrik yang ditampilkan (pack & bilyet)
+      expect(screen.queryByTestId('accumulator-quad-count')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('accumulator-doos-count')).not.toBeInTheDocument();
     });
 
     it('menampilkan nol saat tidak ada pack yang dipilih', () => {
@@ -260,8 +280,6 @@ describe('PackMatrixGrid Component (FE-06)', () => {
       );
 
       expect(screen.getByTestId('accumulator-pack-count')).toHaveTextContent('0 Pack');
-      expect(screen.getByTestId('accumulator-quad-count')).toHaveTextContent('0 / 25 Quad');
-      expect(screen.getByTestId('accumulator-doos-count')).toHaveTextContent('0 Doos');
       expect(screen.getByTestId('accumulator-bilyet-count')).toHaveTextContent('0 Bilyet');
     });
   });
@@ -452,5 +470,59 @@ describe('PackMatrixGrid Component (FE-06)', () => {
         Array.from({ length: 100 }, (_, i) => i + 1)
       );
     });
+  });
+});
+
+describe('buildPackInfoLines (tooltip info turunan status)', () => {
+  const bon = { no_segel: 'SGL-001', tanggal_masuk: '2026-10-02T00:00:00.000Z', jam_masuk: '12:09' };
+  const sortirDetail = {
+    proses_sortir: {
+      penyortir_1: 'Budi Santoso',
+      penyortir_2: 'Ani Lestari',
+      tanggal_sortir: '2026-10-03T00:00:00.000Z',
+      completed_at: '2026-10-03T03:15:07.309Z',
+    },
+  };
+  const kemasDetail = {
+    hasil_kemas: { tanggal_kemas: '2026-10-04T00:00:00.000Z', no_doos_awal: 1, no_doos_akhir: 9, status: 'COMPLETED' },
+  };
+
+  it('RECEIVED -> tampilkan kapan diterima dan no segel', () => {
+    const lines = buildPackInfoLines({ status: 'RECEIVED', bon_masuk: bon });
+    expect(lines).toEqual([
+      { label: 'Diterima', value: '2 Oktober 2026 12:09' },
+      { label: 'No Segel', value: 'SGL-001' },
+    ]);
+  });
+
+  it('SORTED -> tambahkan kapan disortir dan siapa penyortirnya', () => {
+    const lines = buildPackInfoLines({ status: 'SORTED', bon_masuk: bon, sortir_pack_details: [sortirDetail] });
+    expect(lines).toEqual([
+      { label: 'Diterima', value: '2 Oktober 2026 12:09' },
+      { label: 'No Segel', value: 'SGL-001' },
+      { label: 'Disortir', value: '3 Oktober 2026' },
+      { label: 'Penyortir', value: 'Budi Santoso & Ani Lestari' },
+    ]);
+  });
+
+  it('PACKED -> tambahkan kapan dikemas dan rentang no doos', () => {
+    const lines = buildPackInfoLines({
+      status: 'PACKED',
+      bon_masuk: bon,
+      sortir_pack_details: [sortirDetail],
+      kemas_pack_details: [kemasDetail],
+    });
+    expect(lines).toContainEqual({ label: 'Dikemas', value: '4 Oktober 2026' });
+    expect(lines).toContainEqual({ label: 'No Doos', value: 'Doos 0001 - 0009' });
+  });
+
+  it('PENDING tanpa lockReason -> fallback belum diterima', () => {
+    const lines = buildPackInfoLines({ status: 'PENDING' });
+    expect(lines).toEqual([{ label: '', value: '⏳ Belum diterima' }]);
+  });
+
+  it('quad terkunci -> tampilkan alasan kunci', () => {
+    const lines = buildPackInfoLines({ status: 'PENDING' }, 'Pack 12 belum diterima');
+    expect(lines).toEqual([{ label: '', value: '⚠️ Pack 12 belum diterima' }]);
   });
 });

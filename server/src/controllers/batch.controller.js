@@ -130,6 +130,41 @@ export async function getBatchById(req, res) {
         },
         packs: {
           orderBy: { nomor_pack: 'asc' },
+          include: {
+            bon_masuk: {
+              select: {
+                no_segel: true,
+                tanggal_masuk: true,
+                jam_masuk: true,
+              },
+            },
+            sortir_pack_details: {
+              include: {
+                proses_sortir: {
+                  select: {
+                    id: true,
+                    penyortir_1: true,
+                    penyortir_2: true,
+                    tanggal_sortir: true,
+                    completed_at: true,
+                  },
+                },
+              },
+            },
+            kemas_pack_details: {
+              include: {
+                hasil_kemas: {
+                  select: {
+                    id: true,
+                    tanggal_kemas: true,
+                    no_doos_awal: true,
+                    no_doos_akhir: true,
+                    status: true,
+                  },
+                },
+              },
+            },
+          },
         },
       },
     });

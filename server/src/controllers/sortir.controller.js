@@ -28,12 +28,29 @@ export async function createSortir(req, res) {
       batch_id,
       shift_id,
       tanggal_sortir,
+      selected_packs,
+      nomor_pack_list,
       pack_dari,
       pack_sampai,
       penyortir_1,
       penyortir_2,
       catatan,
     } = req.body;
+
+    // Normalisasi daftar pack (mendukung array selected_packs atau rentang pack_dari..pack_sampai)
+    let packNumbers = [];
+    if (Array.isArray(selected_packs) && selected_packs.length > 0) {
+      packNumbers = [...new Set(selected_packs.map(Number))].sort((a, b) => a - b);
+    } else if (pack_dari !== undefined && pack_sampai !== undefined) {
+      for (let i = pack_dari; i <= pack_sampai; i++) {
+        packNumbers.push(i);
+      }
+    }
+
+    const totalPack = packNumbers.length;
+    const computedPackDari = packNumbers[0];
+    const computedPackSampai = packNumbers[packNumbers.length - 1];
+    const computedPackListStr = nomor_pack_list || packNumbers.join(',');
 
     // 1. Validasi Keberadaan Shift
     const shift = await prisma.shift.findUnique({
@@ -67,7 +84,6 @@ export async function createSortir(req, res) {
     }
 
     // 3. Validasi Aturan Kelipatan 4 Pack
-    const totalPack = pack_sampai - pack_dari + 1;
     if (!isKelipatanEmpat(totalPack)) {
       return errorResponse(res, {
         status: 400,
@@ -81,8 +97,7 @@ export async function createSortir(req, res) {
       where: {
         batch_id,
         nomor_pack: {
-          gte: pack_dari,
-          lte: pack_sampai,
+          in: packNumbers,
         },
       },
       orderBy: { nomor_pack: 'asc' },
@@ -91,10 +106,7 @@ export async function createSortir(req, res) {
     // Pastikan seluruh pack dalam rentang terdaftar di database
     if (requestedPacks.length !== totalPack) {
       const foundNumbers = new Set(requestedPacks.map((p) => p.nomor_pack));
-      const missingNumbers = [];
-      for (let i = pack_dari; i <= pack_sampai; i++) {
-        if (!foundNumbers.has(i)) missingNumbers.push(i);
-      }
+      const missingNumbers = packNumbers.filter((n) => !foundNumbers.has(n));
       return errorResponse(res, {
         status: 400,
         error: 'PackNotFound',
@@ -121,21 +133,24 @@ export async function createSortir(req, res) {
 
     // 6. Database Transaction
     const createdSortir = await prisma.$transaction(async (tx) => {
-      // A. Buat record ProsesSortir
+      // A. Buat record ProsesSortir (Direct Completion - ADR 0007)
+      const now = new Date();
       const proses = await tx.prosesSortir.create({
         data: {
           batch_id,
-          pack_dari,
-          pack_sampai,
+          nomor_pack_list: computedPackListStr,
+          pack_dari: computedPackDari,
+          pack_sampai: computedPackSampai,
           total_pack: totalPack,
           shift_id,
           operator_id: req.user.id,
           penyortir_1,
-          penyortir_2,
+          penyortir_2: penyortir_2 || null,
           tanggal_sortir,
           total_brood: totalBrood,
           total_bilyet: totalBilyet,
-          status: 'IN_PROGRESS',
+          status: 'COMPLETED',
+          completed_at: now,
           catatan: catatan || null,
         },
         include: {
@@ -168,8 +183,7 @@ export async function createSortir(req, res) {
         where: {
           batch_id,
           nomor_pack: {
-            gte: pack_dari,
-            lte: pack_sampai,
+            in: packNumbers,
           },
         },
         data: {
@@ -190,6 +204,7 @@ export async function createSortir(req, res) {
       newValue: {
         id: createdSortir.id,
         batch_id: createdSortir.batch_id,
+        nomor_pack_list: createdSortir.nomor_pack_list,
         pack_dari: createdSortir.pack_dari,
         pack_sampai: createdSortir.pack_sampai,
         total_pack: createdSortir.total_pack,
@@ -197,13 +212,14 @@ export async function createSortir(req, res) {
         penyortir_2: createdSortir.penyortir_2,
         total_brood: createdSortir.total_brood,
         total_bilyet: createdSortir.total_bilyet.toString(),
+        status: createdSortir.status,
       },
       ipAddress: req.ip,
     });
 
     return successResponse(res, {
       status: 201,
-      message: `Sesi sortir berhasil dicatat untuk ${totalPack} pack (Pack #${pack_dari} s/d #${pack_sampai}) oleh penyortir ${penyortir_1} & ${penyortir_2}.`,
+      message: `Sesi sortir berhasil dicatat untuk ${totalPack} pack oleh penyortir ${penyortir_1}${penyortir_2 ? ' & ' + penyortir_2 : ''}.`,
       data: createdSortir,
     });
   } catch (err) {
@@ -282,6 +298,13 @@ export async function getAllSortir(req, res) {
           shift: true,
           operator: {
             select: USER_SAFE_SELECT,
+          },
+          sortir_pack_details: {
+            include: {
+              pack_detail: {
+                select: { id: true, nomor_pack: true, status: true },
+              },
+            },
           },
           _count: {
             select: { sortir_pack_details: true },
@@ -578,10 +601,10 @@ export async function completeSortir(req, res) {
     }
 
     if (existing.status === 'COMPLETED') {
-      return errorResponse(res, {
-        status: 400,
-        error: 'AlreadyCompleted',
-        message: `Sesi sortir #${sortirId} sudah dalam status COMPLETED sebelumnya.`,
+      return successResponse(res, {
+        status: 200,
+        message: `Sesi sortir #${sortirId} sudah dalam status COMPLETED.`,
+        data: existing,
       });
     }
 
