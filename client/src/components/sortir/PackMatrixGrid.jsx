@@ -182,6 +182,7 @@ export default function PackMatrixGrid({
     batchInfo?.emisi?.denominasi?.kode_denominasi ||
     '';
   const denomBadgeStyle = DENOM_COLOR_MAP[denomCode] || 'bg-slate-100 text-slate-700';
+  const emisiTahun = batchInfo?.emisi?.tahun || '';
 
   const readyQuadsCount = quads.filter((q) => q.isEligible).length;
 
@@ -190,13 +191,13 @@ export default function PackMatrixGrid({
       className={`rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-soft-card dark:border-border-dark dark:bg-surface-dark dark:shadow-soft-card-dark ${className}`}
     >
       {/* 1. Header Info Batch & Pecahan */}
-      <div className="flex items-center gap-3 pb-4 border-b border-border dark:border-border-dark">
-        <div className="p-2 rounded-xl bg-emerald/10 text-emerald border border-emerald/20 dark:bg-emerald/15">
-          <Layers className="h-5 w-5" strokeWidth={1.75} />
+      <div className="flex items-center gap-2 pb-4 border-b border-border dark:border-border-dark">
+        <div className="p-1.5 rounded-lg bg-emerald/10 text-emerald border border-emerald/20 dark:bg-emerald/15 shrink-0">
+          <Layers className="h-4 w-4" strokeWidth={1.75} />
         </div>
         <div className="min-w-0">
           {batchInfo ? (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <div className="flex flex-nowrap items-center gap-x-1.5 whitespace-nowrap">
               {denomCode && (
                 <span
                   data-testid="matrix-denom-badge"
@@ -207,14 +208,14 @@ export default function PackMatrixGrid({
               )}
               <span className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                 {'Batch: '}
-                <strong className="font-mono text-base font-bold text-ink dark:text-ink-dark">
+                <strong className="font-mono text-xs font-bold text-ink dark:text-ink-dark">
                   {batchInfo.nomor_batch}
                 </strong>
               </span>
               <span className="opacity-40">•</span>
               <span className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                 {'Seri: '}
-                <strong className="font-mono text-base font-bold text-ink dark:text-ink-dark">
+                <strong className="font-mono text-xs font-bold text-ink dark:text-ink-dark">
                   {batchInfo.seri}
                   {batchInfo.kepala !== undefined && batchInfo.kepala !== null ? batchInfo.kepala : ''}
                 </strong>
@@ -224,8 +225,19 @@ export default function PackMatrixGrid({
                   <span className="opacity-40">•</span>
                   <span className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                     {'Tahun Anggaran: '}
-                    <strong className="font-mono text-base font-bold text-ink dark:text-ink-dark">
+                    <strong className="font-mono text-xs font-bold text-ink dark:text-ink-dark">
                       {batchInfo.tahun_anggaran}
+                    </strong>
+                  </span>
+                </>
+              ) : null}
+              {emisiTahun ? (
+                <>
+                  <span className="opacity-40">•</span>
+                  <span className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                    {'Tahun Emisi: '}
+                    <strong className="font-mono text-xs font-bold text-ink dark:text-ink-dark">
+                      {emisiTahun}
                     </strong>
                   </span>
                 </>
