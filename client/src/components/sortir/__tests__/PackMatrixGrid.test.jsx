@@ -101,7 +101,7 @@ describe('PackMatrixGrid Component (FE-06)', () => {
       expect(screen.getByTestId('legend-pending')).toHaveTextContent('77');
     });
 
-    it('menampilkan informasi batch, seri, dan tahun anggaran pada header', () => {
+    it('menampilkan informasi pecahan, batch, seri, dan tahun anggaran pada header', () => {
       render(
         <PackMatrixGrid
           packs={generateMockPacks()}
@@ -109,12 +109,33 @@ describe('PackMatrixGrid Component (FE-06)', () => {
         />
       );
 
+      // Nilai batch, seri, dan tahun anggaran tampil di header
       expect(screen.getByText(/1822001/)).toBeInTheDocument();
       expect(screen.getByText(/AA-BA0/)).toBeInTheDocument();
       expect(screen.getByText('2026')).toBeInTheDocument();
-      // Judul lama dan badge pecahan tidak lagi dirender di header
+      // Badge pecahan tampil di header
+      expect(screen.getByTestId('matrix-denom-badge')).toHaveTextContent('Y');
+      // Judul lama tidak lagi dirender
       expect(screen.queryByText(/Matriks Produksi/)).not.toBeInTheDocument();
-      expect(screen.queryByText('Y')).not.toBeInTheDocument();
+    });
+
+    it('menempatkan tombol aksi seleksi di bawah grid, bukan di header', () => {
+      render(
+        <PackMatrixGrid
+          packs={generateMockPacks()}
+          selectedPacks={[]}
+          selectable={true}
+        />
+      );
+
+      // Tombol tetap ada
+      expect(screen.getByTestId('btn-select-all-ready')).toBeInTheDocument();
+      expect(screen.getByTestId('btn-reset-selection')).toBeInTheDocument();
+
+      // Tombol berada setelah grid (di DOM), bukan di dalam header batch
+      const grid = screen.getByRole('grid');
+      const selectAll = screen.getByTestId('btn-select-all-ready');
+      expect(grid.compareDocumentPosition(selectAll) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
   });
 

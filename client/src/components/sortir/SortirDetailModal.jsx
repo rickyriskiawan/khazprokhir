@@ -184,6 +184,7 @@ export default function SortirDetailModal({
                     seri: session.batch?.seri,
                     kepala: session.batch?.kepala,
                     tahun_anggaran: session.batch?.tahun_anggaran,
+                    emisi: session.batch?.emisi || batchData?.emisi,
                   }}
                 />
               )}

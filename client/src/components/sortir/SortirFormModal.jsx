@@ -361,6 +361,7 @@ export default function SortirFormModal({
                       seri: selectedBatch.seri,
                       kepala: selectedBatch.kepala,
                       tahun_anggaran: selectedBatch.tahun_anggaran,
+                      emisi: selectedBatch.emisi || batchData?.emisi,
                     }}
                   />
                 </div>
