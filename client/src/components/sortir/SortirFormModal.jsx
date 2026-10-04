@@ -310,12 +310,11 @@ export default function SortirFormModal({
                 </label>
                 <textarea
                   id="sortirCatatan"
-                  rows={2}
                   value={catatan}
                   onChange={(e) => setCatatan(e.target.value)}
                   placeholder="Catatan kondisi fisik uang kertas, meja kerja, dsb..."
                   disabled={submitting}
-                  className="w-full rounded-md border border-input bg-surface dark:bg-surface-dark p-2.5 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="w-full h-28 resize-none rounded-md border border-input bg-surface dark:bg-surface-dark p-2.5 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
               </div>
             </div>

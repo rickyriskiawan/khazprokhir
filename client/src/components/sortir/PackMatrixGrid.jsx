@@ -15,7 +15,7 @@ import {
   CheckCheck,
   RotateCcw,
 } from 'lucide-react';
-import { DENOM_COLOR_MAP, STATUS_CONFIG } from './sortirConstants';
+import { STATUS_CONFIG } from './sortirConstants';
 
 /**
  * PackMatrixGrid: Interactive 100-Pack Matrix Grid Component
@@ -176,13 +176,6 @@ export default function PackMatrixGrid({
   const displayPackCount = selectable ? totalSelectedPacks : totalProcessedPacks;
   const displayBilyetCount = selectable ? totalBilyet : processedBilyet;
 
-  // Batch header metadata
-  const denomCode =
-    batchInfo?.emisi?.denominasi?.nama ||
-    batchInfo?.emisi?.denominasi?.kode_denominasi ||
-    '';
-  const denomBadgeStyle = DENOM_COLOR_MAP[denomCode] || 'bg-slate-100 text-slate-700';
-
   const readyQuadsCount = quads.filter((q) => q.isEligible).length;
 
   return (
@@ -195,43 +188,37 @@ export default function PackMatrixGrid({
           <div className="p-2 rounded-xl bg-emerald/10 text-emerald border border-emerald/20 dark:bg-emerald/15">
             <Layers className="h-5 w-5" strokeWidth={1.75} />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm sm:text-base font-semibold text-ink dark:text-ink-dark">
-                Matriks Produksi 100 Pack
-              </h3>
-              {denomCode && (
-                <span
-                  className={`inline-flex items-center justify-center font-bold px-2 py-0.5 text-xs rounded-md border ${denomBadgeStyle}`}
-                >
-                  {denomCode}
-                </span>
-              )}
-            </div>
+          <div className="min-w-0">
             {batchInfo ? (
-              <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
-                <span>Batch:</span>
-                <strong className="font-mono text-ink dark:text-ink-dark">
-                  {batchInfo.nomor_batch}
-                </strong>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                  {'Batch: '}
+                  <strong className="font-mono text-base font-bold text-ink dark:text-ink-dark">
+                    {batchInfo.nomor_batch}
+                  </strong>
+                </span>
                 <span className="opacity-40">•</span>
-                <span>Seri:</span>
-                <strong className="font-mono text-ink dark:text-ink-dark">
-                  {batchInfo.seri}
-                  {batchInfo.kepala !== undefined && batchInfo.kepala !== null ? batchInfo.kepala : ''}
-                </strong>
+                <span className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                  {'Seri: '}
+                  <strong className="font-mono text-base font-bold text-ink dark:text-ink-dark">
+                    {batchInfo.seri}
+                    {batchInfo.kepala !== undefined && batchInfo.kepala !== null ? batchInfo.kepala : ''}
+                  </strong>
+                </span>
                 {batchInfo.tahun_anggaran ? (
                   <>
                     <span className="opacity-40">•</span>
-                    <span>Tahun Anggaran:</span>
-                    <strong className="font-mono text-ink dark:text-ink-dark">
-                      {batchInfo.tahun_anggaran}
-                    </strong>
+                    <span className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
+                      {'Tahun Anggaran: '}
+                      <strong className="font-mono text-base font-bold text-ink dark:text-ink-dark">
+                        {batchInfo.tahun_anggaran}
+                      </strong>
+                    </span>
                   </>
                 ) : null}
-              </p>
+              </div>
             ) : (
-              <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark mt-0.5">
+              <p className="text-xs text-ink-secondary dark:text-ink-secondary-dark">
                 Visualisasi 10x10 keterisian dan status pack per batch
               </p>
             )}

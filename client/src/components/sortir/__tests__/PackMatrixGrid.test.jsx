@@ -101,7 +101,7 @@ describe('PackMatrixGrid Component (FE-06)', () => {
       expect(screen.getByTestId('legend-pending')).toHaveTextContent('77');
     });
 
-    it('menampilkan informasi batch pada header', () => {
+    it('menampilkan informasi batch, seri, dan tahun anggaran pada header', () => {
       render(
         <PackMatrixGrid
           packs={generateMockPacks()}
@@ -111,7 +111,10 @@ describe('PackMatrixGrid Component (FE-06)', () => {
 
       expect(screen.getByText(/1822001/)).toBeInTheDocument();
       expect(screen.getByText(/AA-BA0/)).toBeInTheDocument();
-      expect(screen.getByText('Y')).toBeInTheDocument();
+      expect(screen.getByText('2026')).toBeInTheDocument();
+      // Judul lama dan badge pecahan tidak lagi dirender di header
+      expect(screen.queryByText(/Matriks Produksi/)).not.toBeInTheDocument();
+      expect(screen.queryByText('Y')).not.toBeInTheDocument();
     });
   });
 

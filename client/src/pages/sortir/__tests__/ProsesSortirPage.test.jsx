@@ -13,7 +13,7 @@ vi.mock('@/services/sortirService', () => ({
   createSortir: vi.fn(),
   getAvailablePacks: vi.fn(),
   formatPackRanges: vi.fn((_packs) => (_packs ? 'Pack 01–04, 13–16' : '-')),
-  formatCompactPackRanges: vi.fn((packs) => ({
+  formatCompactPackRanges: vi.fn((_packs) => ({
     display: 'Pack 01–04, 13–16',
     full: 'Pack 01–04, 13–16',
     remainingGroups: 0,
