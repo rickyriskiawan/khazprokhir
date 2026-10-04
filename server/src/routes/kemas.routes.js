@@ -8,10 +8,12 @@ import {
   getAllKemas,
   getKemasById,
   getAvailableSortedPacks,
+  getSesiSiapKemas,
   getNextDoosNumber,
   updateKemas,
   completeKemas,
   deleteKemas,
+  getKemasSummary,
   getKemasSummaryToday,
 } from '../controllers/kemas.controller.js';
 
@@ -28,8 +30,10 @@ const router = Router();
 // =============================================================================
 
 // Route statis / spesifik harus didefinisikan sebelum route param /:id
+router.get('/summary', authenticateToken, getKemasSummary);
 router.get('/summary/today', authenticateToken, getKemasSummaryToday);
 router.get('/next-doos-number', authenticateToken, getNextDoosNumber);
+router.get('/sesi-siap-kemas', authenticateToken, getSesiSiapKemas);
 router.get('/available-packs/:batchId', authenticateToken, getAvailableSortedPacks);
 
 router.get('/', authenticateToken, getAllKemas);

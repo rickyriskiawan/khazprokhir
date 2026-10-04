@@ -20,19 +20,18 @@ const KEMAS_LOCK_CHECK_INCLUDE = {
 
 /**
  * Mencatat hasil pengemasan doos baru (Rasio 4 Pack = 9 Doos)
+ * Berbasis sesi sortir: daftar pack diturunkan dari sesi sortir terpilih.
  * POST /api/kemas
  */
 export async function createKemas(req, res) {
   try {
     const {
-      batch_id,
+      proses_sortir_id,
       shift_id,
       tanggal_kemas,
-      pack_dari,
-      pack_sampai,
       no_doos_awal,
+      no_doos_akhir,
       no_ba_pengemasan,
-      proses_sortir_id,
       status = 'SIAP_KEMAS',
       catatan,
     } = req.body;
@@ -50,26 +49,55 @@ export async function createKemas(req, res) {
       });
     }
 
-    // 2. Validasi Keberadaan Batch
-    const batch = await prisma.batch.findUnique({
-      where: { id: batch_id },
+    // 2. Validasi Keberadaan Sesi Sortir beserta batch dan daftar pack-nya
+    const sesi = await prisma.prosesSortir.findUnique({
+      where: { id: proses_sortir_id },
       include: {
-        emisi: {
-          include: { denominasi: true },
+        batch: {
+          include: {
+            emisi: {
+              include: { denominasi: true },
+            },
+          },
+        },
+        sortir_pack_details: {
+          include: { pack_detail: true },
         },
       },
     });
 
-    if (!batch) {
+    if (!sesi) {
       return errorResponse(res, {
         status: 404,
         error: 'NotFound',
-        message: `Batch dengan ID ${batch_id} tidak ditemukan.`,
+        message: `Sesi sortir dengan ID ${proses_sortir_id} tidak ditemukan.`,
       });
     }
 
-    // 3. Validasi Aturan Kelipatan 4 Pack
-    const totalPack = pack_sampai - pack_dari + 1;
+    const batch = sesi.batch;
+    const requestedPacks = sesi.sortir_pack_details
+      .map((d) => d.pack_detail)
+      .sort((a, b) => a.nomor_pack - b.nomor_pack);
+    const totalPack = requestedPacks.length;
+
+    // 3. Sesi sortir wajib sudah COMPLETED (Direct Completion - ADR 0007)
+    if (sesi.status !== 'COMPLETED') {
+      return errorResponse(res, {
+        status: 400,
+        error: 'InvalidSessionStatus',
+        message: `Sesi sortir #${sesi.id} belum selesai (status: ${sesi.status}). Hanya sesi sortir COMPLETED yang dapat dikemas.`,
+      });
+    }
+
+    if (totalPack === 0) {
+      return errorResponse(res, {
+        status: 400,
+        error: 'EmptySession',
+        message: `Sesi sortir #${sesi.id} tidak memiliki pack yang tercatat.`,
+      });
+    }
+
+    // 4. Validasi Aturan Kelipatan 4 Pack
     if (!isKelipatanEmpat(totalPack)) {
       return errorResponse(res, {
         status: 400,
@@ -78,39 +106,7 @@ export async function createKemas(req, res) {
       });
     }
 
-    // 4. Validasi Ketersediaan Pack dalam Batch & Status Wajib SORTED
-    const requestedPacks = await prisma.packDetail.findMany({
-      where: {
-        batch_id,
-        nomor_pack: {
-          gte: pack_dari,
-          lte: pack_sampai,
-        },
-      },
-      include: {
-        sortir_pack_details: {
-          orderBy: { id: 'desc' },
-          take: 1,
-        },
-      },
-      orderBy: { nomor_pack: 'asc' },
-    });
-
-    // Pastikan seluruh nomor pack dalam rentang terdaftar di database
-    if (requestedPacks.length !== totalPack) {
-      const foundNumbers = new Set(requestedPacks.map((p) => p.nomor_pack));
-      const missingNumbers = [];
-      for (let i = pack_dari; i <= pack_sampai; i++) {
-        if (!foundNumbers.has(i)) missingNumbers.push(i);
-      }
-      return errorResponse(res, {
-        status: 400,
-        error: 'PackNotFound',
-        message: `Nomor pack ${missingNumbers.join(', ')} tidak ditemukan dalam batch ${batch.nomor_batch}.`,
-      });
-    }
-
-    // Periksa status pack: WAJIB berstatus SORTED
+    // 5. Periksa status pack: WAJIB berstatus SORTED
     const notSortedPacks = requestedPacks.filter((p) => p.status !== 'SORTED');
     if (notSortedPacks.length > 0) {
       const invalidDetails = notSortedPacks
@@ -134,19 +130,31 @@ export async function createKemas(req, res) {
       });
     }
 
-    // 5. Kalkulasi Doos & Bilyet (Rasio 4 Pack = 9 Doos)
+    // 6. Kalkulasi Doos & Bilyet (Rasio 4 Pack = 9 Doos)
     const totalDoos = calculateDoosFromPack(totalPack);
-    const noDoosAkhir = no_doos_awal + totalDoos - 1;
+    const expectedNoDoosAkhir = no_doos_awal + totalDoos - 1;
+
+    if (no_doos_akhir !== expectedNoDoosAkhir) {
+      return errorResponse(res, {
+        status: 400,
+        error: 'InvalidDoosRange',
+        message: `Rentang nomor doos tidak sesuai rasio 4 Pack = 9 Doos. Untuk ${totalPack} pack (${totalDoos} doos), doos awal ${no_doos_awal} harus berakhir di ${expectedNoDoosAkhir} (diterima: ${no_doos_akhir}).`,
+      });
+    }
+
     const totalBilyet = packToBilyet(totalPack, true);
     const denominasiId = batch.emisi.denominasi_id;
     const tahunAnggaran = batch.tahun_anggaran;
+    const packNumbers = requestedPacks.map((p) => p.nomor_pack);
+    const packDari = packNumbers[0];
+    const packSampai = packNumbers[packNumbers.length - 1];
 
-    // 6. Validasi Pencegahan Overlap Nomor Doos per Denominasi & Tahun Anggaran
+    // 7. Validasi Pencegahan Overlap Nomor Doos per Denominasi & Tahun Anggaran
     const overlappingKemas = await prisma.hasilKemas.findFirst({
       where: {
         denominasi_id: denominasiId,
         tahun_anggaran: tahunAnggaran,
-        no_doos_awal: { lte: noDoosAkhir },
+        no_doos_awal: { lte: no_doos_akhir },
         no_doos_akhir: { gte: no_doos_awal },
       },
       include: { batch: true },
@@ -156,33 +164,27 @@ export async function createKemas(req, res) {
       return errorResponse(res, {
         status: 400,
         error: 'DoosOverlap',
-        message: `Nomor doos ${no_doos_awal} s/d ${noDoosAkhir} bertabrakan dengan hasil kemas ID ${overlappingKemas.id} (Doos ${overlappingKemas.no_doos_awal}-${overlappingKemas.no_doos_akhir}) pada batch ${overlappingKemas.batch.nomor_batch} untuk pecahan ${batch.emisi.denominasi.nama_pecahan} TA ${tahunAnggaran}.`,
+        message: `Nomor doos ${no_doos_awal} s/d ${no_doos_akhir} bertabrakan dengan hasil kemas ID ${overlappingKemas.id} (Doos ${overlappingKemas.no_doos_awal}-${overlappingKemas.no_doos_akhir}) pada batch ${overlappingKemas.batch.nomor_batch} untuk pecahan ${batch.emisi.denominasi.nama} TA ${tahunAnggaran}.`,
       });
     }
-
-    // 7. Resolusi ID Sesi Sortir (jika tidak disediakan, auto-detect dari pack)
-    const finalProsesSortirId =
-      proses_sortir_id ||
-      requestedPacks[0]?.sortir_pack_details?.[0]?.proses_sortir_id ||
-      null;
 
     // 8. Database Transaction
     const createdKemas = await prisma.$transaction(async (tx) => {
       // A. Buat record HasilKemas
       const kemas = await tx.hasilKemas.create({
         data: {
-          batch_id,
-          proses_sortir_id: finalProsesSortirId,
+          batch_id: batch.id,
+          proses_sortir_id: sesi.id,
           denominasi_id: denominasiId,
           tahun_anggaran: tahunAnggaran,
-          pack_dari,
-          pack_sampai,
+          pack_dari: packDari,
+          pack_sampai: packSampai,
           total_pack: totalPack,
           no_doos_awal,
-          no_doos_akhir: noDoosAkhir,
+          no_doos_akhir,
           total_doos: totalDoos,
           total_bilyet: totalBilyet,
-          no_ba_pengemasan,
+          no_ba_pengemasan: no_ba_pengemasan || null,
           shift_id,
           operator_id: req.user.id,
           tanggal_kemas,
@@ -207,28 +209,20 @@ export async function createKemas(req, res) {
       });
 
       // B. Buat relasi di KemasPackDetail
-      const kemasDetailsData = requestedPacks.map((p) => ({
-        hasil_kemas_id: kemas.id,
-        pack_detail_id: p.id,
-      }));
-
       await tx.kemasPackDetail.createMany({
-        data: kemasDetailsData,
+        data: requestedPacks.map((p) => ({
+          hasil_kemas_id: kemas.id,
+          pack_detail_id: p.id,
+        })),
       });
 
       // C. Update pack: jika status === 'READY' -> status = 'PACKED'; jika 'SIAP_KEMAS' -> tetap 'SORTED'
       await tx.packDetail.updateMany({
-        where: {
-          batch_id,
-          nomor_pack: {
-            gte: pack_dari,
-            lte: pack_sampai,
-          },
-        },
+        where: { id: { in: requestedPacks.map((p) => p.id) } },
         data: {
           status: status === 'READY' ? 'PACKED' : 'SORTED',
           hasil_kemas_id: kemas.id,
-          no_doos_range: `Doos ${no_doos_awal}-${noDoosAkhir}`,
+          no_doos_range: `Doos ${no_doos_awal}-${no_doos_akhir}`,
         },
       });
 
@@ -245,6 +239,7 @@ export async function createKemas(req, res) {
       newValue: {
         id: createdKemas.id,
         batch_id: createdKemas.batch_id,
+        proses_sortir_id: createdKemas.proses_sortir_id,
         denominasi_id: createdKemas.denominasi_id,
         tahun_anggaran: createdKemas.tahun_anggaran,
         pack_dari: createdKemas.pack_dari,
@@ -263,7 +258,7 @@ export async function createKemas(req, res) {
     const statusLabel = status === 'READY' ? 'selesai dikemas (READY)' : 'didaftarkan siap kemas (SIAP_KEMAS)';
     return successResponse(res, {
       status: 201,
-      message: `Hasil pengemasan doos berhasil ${statusLabel} (${totalPack} pack = ${totalDoos} doos [Doos ${no_doos_awal}-${noDoosAkhir}]).`,
+      message: `Hasil pengemasan doos berhasil ${statusLabel} (sesi sortir #${sesi.id}, ${totalPack} pack = ${totalDoos} doos [Doos ${no_doos_awal}-${no_doos_akhir}]).`,
       data: createdKemas,
     });
   } catch (err) {
@@ -277,7 +272,8 @@ export async function createKemas(req, res) {
 
 /**
  * Mengambil daftar seluruh hasil kemas doos
- * Mendukung filter: batch_id, shift_id, denominasi_id, tahun_anggaran, no_ba_pengemasan, tanggal_kemas, status
+ * Mendukung filter: batch_id, shift_id, denominasi_id, tahun_anggaran, no_ba_pengemasan,
+ * tanggal_kemas (tunggal), tanggal_dari & tanggal_sampai (rentang), status, search (nomor batch / seri)
  * Mendukung pagination: page, limit
  * GET /api/kemas
  */
@@ -290,7 +286,10 @@ export async function getAllKemas(req, res) {
       tahun_anggaran,
       no_ba_pengemasan,
       tanggal_kemas,
+      tanggal_dari,
+      tanggal_sampai,
       status,
+      search,
       page = 1,
       limit = 20,
     } = req.query;
@@ -316,6 +315,23 @@ export async function getAllKemas(req, res) {
 
     if (tanggal_kemas) {
       where.tanggal_kemas = new Date(`${tanggal_kemas}T00:00:00.000Z`);
+    } else if (tanggal_dari || tanggal_sampai) {
+      where.tanggal_kemas = {};
+      if (tanggal_dari) {
+        where.tanggal_kemas.gte = new Date(`${tanggal_dari}T00:00:00.000Z`);
+      }
+      if (tanggal_sampai) {
+        where.tanggal_kemas.lte = new Date(`${tanggal_sampai}T00:00:00.000Z`);
+      }
+    }
+
+    if (search) {
+      where.batch = {
+        OR: [
+          { nomor_batch: { contains: search.trim(), mode: 'insensitive' } },
+          { seri: { contains: search.trim(), mode: 'insensitive' } },
+        ],
+      };
     }
 
     const [total, data] = await Promise.all([
@@ -552,7 +568,7 @@ export async function getNextDoosNumber(req, res) {
       batchInfo = {
         batch_id: batch.id,
         nomor_batch: batch.nomor_batch,
-        denominasi: batch.emisi.denominasi.nama_pecahan,
+        denominasi: batch.emisi.denominasi.nama,
       };
     } else {
       targetDenomId = parseInt(denominasi_id, 10);
@@ -947,7 +963,7 @@ export async function deleteKemas(req, res) {
         id: kemas.id,
         batch_id: kemas.batch_id,
         nomor_batch: kemas.batch?.nomor_batch,
-        denominasi: kemas.denominasi?.nama_pecahan,
+        denominasi: kemas.denominasi?.nama,
         tahun_anggaran: kemas.tahun_anggaran,
         pack_dari: kemas.pack_dari,
         pack_sampai: kemas.pack_sampai,
@@ -977,6 +993,248 @@ export async function deleteKemas(req, res) {
     return errorResponse(res, {
       status: 500,
       message: 'Gagal membatalkan hasil pengemasan doos.',
+      error: err.message,
+    });
+  }
+}
+
+/**
+ * Memetakan satu sesi sortir (beserta relasi pack) menjadi bentuk siap kemas.
+ * Dipakai bersama oleh GET /api/kemas/sesi-siap-kemas dan GET /api/kemas/summary.
+ */
+function mapSesiSiapKemas(sesi) {
+  const packs = (sesi.sortir_pack_details || [])
+    .map((d) => d.pack_detail)
+    .filter(Boolean)
+    .sort((a, b) => a.nomor_pack - b.nomor_pack);
+
+  const availablePacks = packs.filter((p) => p.status === 'SORTED' && p.hasil_kemas_id === null);
+  const isFullyAvailable = packs.length > 0 && availablePacks.length === packs.length;
+  // Sesi dengan total pack bukan kelipatan 4 tidak dapat dikemas (rasio 4 Pack = 9 Doos).
+  // Hitung doos hanya bila memenuhi syarat, agar sesi ganjil tidak melempar error.
+  const isKelipatan = packs.length > 0 && packs.length % 4 === 0;
+  const totalDoos = isKelipatan ? (packs.length / 4) * 9 : 0;
+
+  return {
+    id: sesi.id,
+    tanggal_sortir: sesi.tanggal_sortir,
+    status: sesi.status,
+    catatan: sesi.catatan,
+    shift: sesi.shift,
+    operator: sesi.operator,
+    penyortir_1: sesi.penyortir_1,
+    penyortir_2: sesi.penyortir_2,
+    batch: sesi.batch
+      ? {
+          id: sesi.batch.id,
+          nomor_batch: sesi.batch.nomor_batch,
+          seri: sesi.batch.seri,
+          kepala: sesi.batch.kepala,
+          tahun_anggaran: sesi.batch.tahun_anggaran,
+          emisi: sesi.batch.emisi,
+        }
+      : null,
+    total_pack: packs.length,
+    total_available: availablePacks.length,
+    total_doos: totalDoos,
+    is_fully_available: isFullyAvailable,
+    is_kelipatan_empat: isKelipatan,
+    pack_numbers: packs.map((p) => p.nomor_pack),
+    packs: packs.map((p) => ({
+      id: p.id,
+      nomor_pack: p.nomor_pack,
+      status: p.status,
+      hasil_kemas_id: p.hasil_kemas_id,
+      no_doos_range: p.no_doos_range,
+      bon_masuk: p.bon_masuk,
+    })),
+  };
+}
+
+/**
+ * Membangun klausa WHERE sesi sortir berdasarkan filter bar.
+ */
+function buildSesiWhere({ search, tanggal_dari, tanggal_sampai, shift_id } = {}) {
+  const where = { status: 'COMPLETED' };
+
+  if (shift_id) where.shift_id = parseInt(shift_id, 10);
+
+  if (tanggal_dari || tanggal_sampai) {
+    where.tanggal_sortir = {};
+    if (tanggal_dari) where.tanggal_sortir.gte = new Date(`${tanggal_dari}T00:00:00.000Z`);
+    if (tanggal_sampai) where.tanggal_sortir.lte = new Date(`${tanggal_sampai}T00:00:00.000Z`);
+  }
+
+  if (search) {
+    const term = search.trim();
+    where.batch = {
+      OR: [
+        { nomor_batch: { contains: term, mode: 'insensitive' } },
+        { seri: { contains: term, mode: 'insensitive' } },
+      ],
+    };
+  }
+
+  return where;
+}
+
+const SESI_SIAP_KEMAS_INCLUDE = {
+  batch: {
+    include: {
+      emisi: {
+        include: { denominasi: true },
+      },
+    },
+  },
+  shift: true,
+  operator: { select: USER_SAFE_SELECT },
+  sortir_pack_details: {
+    include: {
+      pack_detail: {
+        include: {
+          bon_masuk: {
+            select: { no_segel: true, tanggal_masuk: true, jam_masuk: true },
+          },
+        },
+      },
+    },
+  },
+};
+
+/**
+ * Mengambil daftar sesi sortir yang siap dikemas (seluruh pack-nya berstatus SORTED
+ * dan belum dibooking ke hasil kemas manapun).
+ * Endpoint ini menjadi sumber data grid 10x10 pada modal form pengemasan.
+ * Filter: search (nomor batch / seri), tanggal_dari & tanggal_sampai, shift_id
+ * GET /api/kemas/sesi-siap-kemas
+ */
+export async function getSesiSiapKemas(req, res) {
+  try {
+    const { search, tanggal_dari, tanggal_sampai, shift_id, page = 1, limit = 20 } = req.query;
+
+    const pageNumber = Math.max(1, parseInt(page, 10) || 1);
+    const pageSize = Math.max(1, Math.min(100, parseInt(limit, 10) || 20));
+    const skip = (pageNumber - 1) * pageSize;
+
+    const where = buildSesiWhere({ search, tanggal_dari, tanggal_sampai, shift_id });
+
+    const [total, items] = await Promise.all([
+      prisma.prosesSortir.count({ where }),
+      prisma.prosesSortir.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: [{ tanggal_sortir: 'desc' }, { id: 'desc' }],
+        include: SESI_SIAP_KEMAS_INCLUDE,
+      }),
+    ]);
+
+    // Sesi yang siap dikemas: seluruh pack tersedia & total pack kelipatan 4
+    const sesiSiapKemas = items
+      .map(mapSesiSiapKemas)
+      .filter((sesi) => sesi.is_fully_available && sesi.is_kelipatan_empat);
+
+    return successResponse(res, {
+      status: 200,
+      message: `Ditemukan ${sesiSiapKemas.length} sesi sortir siap dikemas.`,
+      data: sesiSiapKemas,
+      meta: {
+        page: pageNumber,
+        limit: pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    });
+  } catch (err) {
+    return errorResponse(res, {
+      status: 500,
+      message: 'Gagal mengambil daftar sesi sortir siap dikemas.',
+      error: err.message,
+    });
+  }
+}
+
+/**
+ * Ringkasan KPI pengemasan doos yang mengikuti filter bar (rentang tanggal, shift, pencarian batch/seri).
+ * - siap_kemas  : antrian WIP (status SIAP_KEMAS)
+ * - hasil_kemas : output fisik selesai (status READY / SHIPPED)
+ * GET /api/kemas/summary
+ */
+export async function getKemasSummary(req, res) {
+  try {
+    const { shift_id, tanggal_dari, tanggal_sampai, tanggal_kemas, search } = req.query;
+
+    const where = {};
+
+    if (shift_id) where.shift_id = parseInt(shift_id, 10);
+
+    if (tanggal_kemas) {
+      where.tanggal_kemas = new Date(`${tanggal_kemas}T00:00:00.000Z`);
+    } else if (tanggal_dari || tanggal_sampai) {
+      where.tanggal_kemas = {};
+      if (tanggal_dari) where.tanggal_kemas.gte = new Date(`${tanggal_dari}T00:00:00.000Z`);
+      if (tanggal_sampai) where.tanggal_kemas.lte = new Date(`${tanggal_sampai}T00:00:00.000Z`);
+    }
+
+    if (search) {
+      const term = search.trim();
+      where.batch = {
+        OR: [
+          { nomor_batch: { contains: term, mode: 'insensitive' } },
+          { seri: { contains: term, mode: 'insensitive' } },
+        ],
+      };
+    }
+
+    // Antrian "Siap Kemas" = sesi sortir yang seluruh pack-nya SORTED & belum dibooking,
+    // bukan record hasil_kemas berstatus SIAP_KEMAS (record dibuat setelah doos dicatat).
+    const sesiWhere = buildSesiWhere({ search, tanggal_dari, tanggal_sampai, shift_id });
+
+    const [records, sesiItems] = await Promise.all([
+      prisma.hasilKemas.findMany({
+        where,
+        select: { status: true, total_pack: true, total_doos: true, total_bilyet: true },
+      }),
+      prisma.prosesSortir.findMany({
+        where: sesiWhere,
+        include: SESI_SIAP_KEMAS_INCLUDE,
+      }),
+    ]);
+
+    const antrianSesi = sesiItems
+      .map(mapSesiSiapKemas)
+      .filter((sesi) => sesi.is_fully_available && sesi.is_kelipatan_empat);
+
+    const aggregate = (filterStatuses) => {
+      const subset = records.filter((r) => filterStatuses.includes(r.status));
+      return {
+        total_kemas: subset.length,
+        total_pack: subset.reduce((sum, r) => sum + r.total_pack, 0),
+        total_doos: subset.reduce((sum, r) => sum + r.total_doos, 0),
+        total_bilyet: subset.reduce((sum, r) => sum + BigInt(r.total_bilyet), 0n).toString(),
+      };
+    };
+
+    const siapKemas = {
+      total_kemas: antrianSesi.length,
+      total_pack: antrianSesi.reduce((sum, s) => sum + s.total_pack, 0),
+      total_doos: antrianSesi.reduce((sum, s) => sum + s.total_doos, 0),
+      total_bilyet: (BigInt(antrianSesi.reduce((sum, s) => sum + s.total_pack, 0)) * 45000n).toString(),
+    };
+
+    return successResponse(res, {
+      status: 200,
+      message: 'Ringkasan pengemasan doos berhasil diambil.',
+      data: {
+        siap_kemas: siapKemas,
+        hasil_kemas: aggregate(['READY', 'SHIPPED']),
+        total_semua: aggregate(['SIAP_KEMAS', 'READY', 'SHIPPED']),
+      },
+    });
+  } catch (err) {
+    return errorResponse(res, {
+      status: 500,
+      message: 'Gagal mengambil ringkasan pengemasan doos.',
       error: err.message,
     });
   }

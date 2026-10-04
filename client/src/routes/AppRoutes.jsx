@@ -4,6 +4,7 @@ import DashboardLayout from '../layouts/DashboardLayout'
 import DashboardPage from '../pages/dashboard/DashboardPage'
 import BonMasukPage from '../pages/bon-masuk/BonMasukPage'
 import ProsesSortirPage from '../pages/sortir/ProsesSortirPage'
+import HasilKemasPage from '../pages/kemas/HasilKemasPage'
 import LoginPage from '../pages/auth/LoginPage'
 import { UnauthorizedPage } from '../pages/common/UnauthorizedPage'
 import NotFoundPage from '../pages/common/NotFoundPage'
@@ -28,16 +29,7 @@ export default function AppRoutes() {
           <Route element={<ProtectedRoute allowedRoles={['SUPERVISOR', 'OPERATOR']} />}>
             <Route path="/bon-masuk" element={<BonMasukPage />} />
             <Route path="/sortir" element={<ProsesSortirPage />} />
-            <Route
-              path="/kemas"
-              element={
-                <ModulePlaceholderPage
-                  moduleName="Modul 3: Pengemasan Doos / Hasil Kemas"
-                  moduleCode="FE-08 s/d FE-09"
-                  description="Rasio 4 Pack = 9 Doos, penomoran urut doos, status SIAP_KEMAS & konfirmasi fisik READY antar-shift."
-                />
-              }
-            />
+            <Route path="/kemas" element={<HasilKemasPage />} />
           </Route>
 
           {/* Modul Monitoring Doos (Semua Peran, Auditor & Management read-only) */}

@@ -4,8 +4,10 @@ import prisma from '../lib/prisma.js';
 import { successResponse, errorResponse } from '../utils/response.js';
 import { createAuditLog } from '../utils/auditLogger.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'khazprokhir-dev-secret-key-do-not-use-in-production-12345';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1d';
+const JWT_SECRET = (process.env.JWT_SECRET || 'khazprokhir-dev-secret-key-do-not-use-in-production-12345').trim();
+// .trim() penting: .env dengan line ending CRLF menyisakan "\r" di nilai, dan
+// jsonwebtoken menolak expiresIn seperti "1d\r" (semua login jadi 500).
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '1d').trim();
 
 /**
  * Controller Autentikasi Pengguna

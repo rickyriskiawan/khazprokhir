@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { isKelipatanEmpat } from '../utils/businessRules.js';
 
 const dateStringSchema = z
   .string()
@@ -9,42 +8,35 @@ const dateStringSchema = z
 
 // ==========================================
 // 1. Validasi Pembuatan Hasil Kemas Doos
+// Pengemasan berbasis sesi sortir: daftar pack diturunkan dari proses_sortir_id,
+// operator hanya menentukan rentang nomor doos.
 // ==========================================
 export const createKemasSchema = z
   .object({
-    batch_id: z.number().int().positive('ID Batch harus berupa angka bulat positif'),
+    proses_sortir_id: z.number().int().positive('Sesi sortir wajib dipilih'),
     shift_id: z.number().int().positive('Shift kerja wajib dipilih (ID bulat positif)'),
     tanggal_kemas: dateStringSchema,
-    pack_dari: z
-      .number()
-      .int()
-      .min(1, 'Nomor pack awal minimal 1')
-      .max(100, 'Nomor pack awal maksimal 100'),
-    pack_sampai: z
-      .number()
-      .int()
-      .min(1, 'Nomor pack akhir minimal 1')
-      .max(100, 'Nomor pack akhir maksimal 100'),
     no_doos_awal: z
       .number()
       .int()
       .min(1, 'Nomor doos awal minimal 1'),
+    no_doos_akhir: z
+      .number()
+      .int()
+      .min(1, 'Nomor doos akhir minimal 1'),
+    // Nomor BA Pengemasan ditunda sampai modul pengiriman BI diimplementasikan.
     no_ba_pengemasan: z
       .string()
       .trim()
-      .min(1, 'Nomor Berita Acara (BA) Pengemasan wajib diisi')
-      .max(50, 'Nomor BA Pengemasan maksimal 50 karakter'),
-    proses_sortir_id: z.number().int().positive().nullable().optional(),
+      .max(50, 'Nomor BA Pengemasan maksimal 50 karakter')
+      .nullable()
+      .optional(),
     status: z.enum(['SIAP_KEMAS', 'READY']).optional().default('SIAP_KEMAS'),
     catatan: z.string().trim().nullable().optional(),
   })
-  .refine((data) => data.pack_dari <= data.pack_sampai, {
-    message: 'Nomor pack awal (pack_dari) tidak boleh lebih besar dari nomor pack akhir (pack_sampai)',
-    path: ['pack_dari'],
-  })
-  .refine((data) => isKelipatanEmpat(data.pack_sampai - data.pack_dari + 1), {
-    message: 'Total pack yang dikemas harus kelipatan 4 (contoh: 4, 8, 12, 16 pack, dst) untuk memenuhi rasio 4 pack = 9 doos',
-    path: ['pack_sampai'],
+  .refine((data) => data.no_doos_awal <= data.no_doos_akhir, {
+    message: 'Nomor doos awal tidak boleh lebih besar dari nomor doos akhir',
+    path: ['no_doos_awal'],
   });
 
 // ==========================================
