@@ -31,7 +31,7 @@ export const STATUS_CONFIG = {
     defaultOperationalText: '⏳ Belum diterima dari Khazai (Menunggu Bon Masuk)',
   },
   RECEIVED: {
-    label: 'Diterima Khazai',
+    label: 'Diterima',
     code: 'RECEIVED',
     bgClass:
       'bg-sky-50 text-sky-700 border-sky-300/80 hover:bg-sky-100 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/80',

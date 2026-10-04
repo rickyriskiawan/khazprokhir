@@ -64,7 +64,7 @@ export function buildPackInfoLines(packData = {}, lockReason = '') {
   if (lines.length === 0) {
     lines.push({
       label: '',
-      value: lockReason ? `⚠️ ${lockReason}` : '⏳ Belum diterima di Khazai',
+      value: lockReason ? `⚠️ ${lockReason}` : '⏳ Belum diterima',
     });
   }
 

@@ -518,7 +518,7 @@ describe('buildPackInfoLines (tooltip info turunan status)', () => {
 
   it('PENDING tanpa lockReason -> fallback belum diterima', () => {
     const lines = buildPackInfoLines({ status: 'PENDING' });
-    expect(lines).toEqual([{ label: '', value: '⏳ Belum diterima di Khazai' }]);
+    expect(lines).toEqual([{ label: '', value: '⏳ Belum diterima' }]);
   });
 
   it('quad terkunci -> tampilkan alasan kunci', () => {
