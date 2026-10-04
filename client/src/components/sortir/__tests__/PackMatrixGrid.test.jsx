@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import PackMatrixGrid from '../PackMatrixGrid.jsx';
+import PackMatrixGrid, { buildPackInfoLines } from '../PackMatrixGrid.jsx';
 
 describe('PackMatrixGrid Component (FE-06)', () => {
   // Mock data: 100 packs with different statuses
@@ -470,5 +470,59 @@ describe('PackMatrixGrid Component (FE-06)', () => {
         Array.from({ length: 100 }, (_, i) => i + 1)
       );
     });
+  });
+});
+
+describe('buildPackInfoLines (tooltip info turunan status)', () => {
+  const bon = { no_segel: 'SGL-001', tanggal_masuk: '2026-10-02T00:00:00.000Z', jam_masuk: '12:09' };
+  const sortirDetail = {
+    proses_sortir: {
+      penyortir_1: 'Budi Santoso',
+      penyortir_2: 'Ani Lestari',
+      tanggal_sortir: '2026-10-03T00:00:00.000Z',
+      completed_at: '2026-10-03T03:15:07.309Z',
+    },
+  };
+  const kemasDetail = {
+    hasil_kemas: { tanggal_kemas: '2026-10-04T00:00:00.000Z', no_doos_awal: 1, no_doos_akhir: 9, status: 'COMPLETED' },
+  };
+
+  it('RECEIVED -> tampilkan kapan diterima dan no segel', () => {
+    const lines = buildPackInfoLines({ status: 'RECEIVED', bon_masuk: bon });
+    expect(lines).toEqual([
+      { label: 'Diterima', value: '2 Oktober 2026 12:09' },
+      { label: 'No Segel', value: 'SGL-001' },
+    ]);
+  });
+
+  it('SORTED -> tambahkan kapan disortir dan siapa penyortirnya', () => {
+    const lines = buildPackInfoLines({ status: 'SORTED', bon_masuk: bon, sortir_pack_details: [sortirDetail] });
+    expect(lines).toEqual([
+      { label: 'Diterima', value: '2 Oktober 2026 12:09' },
+      { label: 'No Segel', value: 'SGL-001' },
+      { label: 'Disortir', value: '3 Oktober 2026' },
+      { label: 'Penyortir', value: 'Budi Santoso & Ani Lestari' },
+    ]);
+  });
+
+  it('PACKED -> tambahkan kapan dikemas dan rentang no doos', () => {
+    const lines = buildPackInfoLines({
+      status: 'PACKED',
+      bon_masuk: bon,
+      sortir_pack_details: [sortirDetail],
+      kemas_pack_details: [kemasDetail],
+    });
+    expect(lines).toContainEqual({ label: 'Dikemas', value: '4 Oktober 2026' });
+    expect(lines).toContainEqual({ label: 'No Doos', value: 'Doos 0001 - 0009' });
+  });
+
+  it('PENDING tanpa lockReason -> fallback belum diterima', () => {
+    const lines = buildPackInfoLines({ status: 'PENDING' });
+    expect(lines).toEqual([{ label: '', value: '⏳ Belum diterima di Khazai' }]);
+  });
+
+  it('quad terkunci -> tampilkan alasan kunci', () => {
+    const lines = buildPackInfoLines({ status: 'PENDING' }, 'Pack 12 belum diterima');
+    expect(lines).toEqual([{ label: '', value: '⚠️ Pack 12 belum diterima' }]);
   });
 });

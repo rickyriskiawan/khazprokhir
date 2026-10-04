@@ -6,7 +6,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { formatBilyet } from '@/utils/formatters';
+import { formatBilyet, formatIndonesianDate, formatDoosRange } from '@/utils/formatters';
 import {
   Check,
   Lock,
@@ -16,6 +16,60 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { DENOM_COLOR_MAP, STATUS_CONFIG } from './sortirConstants';
+
+/**
+ * Bangun baris informasi turunan status untuk tooltip sel pack.
+ * Baris 1 (header) dan baris 2 (status) dirender terpisah di komponen.
+ * @param {object} packData - objek pack dari API (status, bon_masuk, sortir_pack_details, kemas_pack_details)
+ * @param {string} lockReason - alasan quad terkunci bila pack tidak bisa dipilih
+ * @returns {{label: string, value: string}[]}
+ */
+export function buildPackInfoLines(packData = {}, lockReason = '') {
+  const status = packData.status;
+  const lines = [];
+
+  if (status === 'RECEIVED' || status === 'SORTED' || status === 'PACKED' || status === 'SHIPPED') {
+    const bon = packData.bon_masuk;
+    if (bon) {
+      lines.push({
+        label: 'Diterima',
+        value: `${formatIndonesianDate(bon.tanggal_masuk)}${bon.jam_masuk ? ` ${bon.jam_masuk}` : ''}`,
+      });
+      if (bon.no_segel) lines.push({ label: 'No Segel', value: bon.no_segel });
+    }
+  }
+
+  if (status === 'SORTED' || status === 'PACKED' || status === 'SHIPPED') {
+    const sortir = packData.sortir_pack_details?.[0]?.proses_sortir;
+    if (sortir) {
+      lines.push({
+        label: 'Disortir',
+        value: formatIndonesianDate(sortir.tanggal_sortir || sortir.completed_at),
+      });
+      const penyortir = [sortir.penyortir_1, sortir.penyortir_2].filter(Boolean).join(' & ');
+      if (penyortir) lines.push({ label: 'Penyortir', value: penyortir });
+    }
+  }
+
+  if (status === 'PACKED' || status === 'SHIPPED') {
+    const kemas = packData.kemas_pack_details?.[0]?.hasil_kemas;
+    if (kemas) {
+      lines.push({ label: 'Dikemas', value: formatIndonesianDate(kemas.tanggal_kemas) });
+      if (kemas.no_doos_awal) {
+        lines.push({ label: 'No Doos', value: formatDoosRange(kemas.no_doos_awal, kemas.no_doos_akhir) });
+      }
+    }
+  }
+
+  if (lines.length === 0) {
+    lines.push({
+      label: '',
+      value: lockReason ? `⚠️ ${lockReason}` : '⏳ Belum diterima di Khazai',
+    });
+  }
+
+  return lines;
+}
 
 /**
  * PackMatrixGrid: Interactive 100-Pack Matrix Grid Component
@@ -313,23 +367,8 @@ export default function PackMatrixGrid({
             const isLocked = selectable && !quad.isEligible;
             const statusCfg = STATUS_CONFIG[packData.status] || STATUS_CONFIG.PENDING;
 
-            // Brood and Bilyet calculation for pack
-            const startBilyet = (packNum - 1) * 45000 + 1;
-            const endBilyet = packNum * 45000;
-            const startBrood = (packNum - 1) * 45 + 1;
-            const endBrood = packNum * 45;
-
-            // Operational context message for tooltip line 4
-            let operationalText = '✅ Siap diproses';
-            if (isLocked) {
-              operationalText = `⚠️ ${quad.lockReason}`;
-            } else if (packData.no_doos_range) {
-              operationalText = `📦 ${packData.no_doos_range}`;
-            } else if (packData.proses_sortir_id) {
-              operationalText = `✂️ Sesi Sortir #${packData.proses_sortir_id}`;
-            } else if (packData.bon_masuk_id) {
-              operationalText = `📄 Bon Masuk #${packData.bon_masuk_id}`;
-            }
+            // Baris 3: Informasi turunan status pack
+            const infoLines = buildPackInfoLines(packData, isLocked ? quad.lockReason : '');
 
             // Cell styling
             let cellStyle =
@@ -381,7 +420,7 @@ export default function PackMatrixGrid({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="p-2.5 shadow-floating-tooltip text-left">
-                  <div className="space-y-1 text-xs font-sans max-w-[240px]">
+                  <div className="space-y-1 text-xs font-sans max-w-[260px]">
                     {/* Baris 1: Header Pack & Quad */}
                     <div className="font-semibold flex items-center justify-between gap-2 border-b border-border/40 pb-1">
                       <span>Pack #{packNum}</span>
@@ -390,31 +429,24 @@ export default function PackMatrixGrid({
                       </span>
                     </div>
 
-                    {/* Baris 2: Rentang Bilyet & Brood */}
-                    <div className="text-[11px] font-mono tabular-nums text-ink-secondary dark:text-ink-secondary-dark">
-                      <div>
-                        Bilyet: {startBilyet.toLocaleString('id-ID')} – {endBilyet.toLocaleString('id-ID')}
-                      </div>
-                      <div className="text-[10px] text-ink-muted">
-                        Brood {startBrood} – {endBrood} (45 Brood)
-                      </div>
-                    </div>
-
-                    {/* Baris 3: Status Pack */}
-                    <div className="flex items-center gap-1.5 pt-0.5">
+                    {/* Baris 2: Status Pack */}
+                    <div className="flex items-center gap-1.5">
                       <span className={`h-2 w-2 rounded-full shrink-0 ${statusCfg.dotClass}`} />
                       <span className="font-medium text-xs">{statusCfg.label}</span>
                     </div>
 
-                    {/* Baris 4: Informasi Operasional / Keterangan Kunci */}
-                    <div
-                      className={`text-[10px] pt-0.5 leading-snug ${
-                        isLocked
-                          ? 'text-amber-500 dark:text-amber-400 font-medium'
-                          : 'text-ink-muted'
-                      }`}
-                    >
-                      {operationalText}
+                    {/* Baris 3: Informasi turunan status */}
+                    <div className="space-y-0.5 pt-0.5 border-t border-border/40">
+                      {infoLines.map((line, idx) => (
+                        <div key={idx} className="flex gap-1.5 text-[11px] leading-snug">
+                          {line.label ? (
+                            <span className="text-ink-muted shrink-0 w-[62px]">{line.label}</span>
+                          ) : null}
+                          <span className="text-ink-secondary dark:text-ink-secondary-dark break-words">
+                            {line.value}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </TooltipContent>
