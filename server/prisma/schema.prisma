@@ -339,7 +339,7 @@ model HasilKemas {
   no_doos_akhir    Int           // Doos akhir (misal: 9)
   total_doos       Int           // (total_pack / 4) * 9
   total_bilyet     BigInt        // total_pack * 45000
-  no_ba_pengemasan String        // Nomor BA Pengemasan harian (contoh: "157")
+  no_ba_pengemasan String?       // Nomor BA Pengemasan harian (contoh: "157") - opsional, diisi saat modul pengiriman BI
   shift_id         Int
   shift            Shift         @relation(fields: [shift_id], references: [id])
   operator_id      Int

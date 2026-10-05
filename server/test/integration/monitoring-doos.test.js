@@ -182,27 +182,34 @@ describe('Integration Test: Modul 4 - Monitoring Doos, Buku Register & Deteksi G
     assert.strictEqual(bonJson.success, true);
     testBatchId = bonJson.data.batch_id;
 
-    // Siapkan sesi sortir untuk Pack 1 s/d 28 (agar berstatus SORTED)
-    const sortirRes = await fetch(`${baseUrl}/api/sortir`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${operatorToken}`,
-      },
-      body: JSON.stringify({
-        batch_id: testBatchId,
-        shift_id: testShiftId,
-        tanggal_sortir: '2026-09-15',
-        pack_dari: 1,
-        pack_sampai: 28,
-        penyortir_1: 'Ahmad Fauzi',
-        penyortir_2: 'Siti Rahma',
-      }),
-    });
-    const sortirJson = await sortirRes.json();
-    assert.strictEqual(sortirJson.success, true);
+    // Siapkan sesi sortir: A = 1-8, B = 9-12, C = 13-20 (agar pack berstatus SORTED)
+    const buatSesi = async (dari, sampai) => {
+      const res = await fetch(`${baseUrl}/api/sortir`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${operatorToken}`,
+        },
+        body: JSON.stringify({
+          batch_id: testBatchId,
+          shift_id: testShiftId,
+          tanggal_sortir: '2026-09-15',
+          pack_dari: dari,
+          pack_sampai: sampai,
+          penyortir_1: 'Ahmad Fauzi',
+          penyortir_2: 'Siti Rahma',
+        }),
+      });
+      const json = await res.json();
+      assert.strictEqual(json.success, true, `Sesi sortir pack ${dari}-${sampai} harus berhasil`);
+      return json.data.id;
+    };
 
-    // 1. Buat Hasil Kemas 1: Pack 1..8 (8 pack = 18 doos: Doos 1 s/d 18), status READY
+    const sesiAId = await buatSesi(1, 8);
+    const sesiBId = await buatSesi(9, 12);
+    const sesiCId = await buatSesi(13, 20);
+
+    // 1. Hasil Kemas 1: sesi A (8 pack = 18 doos: Doos 1 s/d 18), status READY
     const kemas1 = await fetch(`${baseUrl}/api/kemas`, {
       method: 'POST',
       headers: {
@@ -210,20 +217,19 @@ describe('Integration Test: Modul 4 - Monitoring Doos, Buku Register & Deteksi G
         Authorization: `Bearer ${operatorToken}`,
       },
       body: JSON.stringify({
-        batch_id: testBatchId,
+        proses_sortir_id: sesiAId,
         shift_id: testShiftId,
         tanggal_kemas: '2026-09-15',
-        pack_dari: 1,
-        pack_sampai: 8,
         no_doos_awal: 1,
+        no_doos_akhir: 18,
         no_ba_pengemasan: 'BA-MON-1001',
         status: 'READY',
       }),
     });
     const kemas1Json = await kemas1.json();
-    assert.strictEqual(kemas1Json.success, true);
+    assert.strictEqual(kemas1Json.success, true, kemas1Json.message);
 
-    // 2. Buat Hasil Kemas 2: Pack 9..12 (4 pack = 9 doos: Doos 19 s/d 27), status SIAP_KEMAS (default)
+    // 2. Hasil Kemas 2: sesi B (4 pack = 9 doos: Doos 19 s/d 27), status SIAP_KEMAS (default)
     const kemas2 = await fetch(`${baseUrl}/api/kemas`, {
       method: 'POST',
       headers: {
@@ -231,20 +237,19 @@ describe('Integration Test: Modul 4 - Monitoring Doos, Buku Register & Deteksi G
         Authorization: `Bearer ${operatorToken}`,
       },
       body: JSON.stringify({
-        batch_id: testBatchId,
+        proses_sortir_id: sesiBId,
         shift_id: testShiftId,
         tanggal_kemas: '2026-09-15',
-        pack_dari: 9,
-        pack_sampai: 12,
         no_doos_awal: 19,
+        no_doos_akhir: 27,
         no_ba_pengemasan: 'BA-MON-1002',
         status: 'SIAP_KEMAS',
       }),
     });
     const kemas2Json = await kemas2.json();
-    assert.strictEqual(kemas2Json.success, true);
+    assert.strictEqual(kemas2Json.success, true, kemas2Json.message);
 
-    // 3. Buat Hasil Kemas 3: Pack 13..20 (8 pack = 18 doos: Doos 37 s/d 54), status READY
+    // 3. Hasil Kemas 3: sesi C (8 pack = 18 doos: Doos 37 s/d 54), status READY
     // CATATAN: Doos 28 s/d 36 SENGAJA DILEWATI (GAP) untuk menguji deteksi loncat nomor doos!
     const kemas3 = await fetch(`${baseUrl}/api/kemas`, {
       method: 'POST',
@@ -253,18 +258,17 @@ describe('Integration Test: Modul 4 - Monitoring Doos, Buku Register & Deteksi G
         Authorization: `Bearer ${operatorToken}`,
       },
       body: JSON.stringify({
-        batch_id: testBatchId,
+        proses_sortir_id: sesiCId,
         shift_id: testShiftId,
         tanggal_kemas: '2026-09-15',
-        pack_dari: 13,
-        pack_sampai: 20,
         no_doos_awal: 37,
+        no_doos_akhir: 54,
         no_ba_pengemasan: 'BA-MON-1003',
         status: 'READY',
       }),
     });
     const kemas3Json = await kemas3.json();
-    assert.strictEqual(kemas3Json.success, true);
+    assert.strictEqual(kemas3Json.success, true, kemas3Json.message);
   });
 
   after(async () => {

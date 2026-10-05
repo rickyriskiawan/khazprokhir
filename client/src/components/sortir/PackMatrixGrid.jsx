@@ -83,6 +83,7 @@ export default function PackMatrixGrid({
   selectable = true,
   selectableStatuses = ['RECEIVED'],
   batchInfo = null,
+  packCountLabel = null,
   className = '',
 }) {
   const [hoveredQuadIndex, setHoveredQuadIndex] = useState(null);
@@ -314,7 +315,7 @@ export default function PackMatrixGrid({
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-wider text-ink-secondary dark:text-ink-secondary-dark">
-                {selectable ? 'Alokasi Pack' : 'Total Diterima'}
+                {packCountLabel || (selectable ? 'Alokasi Pack' : 'Total Diterima')}
               </div>
               <div
                 data-testid="accumulator-pack-count"
@@ -398,7 +399,7 @@ export default function PackMatrixGrid({
                   <button
                     type="button"
                     role="gridcell"
-                    disabled={isLocked || !selectable}
+                    disabled={isLocked && selectable}
                     data-testid={`pack-cell-${packNum}`}
                     data-quad-index={quadIndex}
                     data-quad-hovered={isHovered ? 'true' : 'false'}
