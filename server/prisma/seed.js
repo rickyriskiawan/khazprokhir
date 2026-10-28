@@ -47,7 +47,7 @@ async function main() {
     createdDenominasi.push({ ...denom, sandi: item.sandi });
 
     // Emisi TE 2022
-    const existingEmisi = await prisma.emisi.findFirst({
+    let existingEmisi = await prisma.emisi.findFirst({
       where: {
         denominasi_id: denom.id,
         kode_emisi: 'TE 2022',
@@ -55,7 +55,7 @@ async function main() {
     });
 
     if (!existingEmisi) {
-      const emisi = await prisma.emisi.create({
+      existingEmisi = await prisma.emisi.create({
         data: {
           kode_emisi: 'TE 2022',
           sandi: item.sandi,
@@ -64,10 +64,11 @@ async function main() {
           is_active: true,
         },
       });
-      console.log(`    ✓ Created Emisi: ${emisi.kode_emisi} (${emisi.sandi})`);
+      console.log(`    ✓ Created Emisi: ${existingEmisi.kode_emisi} (${existingEmisi.sandi})`);
     } else {
       console.log(`    - Emisi exists: ${existingEmisi.kode_emisi} (${existingEmisi.sandi})`);
     }
+    createdDenominasi[createdDenominasi.length - 1].emisi_id = existingEmisi.id;
   }
 
   // 2. Seeding Master Shift
@@ -146,36 +147,44 @@ async function main() {
   // 4. Seeding Initial Target Produksi TA 2026
   console.log('\n🎯 Seeding Target Produksi TA 2026...');
   const tahunAnggaran = 2026;
+  const tahunEmisi = 2022;
 
   for (const denom of createdDenominasi) {
     // Target Tahunan per pecahan
     const targetBilyet = BigInt(450_000_000); // 450 juta bilyet
+    const targetDoos = targetBilyet > 0n ? Number((targetBilyet + 19999n) / 20000n) : 0;
     const targetBrood = targetBilyet / BigInt(1000);
     const targetPack = Number(targetBrood / BigInt(45));
 
     await prisma.targetTahunan.upsert({
       where: {
-        tahun_anggaran_denominasi_id: {
+        tahun_anggaran_tahun_emisi_denominasi_id: {
           tahun_anggaran: tahunAnggaran,
+          tahun_emisi: tahunEmisi,
           denominasi_id: denom.id,
         },
       },
       update: {
+        emisi_id: denom.emisi_id,
         target_bilyet: targetBilyet,
+        target_doos: targetDoos,
         target_brood: targetBrood,
         target_pack: targetPack,
-        catatan: `Target Produksi Tahunan TA ${tahunAnggaran} Pecahan ${denom.nama}`,
+        catatan: `Target Produksi Tahunan TA ${tahunAnggaran} TE ${tahunEmisi} Pecahan ${denom.nama}`,
       },
       create: {
         tahun_anggaran: tahunAnggaran,
+        tahun_emisi: tahunEmisi,
+        emisi_id: denom.emisi_id,
         denominasi_id: denom.id,
         target_bilyet: targetBilyet,
+        target_doos: targetDoos,
         target_brood: targetBrood,
         target_pack: targetPack,
-        catatan: `Target Produksi Tahunan TA ${tahunAnggaran} Pecahan ${denom.nama}`,
+        catatan: `Target Produksi Tahunan TA ${tahunAnggaran} TE ${tahunEmisi} Pecahan ${denom.nama}`,
       },
     });
-    console.log(`  ✓ Target Tahunan TA ${tahunAnggaran} Pecahan ${denom.nama}`);
+    console.log(`  ✓ Target Tahunan TA ${tahunAnggaran} TE ${tahunEmisi} Pecahan ${denom.nama}`);
 
     // Target Bulanan (Bulan September / Bulan 9)
     await prisma.targetBulanan.upsert({

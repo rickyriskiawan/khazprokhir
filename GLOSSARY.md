@@ -46,6 +46,20 @@ Format standar nomor batch terdiri dari 7 digit (contoh: `1822001`):
 - 3 digit terakhir: Nomor urutan batch (`001`, `002`, dst.).
 _Avoid_: Lot, gelombang, kelompok produksi
 
+## Perencanaan & Target Produksi
+
+**Tahun Anggaran (TA)**:
+Periode tahun kalender perencanaan dan pelaporan kuota produksi uang kertas di Peruri (contoh: `TA 2026`). Satu Tahun Anggaran dapat mencakup lebih dari satu Tahun Emisi.
+_Avoid_: Tahun buku, periode fiskal, tahun kerja
+
+**Tahun Emisi (TE)**:
+Tahun penerbitan resmi desain seri uang kertas Rupiah oleh Bank Indonesia (contoh: `TE 2022` dengan sandi pecahan `Y'22` s/d `S'22`).
+_Avoid_: Versi uang, keluaran tahun, seri cetakan
+
+**Target Produksi**:
+Kuota jumlah produksi uang kertas dalam satuan bilyet yang ditetapkan per pecahan untuk kombinasi satu Tahun Anggaran dan satu Tahun Emisi, yang menjadi acuan utama bagi seluruh target turunan dan evaluasi realisasi produksi. Dalam konversi target ke satuan Doos (`1 Doos = 20.000 Bilyet`), sisa bilyet yang tidak mencapai 20.000 lembar ("buntut") tetap dihitung sebagai 1 Doos utuh (pembulatan ke atas / *ceiling*).
+_Avoid_: Kuota cetak, rencana order, estimasi produksi
+
 ## Kode Pecahan Denominasi (Emisi TE 2022)
 
 **Y (Rp 100.000)**:

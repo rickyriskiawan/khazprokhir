@@ -14,7 +14,13 @@ async function cleanupTestData() {
       where: { tahun_anggaran: 2026, bulan: 10 },
     });
     await prisma.targetTahunan.deleteMany({
-      where: { tahun_anggaran: 2027 },
+      where: { tahun_anggaran: { in: [2027, 2028, 2029, 2030] } },
+    });
+    await prisma.batch.deleteMany({
+      where: { tahun_anggaran: { in: [2028, 2029, 2030] } },
+    });
+    await prisma.emisi.deleteMany({
+      where: { tahun: '2026' },
     });
     await prisma.transaksiHcts.deleteMany({
       where: { catatan: 'CT siap hitung shift 1' },
@@ -413,6 +419,185 @@ describe('Integration Test: Master Data & Perencanaan Produksi (Step 4)', () => 
   // 5. TARGET PRODUKSI TAHUNAN
   // ===========================================================================
   let testTargetTahunanId;
+
+  it('GET /api/target-tahunan - Mengembalikan data target produksi terkelompok per tahun_anggaran dan tahun_emisi beserta target_doos', async () => {
+    const res = await fetch(`${baseUrl}/api/target-tahunan?tahun_anggaran=2026`, {
+      headers: { Authorization: `Bearer ${supervisorToken}` },
+    });
+
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.success, true);
+    assert.ok(Array.isArray(body.data));
+    assert.ok(body.data.length >= 7);
+
+    // Pastikan setiap baris memiliki tahun_emisi, target_doos, dan sandi_emisi
+    const firstRow = body.data[0];
+    assert.equal(typeof firstRow.tahun_emisi, 'number');
+    assert.equal(typeof firstRow.target_doos, 'number');
+    assert.ok(firstRow.sandi_emisi, 'Harus memiliki sandi_emisi (contoh: Y\'22)');
+
+    // Pastikan meta.grouped mengelompokkan berdasarkan tahun_anggaran -> emisi_groups
+    assert.ok(Array.isArray(body.meta?.grouped));
+    const group2026 = body.meta.grouped.find((g) => g.tahun_anggaran === 2026);
+    assert.ok(group2026, 'Harus ada grup tahun_anggaran 2026');
+    assert.ok(Array.isArray(group2026.emisi_groups));
+    assert.ok(group2026.emisi_groups.length >= 1);
+
+    const emisi2022 = group2026.emisi_groups.find((eg) => eg.tahun_emisi === 2022);
+    assert.ok(emisi2022, 'Harus ada sub-grup tahun_emisi 2022');
+    assert.equal(emisi2022.items.length, 7);
+    assert.equal(emisi2022.items[0].sandi, "Y'22");
+  });
+
+  it('POST /api/target-tahunan - Membuat grup 7 pecahan sekaligus, pembulatan ceiling Doos (buntut bilyet), dan auto-sync Master Emisi baru', async () => {
+    const res = await fetch(`${baseUrl}/api/target-tahunan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${supervisorToken}`,
+      },
+      body: JSON.stringify({
+        tahun_anggaran: 2028,
+        tahun_emisi: 2026,
+        catatan: 'Target Kolektif TA 2028 TE 2026',
+        items: [
+          { denominasi_id: 1, target_bilyet: '900000500' }, // 45.001 Doos
+          { denominasi_id: 2, target_bilyet: '100000500' }, // 5.001 Doos
+          { denominasi_id: 3, target_bilyet: '0' },
+        ],
+      }),
+    });
+
+    assert.equal(res.status, 201);
+    const body = await res.json();
+    assert.equal(body.success, true);
+    assert.equal(body.data.tahun_anggaran, 2028);
+    assert.equal(body.data.tahun_emisi, 2026);
+    assert.equal(body.data.items.length, 7, 'Wajib menyimpan ke-7 pecahan secara utuh');
+    assert.equal(body.data.total_bilyet, '1000001000');
+    assert.equal(body.data.total_doos, 50002, 'Total Doos harus 45.001 + 5.001 = 50.002');
+
+    const itemY = body.data.items.find((i) => i.kode_pecahan === 'Y');
+    assert.equal(itemY.sandi, "Y'26");
+    assert.equal(itemY.target_bilyet, '900000500');
+    assert.equal(itemY.target_doos, 45001);
+
+    // Pastikan Master Emisi TE 2026 otomatis terbuat untuk 7 pecahan
+    const emisiRes = await fetch(`${baseUrl}/api/master/emisi`, {
+      headers: { Authorization: `Bearer ${supervisorToken}` },
+    });
+    const emisiBody = await emisiRes.json();
+    const emisi2026 = emisiBody.data.filter((e) => e.tahun === '2026');
+    assert.equal(emisi2026.length, 7);
+  });
+
+  it('POST /api/target-tahunan - Mendukung lebih dari 1 tahun_emisi dalam 1 tahun_anggaran dan menolak duplikasi pasangan (tahun_anggaran, tahun_emisi)', async () => {
+    // Tambah tahun_emisi 2022 di tahun_anggaran 2028 yang sama -> Harus sukses (201)
+    const resSecondEmisi = await fetch(`${baseUrl}/api/target-tahunan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${supervisorToken}`,
+      },
+      body: JSON.stringify({
+        tahun_anggaran: 2028,
+        tahun_emisi: 2022,
+        items: [{ denominasi_id: 1, target_bilyet: '40000000' }], // 2.000 Doos
+      }),
+    });
+    assert.equal(resSecondEmisi.status, 201);
+
+    // Coba duplikasi pasangan (2028, 2026) -> Harus ditolak (409 Conflict)
+    const resDuplicate = await fetch(`${baseUrl}/api/target-tahunan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${supervisorToken}`,
+      },
+      body: JSON.stringify({
+        tahun_anggaran: 2028,
+        tahun_emisi: 2026,
+        items: [{ denominasi_id: 1, target_bilyet: '50000000' }],
+      }),
+    });
+    assert.equal(resDuplicate.status, 409);
+
+    // Coba simpan semua pecahan bernilai 0 -> Harus ditolak (400 Bad Request)
+    const resAllZero = await fetch(`${baseUrl}/api/target-tahunan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${supervisorToken}`,
+      },
+      body: JSON.stringify({
+        tahun_anggaran: 2029,
+        tahun_emisi: 2022,
+        items: [{ denominasi_id: 1, target_bilyet: '0' }],
+      }),
+    });
+    assert.equal(resAllZero.status, 400);
+  });
+
+  it('PUT /api/target-tahunan/group/:tahun_anggaran/:tahun_emisi - Memperbarui kuota 7 pecahan dalam satu grup dan merekalkulasi target_doos (ceiling)', async () => {
+    const res = await fetch(`${baseUrl}/api/target-tahunan/group/2028/2026`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${supervisorToken}`,
+      },
+      body: JSON.stringify({
+        catatan: 'Revisi Kuota TA 2028 TE 2026',
+        items: [
+          { denominasi_id: 1, target_bilyet: '900040500' }, // 45.003 Doos
+          { denominasi_id: 2, target_bilyet: '20000000' },  // 1.000 Doos
+        ],
+      }),
+    });
+
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.success, true);
+    assert.equal(body.data.catatan, 'Revisi Kuota TA 2028 TE 2026');
+    assert.equal(body.data.total_bilyet, '920040500');
+    assert.equal(body.data.total_doos, 46003);
+    assert.equal(body.data.items.length, 7);
+  });
+
+  it('DELETE /api/target-tahunan/group/:tahun_anggaran/:tahun_emisi - Menerapkan Safety Lock jika sudah ada Batch produksi, dan mengizinkan hapus jika belum ada Batch', async () => {
+    // Buat 1 Batch pada TA 2028 dengan Emisi tahun 2026
+    const emisi2026 = await prisma.emisi.findFirst({
+      where: { tahun: '2026', denominasi_id: 1 },
+    });
+    const dummyBatch = await prisma.batch.create({
+      data: {
+        nomor_batch: '1826999',
+        tahun_anggaran: 2028,
+        seri: 'ZZ-ZZ',
+        kepala: '9',
+        emisi_id: emisi2026.id,
+        jumlah_pack: 100,
+      },
+    });
+
+    // Coba hapus grup (2028, 2026) yang sudah memiliki Batch -> Harus ditolak (409 Conflict)
+    const resLocked = await fetch(`${baseUrl}/api/target-tahunan/group/2028/2026`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${supervisorToken}` },
+    });
+    assert.equal(resLocked.status, 409);
+
+    // Bersihkan dummyBatch lalu hapus kembali grup (2028, 2026) -> Harus sukses (200 OK)
+    await prisma.batch.delete({ where: { id: dummyBatch.id } });
+
+    const resDeleted = await fetch(`${baseUrl}/api/target-tahunan/group/2028/2026`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${supervisorToken}` },
+    });
+    assert.equal(resDeleted.status, 200);
+    const bodyDeleted = await resDeleted.json();
+    assert.equal(bodyDeleted.data.deleted_count, 7);
+  });
 
   it('POST /api/target-tahunan - Auto kalkulasi target_brood dan target_pack secara presisi', async () => {
     // 100.000.000 bilyet:
