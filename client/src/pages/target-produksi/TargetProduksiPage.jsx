@@ -41,6 +41,7 @@ export default function TargetProduksiPage() {
   const isSupervisor = user?.role === 'SUPERVISOR';
 
   const [groupedData, setGroupedData] = useState([]);
+  const [allTahunAnggaran, setAllTahunAnggaran] = useState([]);
   const [denominasiList, setDenominasiList] = useState([]);
   const [emisiList, setEmisiList] = useState([]);
   const [selectedTahunAnggaran, setSelectedTahunAnggaran] = useState('all');
@@ -88,7 +89,15 @@ export default function TargetProduksiPage() {
         params.tahun_anggaran = selectedTahunAnggaran;
       }
       const res = await getTargetProduksiList(params);
-      setGroupedData(res?.meta?.grouped || []);
+      const groups = res?.meta?.grouped || [];
+      setGroupedData(groups);
+      if (selectedTahunAnggaran === 'all') {
+        setAllTahunAnggaran(
+          Array.from(new Set(groups.map((g) => g.tahun_anggaran))).sort(
+            (a, b) => b - a
+          )
+        );
+      }
     } catch (err) {
       console.error('Gagal memuat data target produksi:', err);
     } finally {
@@ -105,9 +114,12 @@ export default function TargetProduksiPage() {
     loadTargets();
   }, [loadTargets]);
 
-  const availableTahunAnggaran = Array.from(
-    new Set(groupedData.map((g) => g.tahun_anggaran))
-  ).sort((a, b) => b - a);
+  const availableTahunAnggaran =
+    allTahunAnggaran.length > 0
+      ? allTahunAnggaran
+      : Array.from(new Set(groupedData.map((g) => g.tahun_anggaran))).sort(
+          (a, b) => b - a
+        );
 
   return (
     <div className="space-y-4">

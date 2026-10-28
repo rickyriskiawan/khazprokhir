@@ -17,6 +17,23 @@ export function calculateTargetDoos(targetBilyet) {
 }
 
 /**
+ * Menghitung seluruh satuan turunan Target Produksi dari nilai Bilyet
+ */
+function deriveTargetUnits(targetBilyet) {
+  const bilyetBigInt = BigInt(targetBilyet || 0);
+  const targetDoos = calculateTargetDoos(bilyetBigInt);
+  const targetBrood = bilyetBigInt / 1000n;
+  const targetPack = Number(targetBrood / 45n);
+
+  return {
+    target_bilyet: bilyetBigInt,
+    target_doos: targetDoos,
+    target_brood: targetBrood,
+    target_pack: targetPack,
+  };
+}
+
+/**
  * Menyusun sandi emisi pecahan (contoh: Y + 2022 -> "Y'22")
  */
 function formatSandiEmisi(kodePecahan, tahunEmisi) {
@@ -284,10 +301,7 @@ export async function createTargetTahunan(req, res) {
 
         const createdRows = [];
         for (const denom of allDenominasi) {
-          const bilyetBigInt = bilyetInputMap.get(denom.id) ?? 0n;
-          const target_doos = calculateTargetDoos(bilyetBigInt);
-          const target_brood = bilyetBigInt / 1000n;
-          const target_pack = Number(target_brood / 45n);
+          const units = deriveTargetUnits(bilyetInputMap.get(denom.id) ?? 0n);
           const emisi = emisiByDenomId.get(denom.id);
 
           const row = await tx.targetTahunan.create({
@@ -296,10 +310,7 @@ export async function createTargetTahunan(req, res) {
               tahun_emisi,
               emisi_id: emisi.id,
               denominasi_id: denom.id,
-              target_bilyet: bilyetBigInt,
-              target_doos,
-              target_brood,
-              target_pack,
+              ...units,
               catatan: catatan || null,
             },
             include: {
@@ -369,20 +380,14 @@ export async function createTargetTahunan(req, res) {
     }
 
     // Kalkulasi otomatis rasio hierarki bilyet -> doos (ceiling), brood, pack
-    const bilyetBigInt = BigInt(target_bilyet);
-    const target_doos = calculateTargetDoos(bilyetBigInt);
-    const target_brood = bilyetBigInt / 1000n;
-    const target_pack = Number(target_brood / 45n);
+    const units = deriveTargetUnits(target_bilyet);
 
     const created = await prisma.targetTahunan.create({
       data: {
         tahun_anggaran,
         tahun_emisi: tahunEmisi,
         denominasi_id,
-        target_bilyet: bilyetBigInt,
-        target_doos,
-        target_brood,
-        target_pack,
+        ...units,
         catatan: catatan || null,
       },
       include: { denominasi: true, emisi: true },
@@ -436,15 +441,7 @@ export async function updateTargetTahunan(req, res) {
     }
 
     if (target_bilyet !== undefined) {
-      const bilyetBigInt = BigInt(target_bilyet);
-      const target_doos = calculateTargetDoos(bilyetBigInt);
-      const target_brood = bilyetBigInt / 1000n;
-      const target_pack = Number(target_brood / 45n);
-
-      updateData.target_bilyet = bilyetBigInt;
-      updateData.target_doos = target_doos;
-      updateData.target_brood = target_brood;
-      updateData.target_pack = target_pack;
+      Object.assign(updateData, deriveTargetUnits(target_bilyet));
     }
 
     const updated = await prisma.targetTahunan.update({
@@ -529,10 +526,7 @@ export async function updateTargetTahunanGroup(req, res) {
 
       const updatedRows = [];
       for (const denom of allDenominasi) {
-        const bilyetBigInt = bilyetInputMap.get(denom.id) ?? 0n;
-        const target_doos = calculateTargetDoos(bilyetBigInt);
-        const target_brood = bilyetBigInt / 1000n;
-        const target_pack = Number(target_brood / 45n);
+        const units = deriveTargetUnits(bilyetInputMap.get(denom.id) ?? 0n);
         const emisi = emisiByDenomId.get(denom.id);
 
         const row = await tx.targetTahunan.upsert({
@@ -545,10 +539,7 @@ export async function updateTargetTahunanGroup(req, res) {
           },
           update: {
             emisi_id: emisi.id,
-            target_bilyet: bilyetBigInt,
-            target_doos,
-            target_brood,
-            target_pack,
+            ...units,
             ...(catatan !== undefined ? { catatan: catatan || null } : {}),
           },
           create: {
@@ -556,10 +547,7 @@ export async function updateTargetTahunanGroup(req, res) {
             tahun_emisi: tahunEmisi,
             emisi_id: emisi.id,
             denominasi_id: denom.id,
-            target_bilyet: bilyetBigInt,
-            target_doos,
-            target_brood,
-            target_pack,
+            ...units,
             catatan: catatan || null,
           },
           include: { denominasi: true, emisi: true },
