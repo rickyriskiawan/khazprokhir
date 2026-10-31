@@ -8,7 +8,9 @@ import {
   getTargetTahunanById,
   createTargetTahunan,
   updateTargetTahunan,
+  updateTargetTahunanGroup,
   deleteTargetTahunan,
+  deleteTargetTahunanGroup,
   getAllTargetBulanan,
   getTargetBulananById,
   createTargetBulanan,
@@ -19,6 +21,7 @@ import {
 import {
   createTargetTahunanSchema,
   updateTargetTahunanSchema,
+  updateTargetTahunanGroupSchema,
   createTargetBulananSchema,
   updateTargetBulananSchema,
 } from '../validators/target.validator.js';
@@ -37,6 +40,19 @@ targetTahunanRouter.post(
   authorize('SUPERVISOR'),
   validate(createTargetTahunanSchema),
   createTargetTahunan
+);
+targetTahunanRouter.put(
+  '/group/:tahun_anggaran/:tahun_emisi',
+  authenticateToken,
+  authorize('SUPERVISOR'),
+  validate(updateTargetTahunanGroupSchema),
+  updateTargetTahunanGroup
+);
+targetTahunanRouter.delete(
+  '/group/:tahun_anggaran/:tahun_emisi',
+  authenticateToken,
+  authorize('SUPERVISOR'),
+  deleteTargetTahunanGroup
 );
 targetTahunanRouter.put(
   '/:id',

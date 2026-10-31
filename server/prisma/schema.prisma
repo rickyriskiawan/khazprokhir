@@ -113,7 +113,8 @@ model Emisi {
   is_active     Boolean    @default(true)
 
   // Relations
-  batches Batch[]
+  batches        Batch[]
+  target_tahunan TargetTahunan[]
 
   @@map("emisi")
 }
@@ -140,16 +141,20 @@ model Shift {
 model TargetTahunan {
   id             Int        @id @default(autoincrement())
   tahun_anggaran Int        // contoh: 2026
+  tahun_emisi    Int        @default(2022) // contoh: 2022
+  emisi_id       Int?
+  emisi          Emisi?     @relation(fields: [emisi_id], references: [id])
   denominasi_id  Int
   denominasi     Denominasi @relation(fields: [denominasi_id], references: [id])
   target_bilyet  BigInt     // Target lembar dalam setahun
+  target_doos    Int        @default(0) // ceil(target_bilyet / 20000)
   target_brood   BigInt     // auto/kalkulasi: target_bilyet / 1000
   target_pack    Int        // auto/kalkulasi: target_brood / 45
   catatan        String?    @db.Text
   created_at     DateTime   @default(now())
   updated_at     DateTime   @updatedAt
 
-  @@unique([tahun_anggaran, denominasi_id])
+  @@unique([tahun_anggaran, tahun_emisi, denominasi_id])
   @@map("target_tahunan")
 }
 

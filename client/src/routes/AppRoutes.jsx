@@ -5,6 +5,7 @@ import DashboardPage from '../pages/dashboard/DashboardPage'
 import BonMasukPage from '../pages/bon-masuk/BonMasukPage'
 import ProsesSortirPage from '../pages/sortir/ProsesSortirPage'
 import HasilKemasPage from '../pages/kemas/HasilKemasPage'
+import TargetProduksiPage from '../pages/target-produksi/TargetProduksiPage'
 import LoginPage from '../pages/auth/LoginPage'
 import { UnauthorizedPage } from '../pages/common/UnauthorizedPage'
 import NotFoundPage from '../pages/common/NotFoundPage'
@@ -46,16 +47,7 @@ export default function AppRoutes() {
 
           {/* Perencanaan & Master Data */}
           <Route element={<ProtectedRoute allowedRoles={['SUPERVISOR', 'MANAGEMENT', 'AUDITOR']} />}>
-            <Route
-              path="/target-produksi"
-              element={
-                <ModulePlaceholderPage
-                  moduleName="Perencanaan: Target Produksi Tahunan & Bulanan"
-                  moduleCode="FE-12"
-                  description="Pencatatan target TA berjalan, pembagian bulanan, dan evaluasi persediaan HCTS."
-                />
-              }
-            />
+            <Route path="/target-produksi" element={<TargetProduksiPage />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['SUPERVISOR']} />}>

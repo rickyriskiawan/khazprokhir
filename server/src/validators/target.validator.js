@@ -56,21 +56,89 @@ const dateStringSchema = z
 // ==========================================
 // 1. Validasi Target Tahunan
 // ==========================================
-export const createTargetTahunanSchema = z.object({
+const createTargetTahunanSingleSchema = z.object({
   tahun_anggaran: z
     .number()
     .int()
     .min(2000, 'Tahun anggaran minimal 2000')
     .max(2100, 'Tahun anggaran maksimal 2100'),
+  tahun_emisi: z
+    .number()
+    .int()
+    .min(2000, 'Tahun emisi minimal 2000')
+    .max(2100, 'Tahun emisi maksimal 2100')
+    .optional()
+    .default(2022),
   denominasi_id: z.number().int().positive('ID Denominasi harus berupa angka bulat positif'),
   target_bilyet: bigIntPositiveSchema,
   catatan: z.string().trim().nullable().optional(),
 });
 
+const createTargetTahunanGroupSchema = z
+  .object({
+    tahun_anggaran: z
+      .number()
+      .int()
+      .min(2000, 'Tahun anggaran minimal 2000')
+      .max(2100, 'Tahun anggaran maksimal 2100'),
+    tahun_emisi: z
+      .number()
+      .int()
+      .min(2000, 'Tahun emisi minimal 2000')
+      .max(2100, 'Tahun emisi maksimal 2100'),
+    catatan: z.string().trim().nullable().optional(),
+    items: z
+      .array(
+        z.object({
+          denominasi_id: z
+            .number()
+            .int()
+            .positive('ID Denominasi harus berupa angka bulat positif'),
+          target_bilyet: bigIntNonNegativeSchema.optional().default(0n),
+        })
+      )
+      .min(1, 'Daftar target pecahan tidak boleh kosong'),
+  })
+  .refine(
+    (data) => data.items.some((item) => BigInt(item.target_bilyet || 0) > 0n),
+    {
+      message: 'Minimal satu pecahan harus memiliki target bilyet lebih besar dari 0.',
+      path: ['items'],
+    }
+  );
+
+export const createTargetTahunanSchema = z.union([
+  createTargetTahunanGroupSchema,
+  createTargetTahunanSingleSchema,
+]);
+
 export const updateTargetTahunanSchema = z.object({
   target_bilyet: bigIntPositiveSchema.optional(),
   catatan: z.string().trim().nullable().optional(),
 });
+
+export const updateTargetTahunanGroupSchema = z
+  .object({
+    catatan: z.string().trim().nullable().optional(),
+    items: z
+      .array(
+        z.object({
+          denominasi_id: z
+            .number()
+            .int()
+            .positive('ID Denominasi harus berupa angka bulat positif'),
+          target_bilyet: bigIntNonNegativeSchema.optional().default(0n),
+        })
+      )
+      .min(1, 'Daftar target pecahan tidak boleh kosong'),
+  })
+  .refine(
+    (data) => data.items.some((item) => BigInt(item.target_bilyet || 0) > 0n),
+    {
+      message: 'Minimal satu pecahan harus memiliki target bilyet lebih besar dari 0.',
+      path: ['items'],
+    }
+  );
 
 // ==========================================
 // 2. Validasi Target Bulanan
