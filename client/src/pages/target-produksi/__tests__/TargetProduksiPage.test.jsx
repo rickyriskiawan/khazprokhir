@@ -84,7 +84,11 @@ describe('TargetProduksiPage - Vertical Slice 1 (Read & Grouped Display)', () =>
   });
 
   it('menampilkan kartu pengelompokan per Tahun Anggaran dan sub-panel Tahun Emisi dengan 3 kolom (Pecahan sandi, Target Bilyet, Target Doos)', async () => {
-    render(<TargetProduksiPage />);
+    const { container } = render(<TargetProduksiPage />);
+
+    // Pastikan root container memiliki padding standar halaman dan max-width 1440px
+    const rootWrapper = container.firstElementChild;
+    expect(rootWrapper).toHaveClass('p-4', 'md:p-6', 'lg:p-8', 'max-w-[1440px]', 'mx-auto');
 
     await waitFor(() => {
       expect(screen.getByText(/Tahun Anggaran 2026/i)).toBeInTheDocument();

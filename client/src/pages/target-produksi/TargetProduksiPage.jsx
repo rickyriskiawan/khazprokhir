@@ -122,31 +122,29 @@ export default function TargetProduksiPage() {
         );
 
   return (
-    <div className="space-y-4">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1440px] w-full mx-auto pb-12">
       {/* Header Halaman */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-bold tracking-tight text-foreground">
-              Target Produksi
-            </h1>
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-ink dark:text-ink-dark flex items-center gap-2.5">
+            <Target className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            Target Produksi
+          </h1>
+          <p className="text-xs sm:text-sm text-ink-muted mt-1">
             Kuota produksi uang kertas per Tahun Anggaran dan Tahun Emisi (1 Doos = 20.000 Bilyet, sisa bilyet dibulatkan ke atas).
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           <Select
             value={selectedTahunAnggaran}
             onValueChange={setSelectedTahunAnggaran}
           >
             <SelectTrigger
-              className="h-8 w-[180px] text-xs"
+              className="h-9 w-[190px] text-xs bg-surface dark:bg-surface-dark border-border dark:border-border-dark"
               aria-label="Filter Tahun Anggaran"
             >
-              <Calendar className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Calendar className="mr-1.5 h-3.5 w-3.5 text-ink-muted" />
               <SelectValue placeholder="Semua Tahun Anggaran" />
             </SelectTrigger>
             <SelectContent>
@@ -164,7 +162,7 @@ export default function TargetProduksiPage() {
             size="sm"
             onClick={loadTargets}
             disabled={refreshing}
-            className="h-8 text-xs"
+            className="h-9 text-xs"
           >
             <RefreshCw
               className={`mr-1.5 h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`}
@@ -173,8 +171,13 @@ export default function TargetProduksiPage() {
           </Button>
 
           {isSupervisor && (
-            <Button size="sm" onClick={handleOpenCreate} className="h-8 text-xs">
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
+            <Button
+              variant="emerald"
+              size="sm"
+              onClick={handleOpenCreate}
+              className="h-9 px-3.5 text-xs font-semibold shadow-sm"
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
               Tambah Target Produksi
             </Button>
           )}
@@ -183,47 +186,47 @@ export default function TargetProduksiPage() {
 
       {/* Daftar Kelompok Tahun Anggaran */}
       {loading ? (
-        <div className="rounded-lg border bg-card p-8 text-center text-xs text-muted-foreground">
+        <div className="rounded-xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark p-8 text-center text-xs text-ink-muted shadow-xs">
           Memuat data Target Produksi...
         </div>
       ) : groupedData.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-10 text-center">
-          <Inbox className="h-8 w-8 text-muted-foreground/60 mb-2" />
-          <p className="text-sm font-medium text-foreground">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark p-10 text-center shadow-xs">
+          <Inbox className="h-8 w-8 text-ink-muted/60 mb-2" />
+          <p className="text-sm font-medium text-ink dark:text-ink-dark">
             Belum ada data Target Produksi
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-ink-muted mt-1">
             Silakan tambahkan Target Produksi baru berdasarkan Tahun Anggaran dan Tahun Emisi.
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {groupedData.map((taGroup) => (
             <div
               key={taGroup.tahun_anggaran}
-              className="rounded-lg border bg-card shadow-sm overflow-hidden"
+              className="rounded-xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark shadow-xs overflow-hidden"
             >
               {/* Level 1: Header Kartu Tahun Anggaran */}
-              <div className="flex flex-col gap-2 border-b bg-muted/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-2 border-b border-border dark:border-border-dark bg-surface-subtle dark:bg-surface-subtle-dark px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2.5">
-                  <Badge variant="default" className="text-xs font-semibold px-2.5 py-0.5">
+                  <Badge variant="emerald" className="text-xs font-semibold px-2.5 py-0.5">
                     Tahun Anggaran {taGroup.tahun_anggaran}
                   </Badge>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-ink-muted">
                     {taGroup.emisi_groups?.length || 0} Tahun Emisi
                   </span>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 text-xs">
                   <div>
-                    <span className="text-muted-foreground">Total Bilyet TA: </span>
-                    <span className="font-mono font-semibold text-foreground">
+                    <span className="text-ink-muted">Total Bilyet TA: </span>
+                    <span className="font-mono tabular-nums font-semibold text-ink dark:text-ink-dark">
                       {Number(taGroup.total_bilyet || 0).toLocaleString('id-ID')}
                     </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Total Doos TA: </span>
-                    <span className="font-mono font-semibold text-foreground">
+                    <span className="text-ink-muted">Total Doos TA: </span>
+                    <span className="font-mono tabular-nums font-semibold text-ink dark:text-ink-dark">
                       {Number(taGroup.total_doos || 0).toLocaleString('id-ID')}
                     </span>
                   </div>
@@ -231,20 +234,20 @@ export default function TargetProduksiPage() {
               </div>
 
               {/* Level 2: Sub-panel per Tahun Emisi */}
-              <div className="divide-y p-4 space-y-4">
+              <div className="p-4 space-y-4">
                 {(taGroup.emisi_groups || []).map((emisiGroup) => (
                   <div
                     key={`${taGroup.tahun_anggaran}-${emisiGroup.tahun_emisi}`}
-                    className="rounded-md border bg-background overflow-hidden"
+                    className="rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark overflow-hidden"
                   >
-                    <div className="flex flex-col gap-2 border-b bg-muted/20 px-3.5 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-2 border-b border-border dark:border-border-dark bg-surface-subtle/60 dark:bg-surface-subtle-dark/60 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-2">
-                        <Layers className="h-4 w-4 text-primary" />
-                        <span className="text-xs font-semibold text-foreground">
+                        <Layers className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-xs font-semibold text-ink dark:text-ink-dark">
                           Tahun Emisi {emisiGroup.tahun_emisi} ({emisiGroup.kode_emisi || `TE ${emisiGroup.tahun_emisi}`})
                         </span>
                         {emisiGroup.catatan && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-ink-muted">
                             — {emisiGroup.catatan}
                           </span>
                         )}
@@ -265,7 +268,7 @@ export default function TargetProduksiPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => setDeletingGroup(emisiGroup)}
-                            className="h-7 px-2.5 text-xs text-destructive hover:text-destructive"
+                            className="h-7 px-2.5 text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300"
                           >
                             <Trash2 className="mr-1 h-3 w-3" />
                             Hapus
@@ -277,7 +280,7 @@ export default function TargetProduksiPage() {
                     {/* Tabel 3 Kolom: Pecahan (Sandi), Target (Bilyet), Target (Doos) */}
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-muted/10">
+                        <TableRow className="bg-surface-subtle/40 dark:bg-surface-subtle-dark/40">
                           <TableHead className="w-[180px] text-xs font-semibold">
                             Pecahan
                           </TableHead>
@@ -294,7 +297,9 @@ export default function TargetProduksiPage() {
                           const colorToken =
                             DENOM_COLOR_MAP[item.kode_pecahan] || DENOM_COLOR_MAP.Y;
                           return (
-                            <TableRow key={item.id || `${item.denominasi_id}-${item.sandi}`}>
+                            <TableRow
+                              key={item.id || `${item.denominasi_id}-${item.sandi}`}
+                            >
                               <TableCell className="py-2">
                                 <span
                                   className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-mono font-semibold border ${colorToken?.badge || ''}`}
@@ -302,10 +307,10 @@ export default function TargetProduksiPage() {
                                   {item.sandi}
                                 </span>
                               </TableCell>
-                              <TableCell className="py-2 text-right font-mono text-xs">
+                              <TableCell className="py-2 text-right font-mono tabular-nums text-xs">
                                 {Number(item.target_bilyet || 0).toLocaleString('id-ID')}
                               </TableCell>
-                              <TableCell className="py-2 text-right font-mono text-xs font-medium">
+                              <TableCell className="py-2 text-right font-mono tabular-nums text-xs font-medium">
                                 {Number(item.target_doos || 0).toLocaleString('id-ID')}
                               </TableCell>
                             </TableRow>
@@ -313,14 +318,14 @@ export default function TargetProduksiPage() {
                         })}
 
                         {/* Baris Total */}
-                        <TableRow className="bg-muted/30 font-semibold border-t-2">
+                        <TableRow className="bg-surface-subtle dark:bg-surface-subtle-dark font-semibold border-t-2 border-border dark:border-border-dark">
                           <TableCell className="py-2 text-xs font-bold">
                             Total
                           </TableCell>
-                          <TableCell className="py-2 text-right font-mono text-xs font-bold">
+                          <TableCell className="py-2 text-right font-mono tabular-nums text-xs font-bold">
                             {Number(emisiGroup.total_bilyet || 0).toLocaleString('id-ID')}
                           </TableCell>
-                          <TableCell className="py-2 text-right font-mono text-xs font-bold">
+                          <TableCell className="py-2 text-right font-mono tabular-nums text-xs font-bold text-emerald-600 dark:text-emerald-400">
                             {Number(emisiGroup.total_doos || 0).toLocaleString('id-ID')}
                           </TableCell>
                         </TableRow>

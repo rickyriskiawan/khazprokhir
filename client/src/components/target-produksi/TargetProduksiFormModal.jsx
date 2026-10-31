@@ -11,6 +11,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
 import {
   createTargetProduksiGroup,
   updateTargetProduksiGroup,
@@ -181,7 +191,7 @@ export default function TargetProduksiFormModal({
       <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
-            <Target className="h-4 w-4 text-primary" />
+            <Target className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             {isEditMode
               ? `Edit Target Produksi — TA ${editingGroup.tahun_anggaran} (TE ${editingGroup.tahun_emisi})`
               : 'Tambah Target Produksi'}
@@ -193,10 +203,10 @@ export default function TargetProduksiFormModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {errorMsg && (
-            <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-              <span>{errorMsg}</span>
-            </div>
+            <Alert variant="destructive" className="py-3">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{errorMsg}</AlertDescription>
+            </Alert>
           )}
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -237,13 +247,13 @@ export default function TargetProduksiFormModal({
               />
               {!isEditMode && availableEmisiYears.length > 0 && (
                 <div className="flex flex-wrap items-center gap-1 pt-0.5">
-                  <span className="text-[11px] text-muted-foreground mr-1">
+                  <span className="text-[11px] text-ink-muted mr-1">
                     Master Emisi:
                   </span>
                   {availableEmisiYears.map((yr) => (
                     <Badge
                       key={yr}
-                      variant={String(tahunEmisi) === String(yr) ? 'default' : 'outline'}
+                      variant={String(tahunEmisi) === String(yr) ? 'emerald' : 'outline'}
                       className="cursor-pointer text-[10px] px-1.5 py-0"
                       onClick={() => setTahunEmisi(String(yr))}
                     >
@@ -256,22 +266,22 @@ export default function TargetProduksiFormModal({
           </div>
 
           {/* Tabel Input Target per Pecahan */}
-          <div className="rounded-md border overflow-hidden">
-            <table className="w-full text-xs">
-              <thead className="bg-muted/40 border-b">
-                <tr>
-                  <th className="px-3 py-2 text-left font-semibold w-[130px]">
+          <div className="rounded-lg border border-border dark:border-border-dark overflow-hidden">
+            <Table className="text-xs">
+              <TableHeader className="bg-surface-subtle dark:bg-surface-subtle-dark">
+                <TableRow>
+                  <TableHead className="h-9 px-3 py-2 w-[130px]">
                     Pecahan
-                  </th>
-                  <th className="px-3 py-2 text-left font-semibold">
+                  </TableHead>
+                  <TableHead className="h-9 px-3 py-2">
                     Target (Bilyet)
-                  </th>
-                  <th className="px-3 py-2 text-right font-semibold w-[140px]">
+                  </TableHead>
+                  <TableHead className="h-9 px-3 py-2 text-right w-[140px]">
                     Target (Doos)
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {sortedDenominasi.map((denom) => {
                   const rawBilyet = bilyetByDenomId[denom.id] ?? '';
                   const doosPreview = calculateDoosCeiling(rawBilyet || '0');
@@ -280,15 +290,15 @@ export default function TargetProduksiFormModal({
                     DENOM_COLOR_MAP[denom.nama] || DENOM_COLOR_MAP.Y;
 
                   return (
-                    <tr key={denom.id}>
-                      <td className="px-3 py-2">
+                    <TableRow key={denom.id}>
+                      <TableCell className="px-3 py-2">
                         <span
                           className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-mono font-semibold border ${colorToken?.badge || ''}`}
                         >
                           {sandiPreview}
                         </span>
-                      </td>
-                      <td className="px-3 py-1.5">
+                      </TableCell>
+                      <TableCell className="px-3 py-1.5">
                         <Input
                           aria-label={`Target Bilyet ${denom.nama}`}
                           type="text"
@@ -300,26 +310,26 @@ export default function TargetProduksiFormModal({
                           }
                           className="h-8 text-xs font-mono text-right"
                         />
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono font-medium">
+                      </TableCell>
+                      <TableCell className="px-3 py-2 text-right font-mono tabular-nums text-xs font-medium">
                         {doosPreview.toLocaleString('id-ID')}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-              <tfoot className="bg-muted/30 border-t-2 font-semibold">
-                <tr>
-                  <td className="px-3 py-2 font-bold">Total</td>
-                  <td className="px-3 py-2 text-right font-mono font-bold">
+              </TableBody>
+              <TableFooter className="border-t-2 font-semibold">
+                <TableRow>
+                  <TableCell className="px-3 py-2 text-xs font-bold">Total</TableCell>
+                  <TableCell className="px-3 py-2 text-right font-mono tabular-nums text-xs font-bold">
                     {BigInt(summaryTotals.totalBilyet).toLocaleString('id-ID')}
-                  </td>
-                  <td className="px-3 py-2 text-right font-mono font-bold">
+                  </TableCell>
+                  <TableCell className="px-3 py-2 text-right font-mono tabular-nums text-xs font-bold text-emerald-600 dark:text-emerald-400">
                     {summaryTotals.totalDoos.toLocaleString('id-ID')}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            </Table>
           </div>
 
           <div className="space-y-1.5">
@@ -350,9 +360,10 @@ export default function TargetProduksiFormModal({
             </Button>
             <Button
               type="submit"
+              variant="emerald"
               size="sm"
               disabled={submitting}
-              className="h-8 text-xs"
+              className="h-8 text-xs font-semibold"
             >
               {submitting
                 ? 'Menyimpan...'

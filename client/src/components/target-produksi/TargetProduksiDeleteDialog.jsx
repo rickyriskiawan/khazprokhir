@@ -8,6 +8,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { deleteTargetProduksiGroup } from '@/services/targetProduksiService';
 import { AlertTriangle, AlertCircle } from 'lucide-react';
 
@@ -53,22 +54,22 @@ export default function TargetProduksiDeleteDialog({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose?.()}>
       <DialogContent className="sm:max-w-[440px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base text-destructive">
+          <DialogTitle className="flex items-center gap-2 text-base text-rose-600 dark:text-rose-400">
             <AlertTriangle className="h-4 w-4" />
             Hapus Target Produksi
           </DialogTitle>
           <DialogDescription className="text-xs">
             Apakah Anda yakin ingin menghapus seluruh kuota Target Produksi untuk{' '}
-            <strong>Tahun Anggaran {targetGroup.tahun_anggaran}</strong> —{' '}
-            <strong>Tahun Emisi {targetGroup.tahun_emisi}</strong>?
+            <strong className="text-ink dark:text-ink-dark">Tahun Anggaran {targetGroup.tahun_anggaran}</strong> —{' '}
+            <strong className="text-ink dark:text-ink-dark">Tahun Emisi {targetGroup.tahun_emisi}</strong>?
           </DialogDescription>
         </DialogHeader>
 
         {errorMsg && (
-          <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-            <span>{errorMsg}</span>
-          </div>
+          <Alert variant="destructive" className="py-3">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{errorMsg}</AlertDescription>
+          </Alert>
         )}
 
         <DialogFooter className="gap-2 pt-2">
@@ -88,7 +89,7 @@ export default function TargetProduksiDeleteDialog({
             size="sm"
             onClick={handleConfirmDelete}
             disabled={deleting}
-            className="h-8 text-xs"
+            className="h-8 text-xs font-semibold"
           >
             {deleting ? 'Menghapus...' : 'Ya, Hapus Target'}
           </Button>
